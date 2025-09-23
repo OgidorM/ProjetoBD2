@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Cinema BD2{% endblock %}</title>
+    {% load static %}
+
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+<header>
+    <h1>Cinema BD2</h1>
+    <nav>
+        <a href="{% url 'lista_filmes' %}">Filmes</a> |
+        <a href="{% url 'adicionar_filme' %}">Adicionar Filme</a>
+    </nav>
+</header>
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+</body>
+</html>

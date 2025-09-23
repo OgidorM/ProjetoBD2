@@ -1,0 +1,28 @@
+{% extends 'filmes_front/base.html' %}
+
+{% block title %}Lista de Filmes{% endblock %}
+
+{% block content %}
+    <h2>Lista de Filmes</h2>
+
+    {% if filmes %}
+        <table border="1">
+            <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Categoria</th>
+                <th>Duração (min)</th>
+            </tr>
+            {% for filme in filmes %}
+                <tr>
+                    <td>{{ filme.id }}</td>
+                    <td>{{ filme.titulo }}</td>
+                    <td>{{ filme.categoria }}</td>
+                    <td>{{ filme.duracao }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>Nenhum filme cadastrado ainda.</p>
+    {% endif %}
+{% endblock %}

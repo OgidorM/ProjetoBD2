@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bd2ap1',
+    'filmes_front',
 ]
 
 MIDDLEWARE = [

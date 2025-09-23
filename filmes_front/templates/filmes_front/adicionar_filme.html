@@ -1,0 +1,14 @@
+{% extends 'filmes_front/base.html' %}
+
+{% block title %}Adicionar Filme{% endblock %}
+
+{% block content %}
+    <h2>Adicionar Filme</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Adicionar</button>
+    </form>
+
+{% endblock %}
