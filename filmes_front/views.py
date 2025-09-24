@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from bd2ap1.models import Filmes
 from .forms import FilmeForm
 

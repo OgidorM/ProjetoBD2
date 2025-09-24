@@ -13,24 +13,20 @@
             {{ form.titulo }}
         </div>
         <div class="mb-3">
-            Categoria
-            {{ form.categoriaid }}
+            Produtora
+            {{ form.produtora }}
         </div>
         <div class="mb-3">
-            Cinema
-            {{ form.cinemaid }}
-        </div>
-        <div class="mb-3">
-            Data de Lançamento
-            {{ form.datalancamento }}
+            Sinopse
+            {{ form.sinopse }}
         </div>
         <div class="mb-3">
             Duracao (min)
             {{ form.duracao }}
         </div>
         <div class="mb-3">
-            Produtora
-            {{ form.produtora }}
+            Data de Lançamento
+            {{ form.datalancamento }}
         </div>
         <div class="mb-3">
             Fim de Exebicao
@@ -41,15 +37,19 @@
             {{ form.idioma }}
         </div>
         <div class="mb-3">
-            Sinopse
-            {{ form.sinopse }}
+            Categoria
+            {{ form.categoriaid }}
         </div>
         <div class="mb-3">
             Classificacao Etaria
             {{ form.classificacaoetaria }}
         </div>
+        <div class="mb-3">
+            Cinema
+            {{ form.cinemaid }}
+        </div>
 
-        <button type="submit" class="btn btn-success">💾 Guardar Filme</button>
+        <button type="submit" class="btn btn-success">Guardar Filme</button>
         <a href="{% url 'lista_filmes' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
