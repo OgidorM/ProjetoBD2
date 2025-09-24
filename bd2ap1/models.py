@@ -97,6 +97,8 @@ class Categorias(models.Model):
     class Meta:
         managed = False
         db_table = 'categorias'
+    def __str__(self):
+        return self.nomecategoria
 
 
 class Cinemas(models.Model):
@@ -111,6 +113,8 @@ class Cinemas(models.Model):
     class Meta:
         managed = False
         db_table = 'cinemas'
+    def __str__(self):
+        return self.nomecinema
 
 
 class Clientes(models.Model):
@@ -190,6 +194,8 @@ class Filmes(models.Model):
     class Meta:
         managed = False
         db_table = 'filmes'
+    def __str__(self):
+        return self.titulo
 
 
 class Funcionarios(models.Model):

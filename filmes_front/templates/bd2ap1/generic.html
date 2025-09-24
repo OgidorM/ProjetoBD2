@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Cinema BD II{% endblock %}</title>
+</head>
+<body>
+<header>
+    <h1>{% block header %}Cinema BD II{% endblock %}</h1>
+    <nav>
+        <a href="{% url 'index' %}">Home</a> |
+        <a href="{% url 'lista_filmes' %}">Filmes</a>
+    </nav>
+    <hr>
+</header>
+<main>
+    {% block content %}{% endblock %}
+</main>
+<footer>
+    <hr>
+    <p>BD II - 2025/2026 - ESTGV</p>
+</footer>
+</body>
+</html>
