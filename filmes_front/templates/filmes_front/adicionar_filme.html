@@ -1,0 +1,56 @@
+{% extends 'filmes_front/base.html' %}
+
+{% block title %}Adicionar Filme{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Adicionar Filme</h2>
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <div class="mb-3">
+            Titulo
+            {{ form.titulo }}
+        </div>
+        <div class="mb-3">
+            Categoria
+            {{ form.categoriaid }}
+        </div>
+        <div class="mb-3">
+            Cinema
+            {{ form.cinemaid }}
+        </div>
+        <div class="mb-3">
+            Data de Lançamento
+            {{ form.datalancamento }}
+        </div>
+        <div class="mb-3">
+            Duracao
+            {{ form.duracao }}
+        </div>
+        <div class="mb-3">
+            Produtora
+            {{ form.produtora }}
+        </div>
+        <div class="mb-3">
+            Fim de Exebicao
+            {{ form.fimexebicao }}
+        </div>
+        <div class="mb-3">
+            Idioma
+            {{ form.idioma }}
+        </div>
+        <div class="mb-3">
+            Sinopse
+            {{ form.sinopse }}
+        </div>
+        <div class="mb-3">
+            Classificacao Etaria
+            {{ form.classificacaoetaria }}
+        </div>
+
+        <button type="submit" class="btn btn-success">💾 Guardar Filme</button>
+        <a href="{% url 'lista_filmes' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
