@@ -10,4 +10,5 @@ urlpatterns = [
     path('salas/', include('salas_front.urls')),
     path('lugares/', include('lugares_front.urls')),
     path('bilhetes/', include('bilhetes_front.urls')),
+    path('produtos/', include('produtos_front.urls')),
 ]
