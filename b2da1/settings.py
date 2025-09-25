@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'bd2ap1',
     'filmes_front',
+    'salas_front',
+    'lugares_front',
+    'bilhetes_front',
 ]
 
 MIDDLEWARE = [

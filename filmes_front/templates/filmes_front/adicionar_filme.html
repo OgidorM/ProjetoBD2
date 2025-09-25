@@ -9,43 +9,43 @@
     <form method="post" class="card p-4 shadow-sm">
         {% csrf_token %}
         <div class="mb-3">
-            Titulo
+            <label class="form-label">Titulo</label>
             {{ form.titulo }}
         </div>
         <div class="mb-3">
-            Produtora
+            <label class="form-label">Produtora</label>
             {{ form.produtora }}
         </div>
         <div class="mb-3">
-            Sinopse
+            <label class="form-label">Sinopse</label>
             {{ form.sinopse }}
         </div>
         <div class="mb-3">
-            Duracao (min)
+            <label class="form-label">Duracao (min)</label>
             {{ form.duracao }}
         </div>
         <div class="mb-3">
-            Data de Lançamento
+            <label class="form-label">Data de Lançamento</label>
             {{ form.datalancamento }}
         </div>
         <div class="mb-3">
-            Fim de Exebicao
+            <label class="form-label">Fim de Exibição</label>
             {{ form.fimexebicao }}
         </div>
         <div class="mb-3">
-            Idioma (PT, EN, ES, ...)
+            <label class="form-label">Idioma (PT, EN, ES, ...)</label>
             {{ form.idioma }}
         </div>
         <div class="mb-3">
-            Categoria
+            <label class="form-label">Categoria</label>
             {{ form.categoriaid }}
         </div>
         <div class="mb-3">
-            Classificacao Etaria
+            <label class="form-label">Classificacao Etaria</label>
             {{ form.classificacaoetaria }}
         </div>
         <div class="mb-3">
-            Cinema
+            <label class="form-label">Cinema</label>
             {{ form.cinemaid }}
         </div>
 

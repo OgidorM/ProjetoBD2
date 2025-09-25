@@ -3,7 +3,7 @@ from bd2ap1.models import Filmes
 from .forms import FilmeForm
 
 def index(request):
-    return render(request, 'filmes_front/index.html')
+    return redirect('lista_filmes')
 
 def lista_filmes(request):
     filmes = Filmes.objects.all()

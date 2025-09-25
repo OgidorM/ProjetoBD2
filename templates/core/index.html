@@ -1,5 +1,25 @@
-{% extends 'core/base.html' %}
+{% extends "core/base.html" %}
+
+{% block title %}Cinema BD2 — Início{% endblock %}
 
 {% block content %}
-    <h1>Bem-vindo ao Cinema!</h1>
+<div class="py-4">
+  <h1 class="h3 mb-3">Bem-vindo ao Cinema BD2</h1>
+  <p class="text-muted">Escolhe uma secção no topo para começares.</p>
+
+  <div class="row g-3">
+    <div class="col-sm-6 col-lg-3">
+      <a href="{% url 'lista_filmes' %}" class="btn btn-primary w-100">Ver Filmes</a>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <a href="{% url 'lista_salas' %}" class="btn btn-outline-primary w-100">Ver Salas</a>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <a href="{% url 'lista_lugares' %}" class="btn btn-outline-primary w-100">Ver Lugares</a>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <a href="{% url 'lista_bilhetes' %}" class="btn btn-outline-primary w-100">Ver Bilhetes</a>
+    </div>
+  </div>
+</div>
 {% endblock %}
