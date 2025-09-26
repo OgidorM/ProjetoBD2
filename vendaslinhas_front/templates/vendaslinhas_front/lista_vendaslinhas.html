@@ -1,0 +1,61 @@
+{% extends 'vendaslinhas_front/base.html' %}
+
+{% block title %}Lista de Linhas de Venda{% endblock %}
+
+{% block content %}
+    {% if vendaslinhas %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Lista de Linhas de Venda</h2>
+        <table class="table table-striped table-hover table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Venda</th>
+                    <th>Produto</th>
+                    <th>Bilhete</th>
+                    <th>Quantidade</th>
+                    <th>Preço Linha</th>
+                    <th>Total Linha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for linha in vendaslinhas %}
+                <tr>
+                    <td>{{ linha.vendalinhaid }}</td>
+                    <td>Venda #{{ linha.vendaid.vendaid|default:"N/A" }}</td>
+                    <td>{{ linha.produtoid.nomeproduto|default:"N/A" }}</td>
+                    <td>
+                        {% if linha.bilheteid %}
+                            Bilhete #{{ linha.bilheteid.bilheteid }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ linha.quantidade }}</td>
+                    <td>
+                        {% if linha.precolinha %}
+                            €{{ linha.precolinha }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if linha.total_linha %}
+                            €{{ linha.total_linha }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            Nenhuma linha de venda registada ainda.
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'avaliacoes_front/base.html' %}
+
+{% block title %}Lista de Avaliações{% endblock %}
+
+{% block content %}
+    {% if avaliacoes %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Lista de Avaliações</h2>
+        <table class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Venda</th>
+                    <th>Título</th>
+                    <th>Cinema</th>
+                    <th>Filme</th>
+                    <th>Funcionário</th>
+                    <th>Comentário</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for avaliacao in avaliacoes %}
+                <tr>
+                    <td>{{ avaliacao.avaliacaoid }}</td>
+                    <td>Venda #{{ avaliacao.venda.vendaid }}</td>
+                    <td>{{ avaliacao.tituloavaliacao }}</td>
+                    <td>
+                        {% if avaliacao.avaliacaocinema %}
+                            <span class="badge bg-primary">{{ avaliacao.avaliacaocinema }}/5</span>
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if avaliacao.avaliacaofilme %}
+                            <span class="badge bg-success">{{ avaliacao.avaliacaofilme }}/5</span>
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if avaliacao.avaliacaofuncionario %}
+                            <span class="badge bg-warning">{{ avaliacao.avaliacaofuncionario }}/5</span>
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if avaliacao.comentario %}
+                            {{ avaliacao.comentario|truncatechars:50 }}
+                        {% else %}
+                            <span class="text-muted">Sem comentário</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            Nenhuma avaliação registada ainda.
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'produtos_front/base.html' %}
+
+{% block title %}Lista de Produtos{% endblock %}
+
+{% block content %}
+    {% if produtos %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Lista de Produtos</h2>
+        <table class="table table-striped table-hover table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Preço</th>
+                    <th>Stock</th>
+                    <th>Ativo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produto in produtos %}
+                <tr>
+                    <td>{{ produto.produtoid }}</td>
+                    <td>{{ produto.nomeproduto }}</td>
+                    <td>€{{ produto.precoproduto }}</td>
+                    <td>{{ produto.stock }}</td>
+                    <td>
+                        {% if produto.ativo %}
+                            <span class="badge bg-success">Sim</span>
+                        {% else %}
+                            <span class="badge bg-danger">Não</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            Nenhum produto registado ainda.
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

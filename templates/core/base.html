@@ -20,19 +20,20 @@
           <li class="nav-item"><a class="nav-link" href="{% url 'lista_salas' %}">Salas</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'lista_lugares' %}">Lugares</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'lista_bilhetes' %}">Bilhetes</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'lista_produtos' %}">Produtos</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'lista_vendas' %}">Vendas</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'lista_vendaslinhas' %}">Linhas</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'lista_avaliacoes' %}">Avaliações</a></li>
         </ul>
       </div>
     </div>
   </nav>
-
-  <main class="container py-4">
-    {% block content %}{% endblock %}
-  </main>
 
   <footer class="bg-dark text-white text-center py-3">
     Cinema BD2
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block content %}{% endblock %}
 </body>
 </html>
