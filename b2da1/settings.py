@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'lugares_front',
     'bilhetes_front',
     'produtos_front',
+    'vendas_front',
+    'vendaslinhas_front',
 ]
 
 MIDDLEWARE = [
