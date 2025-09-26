@@ -42,6 +42,10 @@ INSTALLED_APPS = [
     'salas_front',
     'lugares_front',
     'bilhetes_front',
+    'produtos_front',
+    'vendas_front',
+    'vendaslinhas_front',
+    'avaliacoes_front',
 ]
 
 MIDDLEWARE = [
