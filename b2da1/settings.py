@@ -38,6 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bd2ap1',
+    # Domain (proxy) apps for clean layering
+    'cinemas',
+    'clientes',
+    'funcionarios',
+    # Interface/front apps (legacy UI)
     'filmes_front',
     'salas_front',
     'lugares_front',
