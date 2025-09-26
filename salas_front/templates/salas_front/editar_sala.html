@@ -1,0 +1,16 @@
+{% extends 'salas_front/base.html' %}
+
+{% block title %}Editar Sala{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Editar Sala</h2>
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">Guardar Sala</button>
+        <a href="{% url 'lista_salas' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,2 +1,21 @@
+# Ficheiros temporários do Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Ambiente virtual (não enviar a pasta venv)
+# venv/
+# .env/
+
+# Configuração local (ex.: VS Code, PyCharm, etc.)
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Outros ficheiros temporários
+*.tmp
+.DS_Store
+Thumbs.db

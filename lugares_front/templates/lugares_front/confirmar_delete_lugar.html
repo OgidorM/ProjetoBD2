@@ -1,4 +1,4 @@
-{% extends 'bilhetes_front/base.html' %}
+{% extends 'lugares_front/base.html' %}
 
 {% block title %}Confirmar Eliminação{% endblock %}
 
@@ -9,10 +9,10 @@
         Confirmar eliminação
       </div>
       <div class="card-body">
-        <p>Tens a certeza que queres eliminar o bilhete para <strong> {{bilhete.sessaoid.salaid.nomesala}} @ {{ bilhete.sessaoid.filmeid.titulo }} @ {{ bilhete.sessaoid.inicio }}</strong>?</p>
+        <p>Tens a certeza que queres eliminar o lugar <strong>{{lugares.fila}}-{{lugares.numero}} da {{lugares.salaid.nomesala }} @ {{lugares.salaid.cinemaid.nomecinema }} </strong>?</p>
         <form method="post">
           {% csrf_token %}
-          <a href="{% url 'lista_bilhetes' %}" class="btn btn-secondary">Cancelar</a>
+          <a href="{% url 'lista_lugares' %}" class="btn btn-secondary">Cancelar</a>
           <button type="submit" class="btn btn-danger">Eliminar</button>
         </form>
       </div>
