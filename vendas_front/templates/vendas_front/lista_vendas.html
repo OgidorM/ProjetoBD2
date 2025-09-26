@@ -1,0 +1,47 @@
+{% extends 'vendas_front/base.html' %}
+
+{% block title %}Lista de Vendas{% endblock %}
+
+{% block content %}
+    {% if vendas %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Lista de Vendas</h2>
+        <table class="table table-striped table-hover table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Funcionário</th>
+                    <th>Data</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for venda in vendas %}
+                <tr>
+                    <td>{{ venda.vendaid }}</td>
+                    <td>{{ venda.clienteid.nomecliente|default:"N/A" }}</td>
+                    <td>{{ venda.funcionarioid.nomefuncionario|default:"N/A" }}</td>
+                    <td>{{ venda.data|default:"N/A" }}</td>
+                    <td>{{ venda.estadovenda|default:"N/A" }}</td>
+                    <td>
+                        {% if venda.totalvenda %}
+                            €{{ venda.totalvenda }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            Nenhuma venda registada ainda.
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
