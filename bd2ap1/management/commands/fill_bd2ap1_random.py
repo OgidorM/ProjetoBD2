@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from bd2ap1.models import Categorias, Cinemas, ClassificacoesEtarias, Filmes, Salas, Sessoes, Lugares, Clientes, Funcionarios, Produtos, Vendas
+from bd2ap1.models import Categorias, Cinemas, ClassificacoesEtarias, Filmes, Salas, Sessoes, Lugares, Clientes, Funcionarios, Produtos, Vendas, VendaLinhas, Avaliacoes
 from faker import Faker
 import random
 from django.utils import timezone
@@ -146,8 +146,40 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Produtos table filled.'))
 
         # Fill Vendas
+        vendas = []
         for _ in range(30):
-            Vendas.objects.create(
+            venda = Vendas.objects.create(
                 clienteid=random.choice(clientes)
             )
+            vendas.append(venda)
         self.stdout.write(self.style.SUCCESS('Vendas table filled.'))
+
+        # Fill VendaLinhas (linhas)
+        produtos = list(Produtos.objects.all())
+        for venda in vendas:
+            num_linhas = random.randint(1, 3)
+            for _ in range(num_linhas):
+                produto = random.choice(produtos)
+                quantidade = random.randint(1, 5)
+                preco = float(produto.precoproduto)
+                total_linha = round(preco * quantidade, 2)
+                VendaLinhas.objects.create(
+                    vendaid=venda,
+                    produtoid=produto,
+                    quantidade=quantidade,
+                    total_linha=total_linha,
+                    precolinha=preco
+                )
+        self.stdout.write(self.style.SUCCESS('VendaLinhas table filled.'))
+
+        # Fill Avaliacoes
+        for venda in random.sample(vendas, k=min(20, len(vendas))):
+            Avaliacoes.objects.create(
+                venda=venda,
+                tituloavaliacao=fake.sentence(nb_words=4)[:80],
+                avaliacaocinema=random.randint(1, 5),
+                avaliacaofilme=random.randint(1, 5),
+                avaliacaofuncionario=random.randint(1, 5),
+                comentario=fake.text(max_nb_chars=200)
+            )
+        self.stdout.write(self.style.SUCCESS('Avaliacoes table filled.'))

@@ -6,7 +6,7 @@ def index(request):
     return redirect('lista_vendaslinhas')
 
 def lista_vendaslinhas(request):
-    vendaslinhas = VendaLinhas.objects.select_related('vendaid', 'produtoid', 'bilheteid').order_by('vendalinhaid')
+    vendaslinhas = VendaLinhas.objects.select_related('vendaid', 'produtoid').order_by('vendalinhaid')
     return render(request, 'vendaslinhas_front/lista_vendaslinhas.html', {'vendaslinhas': vendaslinhas})
 
 def adicionar_vendalinha(request):
