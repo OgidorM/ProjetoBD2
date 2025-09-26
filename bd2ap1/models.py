@@ -52,18 +52,17 @@ class ClassificacoesEtarias(models.Model):
     def __str__(self) -> str:
         return self.nomeclassificacao
 
-
 class Filmes(models.Model):
     filmeid = models.AutoField(primary_key=True)
     categoriaid = models.ForeignKey(
         Categorias,
-        on_delete=models.PROTECT,  
+        on_delete=models.PROTECT,  # SQL: NO ACTION
         db_column='categoriaid',
         related_name='filmes'
     )
     cinemaid = models.ForeignKey(
         Cinemas,
-        on_delete=models.PROTECT,
+        on_delete=models.PROTECT,  # SQL: NO ACTION
         db_column='cinemaid',
         related_name='filmes'
     )
@@ -76,7 +75,7 @@ class Filmes(models.Model):
     sinopse = models.TextField(blank=True, null=True)
     classificacaoetaria = models.ForeignKey(
         ClassificacoesEtarias,
-        on_delete=models.PROTECT,
+        on_delete=models.PROTECT,  # SQL: NO ACTION
         db_column='classificacaoetaria',
         default=1,
         related_name='filmes'
@@ -98,7 +97,6 @@ class Filmes(models.Model):
     def __str__(self) -> str:
         return self.titulo
 
-
 class Salas(models.Model):
     salaid = models.AutoField(primary_key=True)
     cinemaid = models.ForeignKey(
@@ -117,7 +115,6 @@ class Salas(models.Model):
 
     def __str__(self) -> str:
         return self.nomesala or f"Sala {self.salaid}"
-
 
 class Sessoes(models.Model):
     sessaoid = models.AutoField(primary_key=True)
@@ -307,17 +304,10 @@ class VendaLinhas(models.Model):
         blank=True, null=True,
         related_name='linhas_venda'
     )
-    bilheteid = models.ForeignKey(
-        Bilhetes,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
-        db_column='bilheteid',
-        blank=True, null=True,
-        related_name='linhas_venda'
-    )
     quantidade = models.IntegerField()
     total_linha = models.DecimalField(
         max_digits=5, decimal_places=2, blank=True, null=True, db_column='total_linha_'
-    )  
+    )  # no SQL a coluna termina com "_"
     precolinha = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
 
     class Meta:
