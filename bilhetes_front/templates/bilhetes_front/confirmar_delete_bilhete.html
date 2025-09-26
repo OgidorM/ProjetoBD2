@@ -1,0 +1,15 @@
+{% extends 'bilhetes_front/base.html' %}
+
+{% block title %}Confirmar Remoção{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Confirmar Remoção</h2>
+    <p>Tem a certeza que deseja remover o bilhete {{ bilhete.bilheteid }}?</p>
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Remover</button>
+        <a href="{% url 'lista_bilhetes' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

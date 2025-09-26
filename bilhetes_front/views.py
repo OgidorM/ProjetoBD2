@@ -18,3 +18,22 @@ def adicionar_bilhete(request):
     else:
         form = BilheteForm()
     return render(request, 'bilhetes_front/adicionar_bilhete.html', {'form': form})
+
+def editar_bilhete(request, bilheteid):
+    bilhete = Bilhetes.objects.get(bilheteid=bilheteid)
+    if request.method == 'POST':
+        form = BilheteForm(request.POST, instance=bilhete)
+        if form.is_valid():
+            form.save()
+            return redirect('lista_bilhetes')
+    else:
+        form = BilheteForm(instance=bilhete)
+    return render(request, 'bilhetes_front/editar_bilhete.html', {'form': form, 'bilhete': bilhete})
+
+def remover_bilhete(request, bilheteid):
+    bilhete = Bilhetes.objects.get(bilheteid=bilheteid)
+    if request.method == 'POST':
+        bilhete.delete()
+        return redirect('lista_bilhetes')
+    return render(request, 'bilhetes_front/confirmar_delete_bilhete.html', {'bilhete': bilhete})
+

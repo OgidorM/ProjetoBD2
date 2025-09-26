@@ -4,13 +4,12 @@
         Confirmar eliminação
       </div>
       <div class="card-body">
-        <p>Tens a certeza que queres eliminar a sala <strong>{{ object.nomesala|default:"(sem nome)" }}</strong> (ID {{ object.salaid }})?</p>
+        <p>Tens a certeza que queres eliminar a sala <strong>{{ salas.nomesala|default:"(sem nome)" }}</strong> (ID {{ salas.salaid }})?</p>
         <form method="post">
           {% csrf_token %}
-          <a href="{% url 'salas_list' %}" class="btn btn-secondary">Cancelar</a>
+          <a href="{% url 'lista_salas' %}" class="btn btn-secondary">Cancelar</a>
           <button type="submit" class="btn btn-danger">Eliminar</button>
         </form>
       </div>
     </div>
   </div>
-  
