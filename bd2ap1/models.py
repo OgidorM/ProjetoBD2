@@ -26,7 +26,8 @@ class Cinemas(models.Model):
     localidadecinema = models.CharField(max_length=60)
     ranking = models.DecimalField(
         max_digits=2, decimal_places=1, default=0.0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        help_text='Ranking do cinema (0 a 5)'
     )
 
     class Meta:
@@ -82,7 +83,8 @@ class Filmes(models.Model):
     )
     ranking = models.DecimalField(
         max_digits=2, decimal_places=1, default=0.0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        help_text='Ranking do filme (0 a 5)'
     )
 
     class Meta:
@@ -206,7 +208,8 @@ class Funcionarios(models.Model):
     salario = models.DecimalField(max_digits=8, decimal_places=2)
     ranking = models.DecimalField(
         max_digits=2, decimal_places=1, default=0.0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        help_text='Ranking do funcionario (0 a 5)'
     )
 
     class Meta:
