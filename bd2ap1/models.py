@@ -270,20 +270,20 @@ class Bilhetes(models.Model):
     bilheteid = models.AutoField(primary_key=True)
     lugarid = models.ForeignKey(
         Lugares,
-        on_delete=models.PROTECT,  
+        on_delete=models.PROTECT,
         db_column='lugarid',
         blank=True, null=True,
         related_name='bilhetes'
     )
     sessaoid = models.ForeignKey(
         Sessoes,
-        on_delete=models.PROTECT,  
+        on_delete=models.PROTECT,
         db_column='sessaoid',
         blank=True, null=True,
         related_name='bilhetes'
     )
     precobilhete = models.DecimalField(max_digits=5, decimal_places=2)
-    emissao = models.DateTimeField(db_column='emicao') 
+    emissao = models.DateTimeField(db_column='emicao')
 
     class Meta:
         db_table = 'bilhetes'
@@ -304,6 +304,13 @@ class VendaLinhas(models.Model):
         Produtos,
         on_delete=models.PROTECT,  # SQL: NO ACTION
         db_column='produtoid',
+        blank=True, null=True,
+        related_name='linhas_venda'
+    )
+    bilheteid = models.ForeignKey(
+        Bilhetes,
+        on_delete=models.PROTECT,  # SQL: NO ACTION
+        db_column='bilheteid',
         blank=True, null=True,
         related_name='linhas_venda'
     )
