@@ -1,0 +1,22 @@
+{% extends 'salas_front/base.html' %}
+
+{% block title %}Confirmar Eliminação{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+      <div class="card-header bg-danger text-white">
+        Confirmar eliminação
+      </div>
+      <div class="card-body">
+        <p>Tens a certeza que queres eliminar a sala <strong>{{ salas.nomesala|default:"(sem nome)" }} do {{ salas.cinemaid.nomecinema }}</strong>?</p>
+        <form method="post">
+          {% csrf_token %}
+          <a href="{% url 'lista_salas' %}" class="btn btn-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+  

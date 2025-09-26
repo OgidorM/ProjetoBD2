@@ -18,3 +18,21 @@ def adicionar_lugar(request):
     else:
         form = LugarForm()
     return render(request, 'lugares_front/adicionar_lugar.html', {'form': form})
+
+def editar_lugar(request, lugarid):
+    lugar = Lugares.objects.get(lugarid=lugarid)
+    if request.method == 'POST':
+        form = LugarForm(request.POST, instance=lugar)
+        if form.is_valid():
+            form.save()
+            return redirect('lista_lugares')
+    else:
+        form = LugarForm(instance=lugar)
+    return render(request, 'lugares_front/editar_lugar.html', {'form': form, 'lugares': lugar})
+
+def remover_lugar(request, lugarid):
+    lugar = Lugares.objects.get(lugarid=lugarid)
+    if request.method == 'POST':
+        lugar.delete()
+        return redirect('lista_lugares')
+    return render(request, 'lugares_front/confirmar_delete_lugar.html', {'lugares': lugar})
