@@ -1,0 +1,56 @@
+{% extends 'filmes_front/base.html' %}
+
+{% block title %}Adicionar Filme{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Adicionar Filme</h2>
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Titulo</label>
+            {{ form.titulo }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Produtora</label>
+            {{ form.produtora }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Sinopse</label>
+            {{ form.sinopse }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Duracao (min)</label>
+            {{ form.duracao }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Data de Lançamento</label>
+            {{ form.datalancamento }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Fim de Exibição</label>
+            {{ form.fimexebicao }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Idioma (PT, EN, ES, ...)</label>
+            {{ form.idioma }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Categoria</label>
+            {{ form.categoriaid }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Classificacao Etaria</label>
+            {{ form.classificacaoetaria }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Cinema</label>
+            {{ form.cinemaid }}
+        </div>
+
+        <button type="submit" class="btn btn-success">Guardar Filme</button>
+        <a href="{% url 'lista_filmes' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

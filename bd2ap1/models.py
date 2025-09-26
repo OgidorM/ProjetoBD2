@@ -52,7 +52,6 @@ class ClassificacoesEtarias(models.Model):
     def __str__(self) -> str:
         return self.nomeclassificacao
 
-
 class Filmes(models.Model):
     filmeid = models.AutoField(primary_key=True)
     categoriaid = models.ForeignKey(
@@ -98,7 +97,6 @@ class Filmes(models.Model):
     def __str__(self) -> str:
         return self.titulo
 
-
 class Salas(models.Model):
     salaid = models.AutoField(primary_key=True)
     cinemaid = models.ForeignKey(
@@ -117,7 +115,6 @@ class Salas(models.Model):
 
     def __str__(self) -> str:
         return self.nomesala or f"Sala {self.salaid}"
-
 
 class Sessoes(models.Model):
     sessaoid = models.AutoField(primary_key=True)
@@ -266,6 +263,31 @@ class Vendas(models.Model):
         return f"Venda #{self.vendaid}"
 
 
+class Bilhetes(models.Model):
+    bilheteid = models.AutoField(primary_key=True)
+    lugarid = models.ForeignKey(
+        Lugares,
+        on_delete=models.PROTECT,  
+        db_column='lugarid',
+        blank=True, null=True,
+        related_name='bilhetes'
+    )
+    sessaoid = models.ForeignKey(
+        Sessoes,
+        on_delete=models.PROTECT,  
+        db_column='sessaoid',
+        blank=True, null=True,
+        related_name='bilhetes'
+    )
+    precobilhete = models.DecimalField(max_digits=5, decimal_places=2)
+    emissao = models.DateTimeField(db_column='emicao') 
+
+    class Meta:
+        db_table = 'bilhetes'
+
+    def __str__(self) -> str:
+        return f"Bilhete #{self.bilheteid}"
+
 class VendaLinhas(models.Model):
     vendalinhaid = models.AutoField(primary_key=True)
     vendaid = models.ForeignKey(
@@ -293,39 +315,6 @@ class VendaLinhas(models.Model):
 
     def __str__(self) -> str:
         return f"Linha {self.vendalinhaid} da venda {self.vendaid_id}"
-
-
-class Bilhetes(models.Model):
-    bilheteid = models.AutoField(primary_key=True)
-    vendalinhaid = models.ForeignKey(
-        VendaLinhas,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
-        db_column='vendalinhaid',
-        blank=True, null=True,
-        related_name='bilhetes'
-    )
-    lugarid = models.ForeignKey(
-        Lugares,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
-        db_column='lugarid',
-        blank=True, null=True,
-        related_name='bilhetes'
-    )
-    sessaoid = models.ForeignKey(
-        Sessoes,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
-        db_column='sessaoid',
-        blank=True, null=True,
-        related_name='bilhetes'
-    )
-    precobilhete = models.DecimalField(max_digits=5, decimal_places=2)
-    emissao = models.DateTimeField(db_column='emicao')  # no SQL/auto gerado está "emicao"/"emicao"
-
-    class Meta:
-        db_table = 'bilhetes'
-
-    def __str__(self) -> str:
-        return f"Bilhete #{self.bilheteid}"
 
 
 class Avaliacoes(models.Model):

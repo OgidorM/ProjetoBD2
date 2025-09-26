@@ -1,0 +1,41 @@
+{% extends 'lugares_front/base.html' %}
+
+{% block title %}Lista de Lugares{% endblock %}
+
+{% block content %}
+    {% if lugares %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Lista de Lugares</h2>
+        <table class="table table-striped table-hover table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>Lugarid</th>
+                    <th>Salaid</th>
+                    <th>Fila</th>
+                    <th>Lugarnumero</th>
+                    <th>Tipolugar</th>
+                    <th>Estadolugar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lugar in lugares %}
+                <tr>
+                    <td>{{ lugar.lugarid }}</td>
+                    <td>{{ lugar.salaid }}</td>
+                    <td>{{ lugar.fila }}</td>
+                    <td>{{ lugar.numero }}</td>
+                    <td>{{ lugar.tipolugar }}</td>
+                    <td>{{ lugar.estadolugar }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            Nenhum lugar registado ainda.
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

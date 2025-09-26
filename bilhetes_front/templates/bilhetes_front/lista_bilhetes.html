@@ -1,0 +1,39 @@
+{% extends 'bilhetes_front/base.html' %}
+
+{% block title %}Lista de Bilhetes{% endblock %}
+
+{% block content %}
+    {% if bilhetes %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Lista de Bilhetes</h2>
+        <table class="table table-striped table-hover table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Sessão</th>
+                    <th>Lugar</th>
+                    <th>Preço</th>
+                    <th>Emissão</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bilhete in bilhetes %}
+                <tr>
+                    <td>{{ bilhete.bilheteid }}</td>
+                    <td>{{ bilhete.sessaoid }}</td>
+                    <td>{{ bilhete.lugarid }}</td>  
+                    <td>{{ bilhete.precobilhete }}</td>
+                    <td>{{ bilhete.emissao }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            Nenhum bilhete registado ainda.
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
