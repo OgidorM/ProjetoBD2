@@ -1,21 +1,40 @@
-<!DOCTYPE html>
-<html>
-<head><title>Client {{ client.clienteid }}</title></head>
-<body>
-  <h1>{{ client.nomecliente|default:'(no name)' }}</h1>
-  <div style="margin-bottom:12px;">
-    <a href="/">← Home</a>
-    <a href="{% url 'clientes:list' %}" style="margin-left:8px;">← Lista</a>
-    <a href="{% url 'clientes:detail' client.clienteid %}?format=json" style="margin-left:8px;">Ver JSON</a>
-  </div>
-  <p><strong>Email:</strong> {{ client.emailcliente }}</p>
-  <p><strong>Phone:</strong> {{ client.telefonecliente }}</p>
-  <p><strong>City:</strong> {{ client.localidadecliente }}</p>
-  <p><strong>NIF:</strong> {{ client.nif }}</p>
-  <p>
-    <a href="{% url 'clientes:update' client.clienteid %}">Edit</a> |
-    <a href="{% url 'clientes:delete' client.clienteid %}">Delete</a> |
-    <a href="{% url 'clientes:list' %}">Back</a>
-  </p>
-</body>
-</html>
+{% extends 'clientes/base.html' %}
+
+{% block title %}{{ client.nomecliente|default:"Cliente "|add:client.clienteid }} - Detalhes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">{{ client.nomecliente|default:"Cliente "|add:client.clienteid }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-muted mb-3">Informações Pessoais</h5>
+                    <p><strong>ID:</strong> {{ client.clienteid }}</p>
+                    <p><strong>Nome:</strong> {{ client.nomecliente|default:"Não disponível" }}</p>
+                    <p><strong>Email:</strong> {{ client.emailcliente|default:"Não disponível" }}</p>
+                    <p><strong>Telefone:</strong> {{ client.telefonecliente|default:"Não disponível" }}</p>
+                    <p><strong>Data de Nascimento:</strong> {{ client.datanascimento|default:"Não disponível" }}</p>
+                    <p><strong>NIF:</strong> {{ client.nif|default:"Não disponível" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-muted mb-3">Morada</h5>
+                    <p><strong>Morada:</strong> {{ client.moradacliente|default:"Não disponível" }}</p>
+                    <p><strong>Código Postal:</strong> {{ client.codigopostalcliente|default:"Não disponível" }}</p>
+                    <p><strong>Localidade:</strong> {{ client.localidadecliente|default:"Não disponível" }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            <div class="d-flex gap-2">
+                <a href="{% url 'clientes:update' client.clienteid %}" class="btn btn-warning">Editar</a>
+                <a href="{% url 'clientes:delete' client.clienteid %}" class="btn btn-danger">Eliminar</a>
+                <a href="{% url 'clientes:list' %}" class="btn btn-secondary">Voltar à Lista</a>
+                <a href="{% url 'clientes:detail' client.clienteid %}?format=json" class="btn btn-info">Ver JSON</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

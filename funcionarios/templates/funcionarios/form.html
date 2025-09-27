@@ -1,0 +1,57 @@
+{% extends 'funcionarios/base.html' %}
+
+{% block title %}{% if mode == 'create' %}Adicionar Funcionário{% else %}Editar Funcionário{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">{% if mode == 'create' %}Adicionar Funcionário{% else %}Editar Funcionário{% endif %}</h2>
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Nome do Funcionário</label>
+            {{ form.nomefuncionario }}
+            {{ form.nomefuncionario.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            {{ form.emailfuncionario }}
+            {{ form.emailfuncionario.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Telefone</label>
+            {{ form.telefonefuncionario }}
+            {{ form.telefonefuncionario.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Cinema</label>
+            {{ form.cinemaid }}
+            {{ form.cinemaid.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Cargo</label>
+            {{ form.cargo }}
+            {{ form.cargo.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Data de Admissão</label>
+            {{ form.admissao }}
+            {{ form.admissao.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Salário (€)</label>
+            {{ form.salario }}
+            {{ form.salario.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Ranking</label>
+            {{ form.ranking }}
+            {{ form.ranking.errors }}
+        </div>
+        <div class="mt-3">
+            <a href="{% url 'funcionarios:list' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

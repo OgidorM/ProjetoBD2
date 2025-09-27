@@ -1,21 +1,38 @@
-<!DOCTYPE html>
-<html>
-<head><title>Cinema {{ cinema.cinemaid }}</title></head>
-<body>
-  <h1>{{ cinema.nomecinema }}</h1>
-  <div style="margin-bottom:12px;">
-    <a href="/">← Home</a>
-    <a href="{% url 'cinemas:list' %}" style="margin-left:8px;">← Voltar à Lista</a>
-    <a href="{% url 'cinemas:detail' cinema.cinemaid %}?format=json" style="margin-left:8px;">Ver JSON</a>
-  </div>
-  <p><strong>Ranking:</strong> {{ cinema.ranking }}</p>
-  <p><strong>Email:</strong> {{ cinema.emailcinema }}</p>
-  <p><strong>Phone:</strong> {{ cinema.telefonecinema }}</p>
-  <p><strong>Address:</strong> {{ cinema.moradacinema }} {{ cinema.codigopostalcinema }} {{ cinema.localidadecinema }}</p>
-  <p>
-    <a href="{% url 'cinemas:update' cinema.cinemaid %}">Edit</a> |
-    <a href="{% url 'cinemas:delete' cinema.cinemaid %}">Delete</a> |
-    <a href="{% url 'cinemas:list' %}">Back</a>
-  </p>
-</body>
-</html>
+{% extends 'cinemas/base.html' %}
+
+{% block title %}{{ cinema.nomecinema }} - Detalhes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">{{ cinema.nomecinema }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-muted mb-3">Informações Gerais</h5>
+                    <p><strong>ID:</strong> {{ cinema.cinemaid }}</p>
+                    <p><strong>Ranking:</strong> {{ cinema.ranking }}</p>
+                    <p><strong>Email:</strong> {{ cinema.emailcinema|default:"Não disponível" }}</p>
+                    <p><strong>Telefone:</strong> {{ cinema.telefonecinema|default:"Não disponível" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-muted mb-3">Localização</h5>
+                    <p><strong>Morada:</strong> {{ cinema.moradacinema|default:"Não disponível" }}</p>
+                    <p><strong>Código Postal:</strong> {{ cinema.codigopostalcinema|default:"Não disponível" }}</p>
+                    <p><strong>Localidade:</strong> {{ cinema.localidadecinema }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            <div class="d-flex gap-2">
+                <a href="{% url 'cinemas:update' cinema.cinemaid %}" class="btn btn-warning">Editar</a>
+                <a href="{% url 'cinemas:delete' cinema.cinemaid %}" class="btn btn-danger">Eliminar</a>
+                <a href="{% url 'cinemas:list' %}" class="btn btn-secondary">Voltar à Lista</a>
+                <a href="{% url 'cinemas:detail' cinema.cinemaid %}?format=json" class="btn btn-info">Ver JSON</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

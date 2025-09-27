@@ -4,6 +4,8 @@ from django.http import HttpRequest, JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.deletion import ProtectedError
+from django.contrib import messages
 
 from . import services
 from .forms import ClienteForm
@@ -82,10 +84,45 @@ def client_update(request: HttpRequest, client_id: int) -> HttpResponse:
 
 def client_delete(request: HttpRequest, client_id: int) -> HttpResponse:
     client = _get_or_404(client_id)
+
     if request.method == 'POST':
-        services.delete(client_id)
-        return redirect(reverse('clientes:list'))
-    return render(request, 'clientes/confirm_delete.html', {'client': client})
+        try:
+            # Check for related objects before attempting deletion
+            related_vendas = client.vendas.all()
+
+            if related_vendas.exists():
+                # Build error message with related objects
+                vendas_count = related_vendas.count()
+                error_message = f"Não é possível eliminar o cliente '{client.nomecliente or f'Cliente {client.clienteid}'}' porque tem {vendas_count} venda{'s' if vendas_count > 1 else ''} associada{'s' if vendas_count > 1 else ''}. Elimine primeiro as vendas relacionadas."
+                messages.error(request, error_message)
+                return render(request, 'clientes/confirm_delete.html', {
+                    'client': client,
+                    'related_vendas': related_vendas,
+                    'has_related_objects': True
+                })
+
+            # If no related objects, proceed with deletion
+            services.delete(client_id)
+            messages.success(request, f"Cliente '{client.nomecliente or f'Cliente {client.clienteid}'}' foi eliminado com sucesso.")
+            return redirect(reverse('clientes:list'))
+
+        except ProtectedError as e:
+            # Fallback error handling in case the service doesn't catch it
+            messages.error(request, f"Não é possível eliminar o cliente '{client.nomecliente or f'Cliente {client.clienteid}'}' porque tem objetos relacionados.")
+            return render(request, 'clientes/confirm_delete.html', {
+                'client': client,
+                'has_related_objects': True
+            })
+
+    # For GET requests, check if there are related objects to show warning
+    related_vendas = client.vendas.all()
+    has_related = related_vendas.exists()
+
+    return render(request, 'clientes/confirm_delete.html', {
+        'client': client,
+        'related_vendas': related_vendas,
+        'has_related_objects': has_related
+    })
 
 
 def client_search(request: HttpRequest) -> HttpResponse:
@@ -98,4 +135,3 @@ def client_search(request: HttpRequest) -> HttpResponse:
         for c in results
     ]
     return JsonResponse({'query': term, 'count': len(data), 'results': data})
-

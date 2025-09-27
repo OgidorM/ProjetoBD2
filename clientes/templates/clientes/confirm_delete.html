@@ -1,22 +1,65 @@
 <!DOCTYPE html>
 <html>
-<head><title>Delete Client {{ client.clienteid }}</title></head>
+<head>
+    <title>Confirmar Eliminação - {{ client.nomecliente|default:"Cliente "|add:client.clienteid }}</title>
+    <!-- Adicione aqui os links para os arquivos CSS do Bootstrap e outros estilos necessários -->
+</head>
 <body>
-  <h1>Delete Client</h1>
-  <div style="margin-bottom:12px;">
-    <a href="/">← Home</a>
-    <a href="{% url 'clientes:list' %}" style="margin-left:8px;">← Lista</a>
-    <a href="{% url 'clientes:detail' client.clienteid %}" style="margin-left:8px;">Ver Detalhe</a>
-    <a href="{% url 'clientes:detail' client.clienteid %}?format=json" style="margin-left:8px;">JSON</a>
-  </div>
-  <p>Are you sure you want to delete <strong>{{ client.nomecliente|default:'(no name)' }}</strong>?</p>
-  <form method="post" style="margin-top:12px;">
-    {% csrf_token %}
-    <button type="submit" style="background:#b30000;color:#fff;padding:6px 12px;">Yes, delete</button>
-    <a href="{% url 'clientes:detail' client.clienteid %}" style="margin-left:8px;">Cancel</a>
-  </form>
-  <div style="margin-top:16px;">
-    <a href="{% url 'clientes:list' %}">← Voltar para lista</a>
-  </div>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="container mt-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Confirmar Eliminação</h5>
+            </div>
+            <div class="card-body">
+                {% if has_related_objects %}
+                    <div class="alert alert-danger" role="alert">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Não é possível eliminar este cliente</h6>
+                        <p class="mb-2">O cliente <strong>{{ client.nomecliente|default:"Cliente "|add:client.clienteid }}</strong> (ID {{ client.clienteid }}) tem os seguintes objetos relacionados que impedem a sua eliminação:</p>
+
+                        {% if related_vendas %}
+                            <div class="mb-3">
+                                <h6 class="text-danger">Vendas ({{ related_vendas.count }}):</h6>
+                                <ul class="list-unstyled ms-3">
+                                    {% for venda in related_vendas|slice:":5" %}
+                                        <li><small>• Venda ID: {{ venda.vendaid }} - Data: {{ venda.data|default:"N/A" }} - Total: {{ venda.totalvenda|default:"N/A" }}€</small></li>
+                                    {% endfor %}
+                                    {% if related_vendas.count > 5 %}
+                                        <li><small>• ... e mais {{ related_vendas.count|add:"-5" }} vendas</small></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <p class="mb-0"><strong>Para eliminar este cliente, primeiro elimine todas as vendas associadas.</strong></p>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'clientes:list' %}" class="btn btn-primary">Voltar à Lista</a>
+                    </div>
+                {% else %}
+                    <p class="mb-3">Tens a certeza que queres eliminar o cliente <strong>{{ client.nomecliente|default:"Cliente "|add:client.clienteid }}</strong> (ID {{ client.clienteid }})?</p>
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Atenção:</strong> Esta ação não pode ser desfeita.
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <a href="{% url 'clientes:list' %}" class="btn btn-secondary me-2">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">Sim, Eliminar</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Adicione aqui os scripts do Bootstrap e outros scripts necessários -->
 </body>
 </html>
