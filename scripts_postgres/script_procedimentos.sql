@@ -448,3 +448,75 @@ BEGIN
         p_nomesala, p_cinemaid, p_capacidade, p_tiposala;
 END;
 $$;
+
+
+-----------------------------------------------------
+--Inserir categoria
+CREATE OR REPLACE PROCEDURE inserir_categoria(
+    p_nome VARCHAR
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_exists BOOLEAN;
+BEGIN
+    -- validar nome
+    IF p_nome IS NULL OR LENGTH(TRIM(p_nome)) = 0 THEN
+        RAISE EXCEPTION 'O nome da categoria não pode ser vazio';
+    END IF;
+    -- verificar se já existe categoria com o mesmo nome
+    SELECT TRUE INTO v_exists
+    FROM categorias
+    WHERE nomecategoria ILIKE p_nome;
+    IF FOUND THEN
+        RAISE EXCEPTION 'Já existe uma categoria chamada "%"', p_nome;
+    END IF;
+    -- inserir categoria
+    INSERT INTO categorias (nomecategoria)
+    VALUES (p_nome);
+    RAISE NOTICE 'Categoria "%" criada com sucesso', p_nome;
+END;
+$$;
+
+
+-----------------------------------------------------
+--Inserir funcionario
+CREATE OR REPLACE PROCEDURE inserir_funcionario(
+    p_cinemaid INT,
+    p_nome VARCHAR,
+    p_cargo VARCHAR,
+    p_email VARCHAR DEFAULT NULL,
+    p_telefone VARCHAR DEFAULT NULL
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_exists BOOLEAN;
+BEGIN
+    -- validar nome
+    IF p_nome IS NULL OR LENGTH(TRIM(p_nome)) = 0 THEN
+        RAISE EXCEPTION 'O nome do funcionário não pode ser vazio';
+    END IF;
+    -- validar cargo
+    IF p_cargo IS NULL OR LENGTH(TRIM(p_cargo)) = 0 THEN
+        RAISE EXCEPTION 'O cargo do funcionário não pode ser vazio';
+    END IF;
+    -- verificar se cinema existe
+    PERFORM 1 FROM cinemas WHERE cinemaid = p_cinemaid;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Cinema % não existe', p_cinemaid;
+    END IF;
+    -- verificar duplicados (nome + cinema)
+    SELECT TRUE INTO v_exists
+    FROM funcionarios
+    WHERE nomefuncionario ILIKE p_nome
+      AND cinemaid = p_cinemaid;
+    IF FOUND THEN
+        RAISE EXCEPTION 'Já existe um funcionário chamado "%" no cinema %', p_nome, p_cinemaid;
+    END IF;
+    -- inserir funcionário
+    INSERT INTO funcionarios (cinemaid, nomefuncionario, cargo, emailfuncionario, telefonefuncionario)
+    VALUES (p_cinemaid, p_nome, p_cargo, p_email, p_telefone);
+    RAISE NOTICE 'Funcionário "%" inserido no cinema % com cargo "%"', p_nome, p_cinemaid, p_cargo;
+END;
+$$;

@@ -157,3 +157,53 @@ JOIN lugares l ON sa.salaid = l.salaid
 LEFT JOIN bilhetes b ON l.lugarid = b.lugarid
 GROUP BY sa.salaid, sa.nomesala, sa.capacidade
 ORDER BY sa.nomesala;
+
+
+--views
+--Mostra o total faturado por cliente e o número de bilhetes 
+CREATE OR REPLACE VIEW v_clientes_resumo AS
+SELECT
+    cl.clienteid,
+    cl.nomecliente,
+    COUNT(DISTINCT v.vendaid) AS total_vendas,
+    COALESCE(SUM(v.totalvenda), 0) AS total_gasto,
+    COUNT(vl.bilheteid) AS total_bilhetes
+FROM clientes cl
+LEFT JOIN vendas v ON v.clienteid = cl.clienteid
+LEFT JOIN vendalinhas vl ON vl.vendaid = v.vendaid AND vl.bilheteid IS NOT NULL
+GROUP BY cl.clienteid, cl.nomecliente
+ORDER BY total_gasto DESC;
+
+
+
+--Mostra a categoria preferida de cada cliente
+CREATE OR REPLACE VIEW v_categoria_preferida_por_cliente AS
+SELECT
+    cl.clienteid,
+    cl.nomecliente,
+    cat.categoriaid,
+    cat.nomecategoria,
+    COUNT(b.bilheteid) AS total_bilhetes
+FROM clientes cl
+JOIN vendas v ON v.clienteid = cl.clienteid
+JOIN vendalinhas vl ON vl.vendaid = v.vendaid AND vl.bilheteid IS NOT NULL
+JOIN bilhetes b ON b.bilheteid = vl.bilheteid
+JOIN sessoes s ON s.sessaoid = b.sessaoid
+JOIN filmes f ON f.filmeid = s.filmeid
+JOIN categorias cat ON cat.categoriaid = f.categoriaid
+GROUP BY cl.clienteid, cl.nomecliente, cat.categoriaid, cat.nomecategoria
+HAVING COUNT(b.bilheteid) = (
+    SELECT MAX(cnt) 
+    FROM (
+        SELECT COUNT(b2.bilheteid) AS cnt
+        FROM vendas v2
+        JOIN vendalinhas vl2 ON vl2.vendaid = v2.vendaid AND vl2.bilheteid IS NOT NULL
+        JOIN bilhetes b2 ON b2.bilheteid = vl2.bilheteid
+        JOIN sessoes s2 ON s2.sessaoid = b2.sessaoid
+        JOIN filmes f2 ON f2.filmeid = s2.filmeid
+        WHERE v2.clienteid = cl.clienteid
+          AND f2.categoriaid = cat.categoriaid
+        GROUP BY f2.categoriaid
+    ) sub
+)
+ORDER BY cl.nomecliente, total_bilhetes DESC;
