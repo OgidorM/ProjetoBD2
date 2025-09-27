@@ -46,6 +46,10 @@ INSTALLED_APPS = [
     'vendas_front',
     'vendaslinhas_front',
     'avaliacoes_front',
+    'sessoes_front',                
+    'categorias_front',             
+    'classificacoesetarias_front',  
+
 ]
 
 MIDDLEWARE = [
@@ -87,11 +91,11 @@ WSGI_APPLICATION = 'b2da1.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'cinemaDB',
-        'USER': 'admin',
+        'NAME': 'postgres',
+        'USER': 'postgres',
         'PASSWORD': 'admin',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5434',
     }
 }
 
