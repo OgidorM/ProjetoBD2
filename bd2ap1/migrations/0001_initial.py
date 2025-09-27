@@ -77,7 +77,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'cinemas',
-                'constraints': [models.CheckConstraint(condition=models.Q(('ranking__gte', 0), ('ranking__lte', 5)), name='ck_cinemas_ranking_0_5')],
+                'constraints': [models.CheckConstraint(check=models.Q(ranking__gte=0, ranking__lte=5), name='ck_cinemas_ranking_0_5')],
             },
         ),
         migrations.CreateModel(
@@ -223,11 +223,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='filmes',
-            constraint=models.CheckConstraint(condition=models.Q(('ranking__gte', 0), ('ranking__lte', 5)), name='ck_filmes_ranking_0_5'),
+            constraint=models.CheckConstraint(check=models.Q(ranking__gte=0, ranking__lte=5), name='ck_filmes_ranking_0_5'),
         ),
         migrations.AddConstraint(
             model_name='funcionarios',
-            constraint=models.CheckConstraint(condition=models.Q(('ranking__gte', 0), ('ranking__lte', 5)), name='ck_funcionarios_ranking_0_5'),
+            constraint=models.CheckConstraint(check=models.Q(ranking__gte=0, ranking__lte=5), name='ck_funcionarios_ranking_0_5'),
         ),
         migrations.AddConstraint(
             model_name='lugares',

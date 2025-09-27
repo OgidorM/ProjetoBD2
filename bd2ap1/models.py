@@ -26,7 +26,8 @@ class Cinemas(models.Model):
     localidadecinema = models.CharField(max_length=60)
     ranking = models.DecimalField(
         max_digits=2, decimal_places=1, default=0.0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        help_text='Ranking do cinema (0 a 5)'
     )
 
     class Meta:
@@ -52,18 +53,17 @@ class ClassificacoesEtarias(models.Model):
     def __str__(self) -> str:
         return self.nomeclassificacao
 
-
 class Filmes(models.Model):
     filmeid = models.AutoField(primary_key=True)
     categoriaid = models.ForeignKey(
         Categorias,
-        on_delete=models.PROTECT,  
+        on_delete=models.PROTECT,  # SQL: NO ACTION
         db_column='categoriaid',
         related_name='filmes'
     )
     cinemaid = models.ForeignKey(
         Cinemas,
-        on_delete=models.PROTECT,
+        on_delete=models.PROTECT,  # SQL: NO ACTION
         db_column='cinemaid',
         related_name='filmes'
     )
@@ -76,14 +76,15 @@ class Filmes(models.Model):
     sinopse = models.TextField(blank=True, null=True)
     classificacaoetaria = models.ForeignKey(
         ClassificacoesEtarias,
-        on_delete=models.PROTECT,
+        on_delete=models.PROTECT,  # SQL: NO ACTION
         db_column='classificacaoetaria',
         default=1,
         related_name='filmes'
     )
     ranking = models.DecimalField(
         max_digits=2, decimal_places=1, default=0.0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        help_text='Ranking do filme (0 a 5)'
     )
 
     class Meta:
@@ -97,7 +98,6 @@ class Filmes(models.Model):
 
     def __str__(self) -> str:
         return self.titulo
-
 
 class Salas(models.Model):
     salaid = models.AutoField(primary_key=True)
@@ -117,7 +117,6 @@ class Salas(models.Model):
 
     def __str__(self) -> str:
         return self.nomesala or f"Sala {self.salaid}"
-
 
 class Sessoes(models.Model):
     sessaoid = models.AutoField(primary_key=True)
@@ -209,7 +208,8 @@ class Funcionarios(models.Model):
     salario = models.DecimalField(max_digits=8, decimal_places=2)
     ranking = models.DecimalField(
         max_digits=2, decimal_places=1, default=0.0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        help_text='Ranking do funcionario (0 a 5)'
     )
 
     class Meta:
@@ -270,20 +270,20 @@ class Bilhetes(models.Model):
     bilheteid = models.AutoField(primary_key=True)
     lugarid = models.ForeignKey(
         Lugares,
-        on_delete=models.PROTECT,  
+        on_delete=models.PROTECT,
         db_column='lugarid',
         blank=True, null=True,
         related_name='bilhetes'
     )
     sessaoid = models.ForeignKey(
         Sessoes,
-        on_delete=models.PROTECT,  
+        on_delete=models.PROTECT,
         db_column='sessaoid',
         blank=True, null=True,
         related_name='bilhetes'
     )
     precobilhete = models.DecimalField(max_digits=5, decimal_places=2)
-    emissao = models.DateTimeField(db_column='emicao') 
+    emissao = models.DateTimeField(db_column='emicao')
 
     class Meta:
         db_table = 'bilhetes'
@@ -317,7 +317,7 @@ class VendaLinhas(models.Model):
     quantidade = models.IntegerField()
     total_linha = models.DecimalField(
         max_digits=5, decimal_places=2, blank=True, null=True, db_column='total_linha_'
-    )  
+    )  # no SQL a coluna termina com "_"
     precolinha = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
 
     class Meta:
