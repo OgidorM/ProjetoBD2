@@ -4,6 +4,8 @@ from django.http import HttpRequest, JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.deletion import ProtectedError
+from django.contrib import messages
 
 from . import services
 from .forms import CinemaForm
@@ -85,11 +87,56 @@ def cinema_update(request: HttpRequest, cinema_id: int) -> HttpResponse:
 
 def cinema_delete(request: HttpRequest, cinema_id: int) -> HttpResponse:
     cinema = _get_or_404(cinema_id)
+
     if request.method == 'POST':
-        # No business logic here beyond calling service
-        services.delete(cinema_id)
-        return redirect(reverse('cinemas:list'))
-    return render(request, 'cinemas/confirm_delete.html', {'cinema': cinema})
+        try:
+            # Check for related objects before attempting deletion
+            related_filmes = cinema.filmes.all()
+            related_salas = cinema.salas.all()
+
+            if related_filmes.exists() or related_salas.exists():
+                # Build error message with related objects
+                error_parts = []
+                if related_filmes.exists():
+                    filmes_count = related_filmes.count()
+                    error_parts.append(f"{filmes_count} filme{'s' if filmes_count > 1 else ''}")
+                if related_salas.exists():
+                    salas_count = related_salas.count()
+                    error_parts.append(f"{salas_count} sala{'s' if salas_count > 1 else ''}")
+
+                error_message = f"Não é possível eliminar o cinema '{cinema.nomecinema}' porque tem {' e '.join(error_parts)} associados. Elimine primeiro os objetos relacionados."
+                messages.error(request, error_message)
+                return render(request, 'cinemas/confirm_delete.html', {
+                    'cinema': cinema,
+                    'related_filmes': related_filmes,
+                    'related_salas': related_salas,
+                    'has_related_objects': True
+                })
+
+            # If no related objects, proceed with deletion
+            services.delete(cinema_id)
+            messages.success(request, f"Cinema '{cinema.nomecinema}' foi eliminado com sucesso.")
+            return redirect(reverse('cinemas:list'))
+
+        except ProtectedError as e:
+            # Fallback error handling in case the service doesn't catch it
+            messages.error(request, f"Não é possível eliminar o cinema '{cinema.nomecinema}' porque tem objetos relacionados.")
+            return render(request, 'cinemas/confirm_delete.html', {
+                'cinema': cinema,
+                'has_related_objects': True
+            })
+
+    # For GET requests, check if there are related objects to show warning
+    related_filmes = cinema.filmes.all()
+    related_salas = cinema.salas.all()
+    has_related = related_filmes.exists() or related_salas.exists()
+
+    return render(request, 'cinemas/confirm_delete.html', {
+        'cinema': cinema,
+        'related_filmes': related_filmes,
+        'related_salas': related_salas,
+        'has_related_objects': has_related
+    })
 
 
 def cinema_search(request: HttpRequest) -> HttpResponse:
@@ -102,4 +149,3 @@ def cinema_search(request: HttpRequest) -> HttpResponse:
         for c in results
     ]
     return JsonResponse({'query': term, 'count': len(data), 'results': data})
-
