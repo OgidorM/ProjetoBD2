@@ -134,8 +134,8 @@ class Sessoes(models.Model):
         blank=True, null=True,
         related_name='sessoes'
     )
-    inicio = models.DateTimeField()
-    fim = models.DateTimeField()
+    inicio = models.TimeField()
+    fim = models.TimeField()
     versao = models.CharField(max_length=8)
     estadosessao = models.CharField(max_length=20)
     precosessao = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)

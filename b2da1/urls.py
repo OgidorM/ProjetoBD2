@@ -18,4 +18,7 @@ urlpatterns = [
     path('vendas/', include('vendas_front.urls')),
     path('vendaslinhas/', include('vendaslinhas_front.urls')),
     path('avaliacoes/', include('avaliacoes_front.urls')),
+    path('sessoes/', include('sessoes_front.urls')),
+    path('categorias/', include('categorias_front.urls')),
+    path('classificacoesetarias/', include('classificacoesetarias_front.urls')),
 ]
