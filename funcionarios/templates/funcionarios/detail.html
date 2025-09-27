@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head><title>Employee {{ employee.funcionarioid }}</title></head>
+<body>
+  <h1>{{ employee.nomefuncionario }}</h1>
+  <div style="margin-bottom:12px;">
+    <a href="/">← Home</a>
+    <a href="{% url 'funcionarios:list' %}" style="margin-left:8px;">← Lista</a>
+    <a href="{% url 'funcionarios:detail' employee.funcionarioid %}?format=json" style="margin-left:8px;">Ver JSON</a>
+  </div>
+  <p><strong>Role:</strong> {{ employee.cargo }}</p>
+  <p><strong>Email:</strong> {{ employee.emailfuncionario }}</p>
+  <p><strong>Phone:</strong> {{ employee.telefonefuncionario }}</p>
+  <p><strong>Cinema ID:</strong> {{ employee.cinemaid_id }}</p>
+  <p><strong>Admission:</strong> {{ employee.admissao }}</p>
+  <p><strong>Salary:</strong> {{ employee.salario }}</p>
+  <p><strong>Ranking:</strong> {{ employee.ranking }}</p>
+  <p>
+    <a href="{% url 'funcionarios:update' employee.funcionarioid %}">Edit</a> |
+    <a href="{% url 'funcionarios:delete' employee.funcionarioid %}">Delete</a> |
+    <a href="{% url 'funcionarios:list' %}">Back</a>
+  </p>
+</body>
+</html>

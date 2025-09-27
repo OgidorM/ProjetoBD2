@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head><title>Client {{ client.clienteid }}</title></head>
+<body>
+  <h1>{{ client.nomecliente|default:'(no name)' }}</h1>
+  <div style="margin-bottom:12px;">
+    <a href="/">← Home</a>
+    <a href="{% url 'clientes:list' %}" style="margin-left:8px;">← Lista</a>
+    <a href="{% url 'clientes:detail' client.clienteid %}?format=json" style="margin-left:8px;">Ver JSON</a>
+  </div>
+  <p><strong>Email:</strong> {{ client.emailcliente }}</p>
+  <p><strong>Phone:</strong> {{ client.telefonecliente }}</p>
+  <p><strong>City:</strong> {{ client.localidadecliente }}</p>
+  <p><strong>NIF:</strong> {{ client.nif }}</p>
+  <p>
+    <a href="{% url 'clientes:update' client.clienteid %}">Edit</a> |
+    <a href="{% url 'clientes:delete' client.clienteid %}">Delete</a> |
+    <a href="{% url 'clientes:list' %}">Back</a>
+  </p>
+</body>
+</html>

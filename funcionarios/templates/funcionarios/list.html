@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head><title>Employees</title></head>
+<body>
+  <h1>Employees</h1>
+  <div style="margin-bottom:12px;">
+    <a href="/">← Home</a>
+    <a href="{% url 'funcionarios:create' %}" style="margin-left:8px;">+ Novo Funcionário</a>
+    <a href="{% url 'funcionarios:list' %}?format=json" style="margin-left:8px;">Ver JSON</a>
+  </div>
+  <form method="get" action="{% url 'funcionarios:search' %}" style="margin-bottom:12px;">
+    <input type="text" name="q" placeholder="Search..." value="{{ request.GET.q }}"/>
+    <button type="submit">Search (JSON)</button>
+    <a href="{% url 'funcionarios:list' %}" style="margin-left:8px;">Limpar</a>
+  </form>
+  <table border="1" cellpadding="4">
+    <tr><th>ID</th><th>Name</th><th>Role</th><th>Cinema</th><th>Ranking</th><th>Actions</th></tr>
+    {% for e in employees %}
+    <tr>
+      <td>{{ e.funcionarioid }}</td>
+      <td><a href="{% url 'funcionarios:detail' e.funcionarioid %}">{{ e.nomefuncionario }}</a></td>
+      <td>{{ e.cargo }}</td>
+      <td>{{ e.cinemaid_id }}</td>
+      <td>{{ e.ranking }}</td>
+      <td>
+        <a href="{% url 'funcionarios:update' e.funcionarioid %}">Edit</a> |
+        <a href="{% url 'funcionarios:delete' e.funcionarioid %}">Delete</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">No employees.</td></tr>
+    {% endfor %}
+  </table>
+  <div style="margin-top:16px;">
+    <a href="/">← Voltar para Home</a>
+  </div>
+</body>
+</html>

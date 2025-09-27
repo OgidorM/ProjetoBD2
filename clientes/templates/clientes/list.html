@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head><title>Clients</title></head>
+<body>
+  <h1>Clients</h1>
+  <div style="margin-bottom:12px;">
+    <a href="/">← Home</a>
+    <a href="{% url 'clientes:create' %}" style="margin-left:8px;">+ Novo Cliente</a>
+    <a href="{% url 'clientes:list' %}?format=json" style="margin-left:8px;">Ver JSON</a>
+  </div>
+  <form method="get" action="{% url 'clientes:search' %}" style="margin-bottom:12px;">
+    <input type="text" name="q" placeholder="Search..." value="{{ request.GET.q }}"/>
+    <button type="submit">Search (JSON)</button>
+    <a href="{% url 'clientes:list' %}" style="margin-left:8px;">Limpar</a>
+  </form>
+  <table border="1" cellpadding="4">
+    <tr><th>ID</th><th>Name</th><th>Email</th><th>City</th><th>Actions</th></tr>
+    {% for c in clients %}
+    <tr>
+      <td>{{ c.clienteid }}</td>
+      <td><a href="{% url 'clientes:detail' c.clienteid %}">{{ c.nomecliente|default:'(no name)' }}</a></td>
+      <td>{{ c.emailcliente }}</td>
+      <td>{{ c.localidadecliente }}</td>
+      <td>
+        <a href="{% url 'clientes:update' c.clienteid %}">Edit</a> |
+        <a href="{% url 'clientes:delete' c.clienteid %}">Delete</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">No clients.</td></tr>
+    {% endfor %}
+  </table>
+  <div style="margin-top:16px;">
+    <a href="/">← Voltar para Home</a>
+  </div>
+</body>
+</html>

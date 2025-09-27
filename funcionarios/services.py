@@ -1,23 +1,38 @@
 from . import repositories as repo
 from .models import Funcionario
+from typing import Any
 
 
-def contratar_funcionario(**dados) -> Funcionario:
-    return Funcionario.objects.create(**dados)
+def create(**data) -> Funcionario:
+    """Create and persist a new employee."""
+    return repo.create(**data)
 
 
-def obter(funcionario_id: int) -> Funcionario:
-    return repo.get(funcionario_id)
+def get(employee_id: int) -> Funcionario:
+    """Retrieve an employee by primary key."""
+    return repo.get(employee_id)
 
 
-def listar():
-    return repo.list_all()
+def list_all(order: str = 'nomefuncionario'):
+    """List all employees ordered by the provided field (Portuguese default)."""
+    return repo.list_all(order)
 
 
-def listar_por_cinema(cinema_id: int):
-    return repo.por_cinema(cinema_id)
+def list_by_cinema(cinema_id: int):
+    """List employees filtered by cinema id."""
+    return repo.list_by_cinema(cinema_id)
 
 
-def pesquisar(nome_fragmento: str, limite: int | None = None):
-    return repo.search(nome_fragmento, limite)
+def search(name_fragment: str, limit: int | None = None):
+    """Search employees by partial case-insensitive name match. Optional limit."""
+    return repo.search(name_fragment, limit)
 
+
+def update(employee_id: int, **data: Any) -> Funcionario:
+    """Update provided fields of an employee and return the persisted instance."""
+    return repo.update(employee_id, **data)
+
+
+def delete(employee_id: int) -> None:
+    """Delete employee silently if it already does not exist."""
+    repo.delete(employee_id)

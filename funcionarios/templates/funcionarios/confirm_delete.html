@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head><title>Delete Employee {{ employee.funcionarioid }}</title></head>
+<body>
+  <h1>Delete Employee</h1>
+  <p>Are you sure you want to delete <strong>{{ employee.nomefuncionario }}</strong>?</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit">Yes, delete</button>
+    <a href="{% url 'funcionarios:detail' employee.funcionarioid %}">Cancel</a>
+  </form>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head><title>{% if mode == 'create' %}Create Employee{% else %}Edit Employee{% endif %}</title></head>
+<body>
+  <h1>{% if mode == 'create' %}Create Employee{% else %}Edit Employee{% endif %}</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+    <a href="{% if employee %}{% url 'funcionarios:detail' employee.funcionarioid %}{% else %}{% url 'funcionarios:list' %}{% endif %}">Cancel</a>
+  </form>
+</body>
+</html>
+

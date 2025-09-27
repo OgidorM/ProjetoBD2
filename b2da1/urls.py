@@ -5,7 +5,11 @@ from bd2ap1.views import home
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
-    
+    # MVC-style controllers
+    path('cinemas/', include('cinemas.urls')),
+    path('clientes/', include('clientes.urls')),
+    path('funcionarios/', include('funcionarios.urls')),
+    # Legacy/front apps
     path('filmes/', include('filmes_front.urls')),
     path('salas/', include('salas_front.urls')),
     path('lugares/', include('lugares_front.urls')),

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>Delete Client {{ client.clienteid }}</title></head>
+<body>
+  <h1>Delete Client</h1>
+  <div style="margin-bottom:12px;">
+    <a href="/">← Home</a>
+    <a href="{% url 'clientes:list' %}" style="margin-left:8px;">← Lista</a>
+    <a href="{% url 'clientes:detail' client.clienteid %}" style="margin-left:8px;">Ver Detalhe</a>
+    <a href="{% url 'clientes:detail' client.clienteid %}?format=json" style="margin-left:8px;">JSON</a>
+  </div>
+  <p>Are you sure you want to delete <strong>{{ client.nomecliente|default:'(no name)' }}</strong>?</p>
+  <form method="post" style="margin-top:12px;">
+    {% csrf_token %}
+    <button type="submit" style="background:#b30000;color:#fff;padding:6px 12px;">Yes, delete</button>
+    <a href="{% url 'clientes:detail' client.clienteid %}" style="margin-left:8px;">Cancel</a>
+  </form>
+  <div style="margin-top:16px;">
+    <a href="{% url 'clientes:list' %}">← Voltar para lista</a>
+  </div>
+</body>
+</html>
