@@ -14,7 +14,6 @@
                     <th>Lugar</th>
                     <th>Preço</th>
                     <th>Emissão</th>
-                    <th>Acções</th>
                 </tr>
             </thead>
             <tbody>
@@ -25,10 +24,6 @@
                     <td>{{ bilhete.lugarid }}</td>  
                     <td>{{ bilhete.precobilhete }}</td>
                     <td>{{ bilhete.emissao }}</td>
-                    <td>
-                        <a href="{% url 'editar_bilhete' bilhete.bilheteid %}" class="btn btn-warning btn-sm">Editar</a>
-                        <a href="{% url 'remover_bilhete' bilhete.bilheteid %}" class="btn btn-danger btn-sm">Remover</a>
-                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
