@@ -1,6 +1,6 @@
 # Cinema Management & Sales Platform (Django)
 
-This project is a Django 5.x application modeling a cinema ecosystem: films, sessions, rooms, seats, ticketing, product sales (concessions), and customer evaluations. It is organized into a core domain app (`bd2ap1`) that defines the database schema and several "front" apps that can provide views/forms per entity (e.g. `filmes_front`, `salas_front`, `vendas_front`, etc.).
+This project is a Django 5.x application modeling a cinema ecosystem: films, sessions, rooms, seats, ticketing, product sales (concessions), and customer evaluations. It now exposes a lightweight MVC-style (Controller-focused) layer for selected domain aggregates (`cinemas`, `clientes`, `funcionarios`) while preserving a clean internal layering (Models → Repositories → Services → Views/Controllers → Templates).
 
 ## Features
 
@@ -16,26 +16,123 @@ This project is a Django 5.x application modeling a cinema ecosystem: films, ses
   - Avaliações (customer feedback on a sale)
 - Database constraints (check + unique) for data integrity
 - Separation between core data model (`bd2ap1`) and UI-oriented front apps
+- Clean layering with repository + service abstraction for selected domain apps
+- Function-based MVC-style controllers (views) + CRUD + JSON output for Cinemas, Clients, Employees
 - PostgreSQL as the configured database backend (SQLite file present but not used by default settings)
+
+## Architecture Overview
+
+Although Django follows MTV, we structure internal code in a style close to classic MVC + Clean Architecture for certain apps:
+
+| Layer | Location | Responsibility |
+|-------|----------|----------------|
+| Data Model | `bd2ap1/models.py` (+ proxy models in `cinemas/`, `clientes/`, `funcionarios/`) | Database schema & core entities |
+| Repository | `*/repositories.py` | Encapsulate ORM reads, list/search/delete, create/update (added for consistency) |
+| Service | `*/services.py` | Business logic & orchestration (no HTTP, no presentation) |
+| Controller (View) | `*/views.py` (function-based) | Thin request handling: parse request → call service → render template / JSON |
+| Presentation | `templates/<app_name>/*.html` | Minimal HTML templates (no business logic) |
+
+### Why Repositories + Services?
+- Repositories isolate query logic and provide a narrow interface (e.g. `list_all`, `search`, `update`).
+- Services encapsulate mutation / domain rules (e.g. `update_rating`, generic `update` loops) and keep views free of business decisions.
+- Views remain testable and thin (only flow + serialization concerns).
+
+### Recently Added / Refactored
+- Added `create()` and `update()` functions to repositories for `cinemas`, `clientes`, `funcionarios`.
+- Refactored services to invoke repository create/update instead of direct model persistence.
+- Added function-based CRUD + search views and templates for the three domains.
+- Added optional JSON rendering via `?format=json` on list and detail endpoints.
+- Added dedicated `/search/?q=...&limit=` JSON endpoints.
+- Injected navigation and return buttons (Home / List / JSON) in templates.
+- Updated home page (`core/index.html`) with quick access buttons.
+
+## MVC-style Endpoints (Current)
+
+All endpoints are mounted under project root (`b2da1/urls.py`).
+
+### Cinemas
+```
+GET   /cinemas/                # HTML list (or JSON with ?format=json)
+GET   /cinemas/search/?q=Term  # JSON search
+GET   /cinemas/create/         # Form (create)
+POST  /cinemas/create/         # Persist
+GET   /cinemas/<id>/           # Detail (or JSON)
+GET   /cinemas/<id>/edit/      # Edit form
+POST  /cinemas/<id>/edit/      # Update
+GET   /cinemas/<id>/delete/    # Confirm delete
+POST  /cinemas/<id>/delete/    # Delete
+```
+
+### Clients (`clientes`)
+```
+GET   /clientes/               # List (HTML / JSON)
+GET   /clientes/search/?q=...  # JSON search
+GET   /clientes/create/        # Create form
+POST  /clientes/create/        # Persist
+GET   /clientes/<id>/          # Detail (HTML / JSON)
+GET   /clientes/<id>/edit/
+POST  /clientes/<id>/edit/
+GET   /clientes/<id>/delete/
+POST  /clientes/<id>/delete/
+```
+
+### Employees (`funcionarios`)
+```
+GET   /funcionarios/               # List (HTML / JSON)
+GET   /funcionarios/search/?q=...  # JSON search
+GET   /funcionarios/create/
+POST  /funcionarios/create/
+GET   /funcionarios/<id>/
+GET   /funcionarios/<id>/edit/
+POST  /funcionarios/<id>/edit/
+GET   /funcionarios/<id>/delete/
+POST  /funcionarios/<id>/delete/
+```
+
+### JSON Output Pattern
+- Append `?format=json` to list or detail views for structured responses.
+- Search endpoints always return JSON with: `{"query": ..., "count": <int>, "results": [ ... ]}`.
+
+### Example JSON Calls
+```
+GET /cinemas/?format=json
+GET /cinemas/1/?format=json
+GET /cinemas/search/?q=cen&limit=5
+GET /clientes/?format=json
+GET /funcionarios/search/?q=mar
+```
+
+## Quick Usage Flow (Example)
+```python
+from cinemas import services as cinema_services
+
+c = cinema_services.create(
+    nomecinema="Cinema Centro",
+    localidadecinema="Lisboa",
+    ranking=4.5
+)
+cinema_services.update_rating(c.cinemaid, 4.9)
+updated = cinema_services.get(c.cinemaid)
+```
 
 ## Tech Stack
 
-- Python 3.12+ (recommend 3.12; adjust if needed)
+- Python 3.12+
 - Django 5.2.6
-- PostgreSQL 14+ (any recent version should work)
-- (Optional) SQLite for quick experimentation
+- PostgreSQL 14+
 
 ## Project Structure (high level)
 
 ```
 manage.py
-b2da1/                # Project config (settings, urls, wsgi/asgi)
+b2da1/                 # Project config (settings, urls, wsgi/asgi)
 bd2ap1/                # Core domain models & migrations
-<entity>_front/        # Front-end oriented Django apps (forms, views, templates)
+cinemas/               # MVC domain (proxy + repo + service + controller + templates)
+clientes/              # MVC domain (proxy + repo + service + controller + templates)
+funcionarios/          # MVC domain (proxy + repo + service + controller + templates)
+<entity>_front/        # Legacy/front apps
 templates/             # Global / shared templates
 ```
-
-Each `*_front` app may provide forms, basic CRUD views, and templates associated with its domain entity.
 
 ## Initial Setup
 
@@ -44,54 +141,37 @@ Each `*_front` app may provide forms, basic CRUD views, and templates associated
 git clone <your-repo-url>
 cd b2da1
 ```
-
 ### 2. Create & Activate Virtual Environment
 ```
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 ```
-
 ### 3. Install Dependencies
 ```
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
-
 ### 4. Configure PostgreSQL
-Create a database and user that match `b2da1/settings.py` (or adjust settings):
 ```
 psql -U postgres -c "CREATE DATABASE \"cinemaDB\";"
 psql -U postgres -c "CREATE USER admin WITH PASSWORD 'admin';"
 psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE \"cinemaDB\" TO admin;"
 ```
-If you change credentials, update `DATABASES` in `b2da1/settings.py`.
-
-#### Alternative: Use SQLite (quick start)
-Edit `b2da1/settings.py` and replace the `DATABASES` dict with:
-```
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-```
+(Adjust credentials or switch to SQLite for quick tests.)
 
 ### 5. Apply Migrations
 ```
 python manage.py migrate
 ```
-
-### 6. Create Superuser (for /admin)
+### 6. Create Superuser (optional)
 ```
 python manage.py createsuperuser
 ```
-
-### 7. Run Development Server
+### 7. Run Server
 ```
 python manage.py runserver
 ```
-Visit: http://127.0.0.1:8000/ and http://127.0.0.1:8000/admin/
+Browse: http://127.0.0.1:8000/
 
 ## Data Model Highlights
 
@@ -108,74 +188,52 @@ Visit: http://127.0.0.1:8000/ and http://127.0.0.1:8000/admin/
 | Funcionarios | cinemaid, cargo, ranking | Staff, ranking 0–5 |
 | Produtos | nomeproduto, precoproduto, stock | Concession items |
 | Vendas | clienteid, funcionarioid, totalvenda | A sale transaction |
-| VendaLinhas | vendaid, produtoid, quantidade | Line items, total_linha optional |
-| Bilhetes | sessaoid, lugarid, precobilhete | Ticket for a seat in a session |
-| Avaliacoes | OneToOne(Vendas) + ratings | Feedback per sale |
+| VendaLinhas | vendaid, produtoid, quantidade | Line items |
+| Bilhetes | sessaoid, lugarid, precobilhete | Ticket for session seat |
+| Avaliacoes | venda (1:1) + ratings | Feedback per sale |
 
 ### Constraints / Integrity
-- Check constraints enforce ranking ranges (0–5) for Cinemas, Filmes, Funcionarios.
-- Unique constraint on Lugares: (`salaid`, `fila`, `numero`).
-- `Avaliacoes.venda` is One-to-One (each sale may have at most one evaluation).
-- Most foreign keys use `PROTECT` to avoid cascading deletes of core reference data.
+- Ranking check constraints (0–5) for Cinemas, Filmes, Funcionarios.
+- Unique (`salaid`, `fila`, `numero`) for Lugares.
+- PROTECT FKs to avoid accidental cascading on reference data.
 
 ## Running Tests
 ```
 python manage.py test
 ```
-Add tests to each app's `tests.py` or create packages as needed.
+(Add tests in each app's `tests.py`.)
 
-## Adding a New App
+## Migrations Workflow
 ```
-python manage.py startapp <name>_front
-# Add to INSTALLED_APPS in b2da1/settings.py
+python manage.py makemigrations
+python manage.py migrate
 ```
-Then create `urls.py`, views, templates, and include routes in the project root `urls.py`.
 
-## Environment / Secrets
-Current `settings.py` contains an inline `SECRET_KEY` and `DEBUG=True` for development only. For production you should:
-- Move secrets to environment variables
-- Set `DEBUG=False`
-- Define `ALLOWED_HOSTS`
-- Configure proper static/media serving and HTTPS
-
-Example (Linux/macOS shell):
+## Useful Commands
 ```
-export DJANGO_SECRET_KEY="your-prod-secret"
-export DJANGO_DEBUG="False"
-```
-Then modify settings to read from `os.environ` (not yet implemented here).
-
-## Database Migrations Workflow
-- Modify or create models in `bd2ap1/models.py` (or appropriate app)
-- Make migrations: `python manage.py makemigrations`
-- Apply: `python manage.py migrate`
-
-## Common Management Commands
-```
-python manage.py shell          # Open Django shell
-python manage.py showmigrations  # See applied/pending migrations
-python manage.py check           # Basic project diagnostics
+python manage.py shell
+python manage.py check
+python manage.py showmigrations
 ```
 
 ## Troubleshooting
 | Issue | Possible Fix |
 |-------|--------------|
-| psycopg2 errors | Ensure PostgreSQL is running & credentials match settings |
-| Migration dependency errors | Delete stray migration files and re-run makemigrations (only if safe) |
-| "relation does not exist" | You forgot `python manage.py migrate` |
-| Static files not loading | Collect static in production: `python manage.py collectstatic` |
+| psycopg2 errors | Ensure PostgreSQL up & credentials correct |
+| TemplateDoesNotExist | Check app in INSTALLED_APPS & path templates/app_name/file.html |
+| relation does not exist | Run migrations |
+| Invalid ranking | Validation or model constraint triggered |
 
-## Next Steps / Improvements (Suggestions)
-- Add `.env` support (python-dotenv or django-environ)
-- Create CRUD views & templates for each domain entity
-- Implement validation on ticket sales (seat availability)
-- Add API layer (Django REST Framework) for integrations
-- Add pagination & filtering for film/session listings
-- Write unit tests for business rules (e.g., seat uniqueness, ranking bounds)
+## Improvement Ideas
+- Base template + template inheritance for new MVC templates (currently minimal / duplicated markup)
+- Flash messages on create/update/delete
+- Pagination & ordering parameters on list endpoints
+- DRF-based API layer
+- Central error handling decorator for 404 mapping
+- Environment variable driven settings
 
 ## License
-Specify a license (e.g., MIT) here if distributing publicly.
+Specify a license (e.g., MIT) if distributing publicly.
 
 ---
-Happy building! Let this README be your quick reference to extend and maintain the cinema management platform.
-
+Happy building! This README now reflects the layered MVC-style additions (repositories + services + thin controllers) and newly exposed CRUD/JSON endpoints.

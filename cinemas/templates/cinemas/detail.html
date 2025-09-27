@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head><title>Cinema {{ cinema.cinemaid }}</title></head>
+<body>
+  <h1>{{ cinema.nomecinema }}</h1>
+  <div style="margin-bottom:12px;">
+    <a href="/">← Home</a>
+    <a href="{% url 'cinemas:list' %}" style="margin-left:8px;">← Voltar à Lista</a>
+    <a href="{% url 'cinemas:detail' cinema.cinemaid %}?format=json" style="margin-left:8px;">Ver JSON</a>
+  </div>
+  <p><strong>Ranking:</strong> {{ cinema.ranking }}</p>
+  <p><strong>Email:</strong> {{ cinema.emailcinema }}</p>
+  <p><strong>Phone:</strong> {{ cinema.telefonecinema }}</p>
+  <p><strong>Address:</strong> {{ cinema.moradacinema }} {{ cinema.codigopostalcinema }} {{ cinema.localidadecinema }}</p>
+  <p>
+    <a href="{% url 'cinemas:update' cinema.cinemaid %}">Edit</a> |
+    <a href="{% url 'cinemas:delete' cinema.cinemaid %}">Delete</a> |
+    <a href="{% url 'cinemas:list' %}">Back</a>
+  </p>
+</body>
+</html>

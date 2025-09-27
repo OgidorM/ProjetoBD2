@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head><title>Cinemas</title></head>
+<body>
+  <h1>Cinemas</h1>
+  <!-- Navigation / Return buttons -->
+  <div style="margin-bottom:12px;">
+    <a href="/" style="margin-right:8px;">← Home</a>
+    <a href="{% url 'cinemas:create' %}" style="margin-right:8px;">+ Novo Cinema</a>
+    <a href="{% url 'cinemas:list' %}?format=json" style="margin-right:8px;">Ver JSON</a>
+  </div>
+  <form method="get" action="{% url 'cinemas:search' %}" style="margin-bottom:12px;">
+    <input type="text" name="q" placeholder="Search..." value="{{ request.GET.q }}"/>
+    <button type="submit">Search (JSON)</button>
+    <a href="{% url 'cinemas:list' %}" style="margin-left:8px;">Limpar</a>
+  </form>
+  <table border="1" cellpadding="4">
+    <tr><th>ID</th><th>Name</th><th>Ranking</th><th>City</th><th>Actions</th></tr>
+    {% for c in cinemas %}
+    <tr>
+      <td>{{ c.cinemaid }}</td>
+      <td><a href="{% url 'cinemas:detail' c.cinemaid %}">{{ c.nomecinema }}</a></td>
+      <td>{{ c.ranking }}</td>
+      <td>{{ c.localidadecinema }}</td>
+      <td>
+        <a href="{% url 'cinemas:update' c.cinemaid %}">Edit</a> |
+        <a href="{% url 'cinemas:delete' c.cinemaid %}">Delete</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">No cinemas.</td></tr>
+    {% endfor %}
+  </table>
+  <div style="margin-top:16px;">
+    <a href="/">← Voltar para Home</a>
+  </div>
+</body>
+</html>

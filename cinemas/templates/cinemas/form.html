@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head><title>{% if mode == 'create' %}Create Cinema{% else %}Edit Cinema{% endif %}</title></head>
+<body>
+  <h1>{% if mode == 'create' %}Create Cinema{% else %}Edit Cinema{% endif %}</h1>
+  <div style="margin-bottom:12px;">
+    <a href="/">← Home</a>
+    <a href="{% url 'cinemas:list' %}" style="margin-left:8px;">← Lista</a>
+    {% if cinema %}<a href="{% url 'cinemas:detail' cinema.cinemaid %}?format=json" style="margin-left:8px;">Ver JSON</a>{% endif %}
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+    <a href="{% if cinema %}{% url 'cinemas:detail' cinema.cinemaid %}{% else %}{% url 'cinemas:list' %}{% endif %}">Cancel</a>
+  </form>
+  <div style="margin-top:16px;">
+    <a href="{% url 'cinemas:list' %}">← Voltar para lista</a>
+  </div>
+</body>
+</html>
