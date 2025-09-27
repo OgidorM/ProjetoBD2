@@ -1,0 +1,44 @@
+{% extends 'sessoes_front/base.html' %}
+{% block title %}Lista de Sessões{% endblock %}
+{% block content %}
+    <!-- Botão de adicionar removido, já existe na navbar -->
+    {% if sessoes %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Sessões</h2>
+        <table class="table table-striped table-hover table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Filme</th>
+                    <th>Sala</th>
+                    <th>Início</th>
+                    <th>Fim</th>
+                    <th>Versão</th>
+                    <th>Estado</th>
+                    <th>Preço</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sessao in sessoes %}
+                <tr>
+                    <td>{{ sessao.sessaoid }}</td>
+                    <td>{{ sessao.filmeid.titulo }}</td>
+                    <td>{{ sessao.salaid.nomesala }}</td>
+                    <td>{{ sessao.inicio }}</td>
+                    <td>{{ sessao.fim }}</td>
+                    <td>{{ sessao.versao }}</td>
+                    <td>{{ sessao.estadosessao }}</td>
+                    <td>{{ sessao.precosessao }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            Nenhuma sessão registada ainda.
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
