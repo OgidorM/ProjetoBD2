@@ -3,51 +3,138 @@
 {% block title %}Cinema BD2 — Início{% endblock %}
 
 {% block content %}
-<div class="py-4">
-  <h1 class="h3 mb-3">Bem-vindo ao Cinema BD2</h1>
-  <p class="text-muted">Escolhe uma secção no topo para começares.</p>
+<div class="py-5">
+  <div class="text-center mb-5">
+    <h1 class="display-4 fw-bold text-primary mb-3">Bem-vindo ao Cinema BD2</h1>
+    <p class="lead text-muted">Sistema de Gestão de Cinema - Escolha uma secção para começar</p>
+  </div>
 
-  <div class="row g-3">
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_filmes' %}" class="btn btn-primary w-100">Ver Filmes</a>
+  <!-- Core Cinema Management -->
+  <div class="mb-5">
+    <h2 class="h4 mb-4 text-secondary border-bottom pb-2">
+      <i class="bi bi-film"></i> Gestão Principal
+    </h2>
+    <div class="row g-3">
+      <div class="col-sm-6 col-lg-4">
+        <a href="{% url 'cinemas:list' %}" class="btn btn-primary w-100 py-3 shadow-sm">
+          <i class="bi bi-building"></i><br>
+          <strong>Cinemas</strong>
+        </a>
+      </div>
+      <div class="col-sm-6 col-lg-4">
+        <a href="{% url 'lista_filmes' %}" class="btn btn-primary w-100 py-3 shadow-sm">
+          <i class="bi bi-camera-reels"></i><br>
+          <strong>Filmes</strong>
+        </a>
+      </div>
+      <div class="col-sm-6 col-lg-4">
+        <a href="{% url 'lista_salas' %}" class="btn btn-primary w-100 py-3 shadow-sm">
+          <i class="bi bi-door-open"></i><br>
+          <strong>Salas</strong>
+        </a>
+      </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_salas' %}" class="btn btn-outline-primary w-100">Ver Salas</a>
+  </div>
+
+  <!-- People Management -->
+  <div class="mb-5">
+    <h2 class="h4 mb-4 text-secondary border-bottom pb-2">
+      <i class="bi bi-people"></i> Gestão de Pessoas
+    </h2>
+    <div class="row g-3">
+      <div class="col-sm-6 col-lg-4">
+        <a href="{% url 'clientes:list' %}" class="btn btn-success w-100 py-3 shadow-sm">
+          <i class="bi bi-person"></i><br>
+          <strong>Clientes</strong>
+        </a>
+      </div>
+      <div class="col-sm-6 col-lg-4">
+        <a href="{% url 'funcionarios:list' %}" class="btn btn-success w-100 py-3 shadow-sm">
+          <i class="bi bi-person-badge"></i><br>
+          <strong>Funcionários</strong>
+        </a>
+      </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_lugares' %}" class="btn btn-outline-primary w-100">Ver Lugares</a>
+  </div>
+
+  <!-- Operations -->
+  <div class="mb-5">
+    <h2 class="h4 mb-4 text-secondary border-bottom pb-2">
+      <i class="bi bi-gear"></i> Operações
+    </h2>
+    <div class="row g-3">
+      <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'lista_sessoes' %}" class="btn btn-warning w-100 py-3 shadow-sm">
+          <i class="bi bi-calendar-event"></i><br>
+          <strong>Sessões</strong>
+        </a>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'lista_bilhetes' %}" class="btn btn-warning w-100 py-3 shadow-sm">
+          <i class="bi bi-ticket-perforated"></i><br>
+          <strong>Bilhetes</strong>
+        </a>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'lista_vendas' %}" class="btn btn-warning w-100 py-3 shadow-sm">
+          <i class="bi bi-cart"></i><br>
+          <strong>Vendas</strong>
+        </a>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'lista_lugares' %}" class="btn btn-warning w-100 py-3 shadow-sm">
+          <i class="bi bi-grid-3x3"></i><br>
+          <strong>Lugares</strong>
+        </a>
+      </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_bilhetes' %}" class="btn btn-outline-primary w-100">Ver Bilhetes</a>
+  </div>
+
+  <!-- Additional Services -->
+  <div class="mb-5">
+    <h2 class="h4 mb-4 text-secondary border-bottom pb-2">
+      <i class="bi bi-plus-circle"></i> Serviços Adicionais
+    </h2>
+    <div class="row g-3">
+      <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'lista_produtos' %}" class="btn btn-info w-100 py-3 shadow-sm">
+          <i class="bi bi-bag"></i><br>
+          <strong>Produtos</strong>
+        </a>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'lista_vendaslinhas' %}" class="btn btn-info w-100 py-3 shadow-sm">
+          <i class="bi bi-list-ul"></i><br>
+          <strong>Linhas de Venda</strong>
+        </a>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <a href="{% url 'lista_avaliacoes' %}" class="btn btn-info w-100 py-3 shadow-sm">
+          <i class="bi bi-star"></i><br>
+          <strong>Avaliações</strong>
+        </a>
+      </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_produtos' %}" class="btn btn-outline-primary w-100">Ver Produtos</a>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_vendas' %}" class="btn btn-outline-primary w-100">Ver Vendas</a>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_vendaslinhas' %}" class="btn btn-outline-primary w-100">Ver Linhas</a>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_avaliacoes' %}" class="btn btn-outline-primary w-100">Ver Avaliações</a>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_sessoes' %}" class="btn btn-outline-primary w-100">Ver Sessões</a>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_categorias' %}" class="btn btn-outline-primary w-100">Ver Categorias</a>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'lista_classificacoesetarias' %}" class="btn btn-outline-primary w-100">Ver Classificações Etárias</a>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'cinemas:list' %}" class="btn btn-outline-secondary w-100">Ver Cinemas</a>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'clientes:list' %}" class="btn btn-outline-secondary w-100">Ver Clientes</a>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-      <a href="{% url 'funcionarios:list' %}" class="btn btn-outline-secondary w-100">Ver Funcionários</a>
+  </div>
+
+  <!-- Configuration -->
+  <div class="mb-4">
+    <h2 class="h4 mb-4 text-secondary border-bottom pb-2">
+      <i class="bi bi-sliders"></i> Configuração
+    </h2>
+    <div class="row g-3">
+      <div class="col-sm-6 col-lg-4">
+        <a href="{% url 'lista_categorias' %}" class="btn btn-outline-secondary w-100 py-3">
+          <i class="bi bi-tags"></i><br>
+          <strong>Categorias</strong>
+        </a>
+      </div>
+      <div class="col-sm-6 col-lg-4">
+        <a href="{% url 'lista_classificacoesetarias' %}" class="btn btn-outline-secondary w-100 py-3">
+          <i class="bi bi-shield-check"></i><br>
+          <strong>Classificações Etárias</strong>
+        </a>
+      </div>
     </div>
   </div>
 </div>

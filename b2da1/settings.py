@@ -96,11 +96,11 @@ WSGI_APPLICATION = 'b2da1.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
+        'NAME': 'cinemaDB',
         'USER': 'postgres',
-        'PASSWORD': 'admin',
+        'PASSWORD': '266551050',
         'HOST': 'localhost',
-        'PORT': '5434',
+        'PORT': '5432',
     }
 }
 
