@@ -1,0 +1,66 @@
+{% extends 'funcionarios/base.html' %}
+
+{% block title %}Lista de Funcionários{% endblock %}
+
+{% block content %}
+    {% if employees %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Funcionários</h2>
+        <div class="mb-3">
+            <a href="{% url 'funcionarios:create' %}" class="btn btn-primary me-2">+ Novo Funcionário</a>
+            <a href="{% url 'funcionarios:list' %}?format=json" class="btn btn-info me-2">Ver JSON</a>
+        </div>
+        <form method="get" action="{% url 'funcionarios:search' %}" class="mb-4">
+            <div class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <input type="text" name="q" class="form-control" placeholder="Pesquisar..." value="{{ request.GET.q }}"/>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success">Pesquisar (JSON)</button>
+                </div>
+                <div class="col-auto">
+                    <a href="{% url 'funcionarios:list' %}" class="btn btn-outline-secondary">Limpar</a>
+                </div>
+            </div>
+        </form>
+        <table class="table table-striped table-hover table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Cargo</th>
+                    <th>Cinema</th>
+                    <th>Salário</th>
+                    <th>Ranking</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in employees %}
+                <tr>
+                    <td>{{ e.funcionarioid }}</td>
+                    <td><a href="{% url 'funcionarios:detail' e.funcionarioid %}" class="text-decoration-none">{{ e.nomefuncionario|default:'Funcionário sem nome' }}</a></td>
+                    <td>{{ e.cargo|default:'N/A' }}</td>
+                    <td>{{ e.cinemaid.nomecinema|default:'N/A' }}</td>
+                    <td>{{ e.salario|default:'N/A' }}€</td>
+                    <td>{{ e.ranking|default:'N/A' }}</td>
+                    <td>
+                        <a href="{% url 'funcionarios:update' e.funcionarioid %}" class="btn btn-warning btn-sm">Editar</a>
+                        <a href="{% url 'funcionarios:delete' e.funcionarioid %}" class="btn btn-danger btn-sm">Apagar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            Nenhum funcionário registado ainda.
+        </div>
+        <div class="text-center">
+            <a href="{% url 'funcionarios:create' %}" class="btn btn-primary">+ Adicionar Primeiro Funcionário</a>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

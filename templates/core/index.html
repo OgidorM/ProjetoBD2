@@ -1,5 +1,254 @@
-{% extends 'core/base.html' %}
+{% extends "core/base.html" %}
+
+{% block title %}Cinema BD2 — Início{% endblock %}
 
 {% block content %}
-    <h1>Bem-vindo ao Cinema!</h1>
+<div class="py-5">
+  <!-- Hero Section -->
+  <div class="text-center mb-5">
+    <h1 class="display-4 fw-bold text-primary mb-3">
+      <i class="bi bi-film me-3"></i>Cinema BD2
+    </h1>
+    <p class="lead text-muted mb-4">Sistema Completo de Gestão de Cinema</p>
+    <div class="row justify-content-center">
+      <div class="col-lg-6">
+        <p class="text-muted">
+          Gerencie todos os aspectos do seu cinema de forma eficiente e organizada.
+          Escolha uma das categorias abaixo para começar.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Core Management Section -->
+  <div class="mb-5">
+    <div class="d-flex align-items-center mb-4">
+      <div class="bg-primary rounded-circle p-2 me-3">
+        <i class="bi bi-building text-white"></i>
+      </div>
+      <h2 class="h4 mb-0">Gestão Principal</h2>
+    </div>
+    <div class="row g-3">
+      <div class="col-sm-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+              <i class="bi bi-building text-primary fs-4"></i>
+            </div>
+            <h5 class="card-title">Cinemas</h5>
+            <p class="card-text text-muted small">Gerir informações dos cinemas</p>
+            <a href="{% url 'cinemas:list' %}" class="btn btn-primary">Ver Cinemas</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+              <i class="bi bi-camera-reels text-primary fs-4"></i>
+            </div>
+            <h5 class="card-title">Filmes</h5>
+            <p class="card-text text-muted small">Catálogo completo de filmes</p>
+            <a href="{% url 'lista_filmes' %}" class="btn btn-primary">Ver Filmes</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+              <i class="bi bi-door-open text-primary fs-4"></i>
+            </div>
+            <h5 class="card-title">Salas</h5>
+            <p class="card-text text-muted small">Configuração de salas de cinema</p>
+            <a href="{% url 'lista_salas' %}" class="btn btn-primary">Ver Salas</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- People Management Section -->
+  <div class="mb-5">
+    <div class="d-flex align-items-center mb-4">
+      <div class="bg-success rounded-circle p-2 me-3">
+        <i class="bi bi-people text-white"></i>
+      </div>
+      <h2 class="h4 mb-0">Gestão de Pessoas</h2>
+    </div>
+    <div class="row g-3">
+      <div class="col-sm-6 col-lg-6">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+              <i class="bi bi-person text-success fs-4"></i>
+            </div>
+            <h5 class="card-title">Clientes</h5>
+            <p class="card-text text-muted small">Base de dados de clientes</p>
+            <a href="{% url 'clientes:list' %}" class="btn btn-success">Ver Clientes</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-6">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+              <i class="bi bi-person-badge text-success fs-4"></i>
+            </div>
+            <h5 class="card-title">Funcionários</h5>
+            <p class="card-text text-muted small">Gestão de recursos humanos</p>
+            <a href="{% url 'funcionarios:list' %}" class="btn btn-success">Ver Funcionários</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Operations Section -->
+  <div class="mb-5">
+    <div class="d-flex align-items-center mb-4">
+      <div class="bg-warning rounded-circle p-2 me-3">
+        <i class="bi bi-gear text-white"></i>
+      </div>
+      <h2 class="h4 mb-0">Operações Diárias</h2>
+    </div>
+    <div class="row g-3">
+      <div class="col-sm-6 col-lg-3">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+              <i class="bi bi-calendar-event text-warning"></i>
+            </div>
+            <h6 class="card-title">Sessões</h6>
+            <a href="{% url 'lista_sessoes' %}" class="btn btn-sm btn-outline-warning">Ver</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+              <i class="bi bi-ticket-perforated text-warning"></i>
+            </div>
+            <h6 class="card-title">Bilhetes</h6>
+            <a href="{% url 'lista_bilhetes' %}" class="btn btn-sm btn-outline-warning">Ver</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+              <i class="bi bi-cart text-warning"></i>
+            </div>
+            <h6 class="card-title">Vendas</h6>
+            <a href="{% url 'lista_vendas' %}" class="btn btn-sm btn-outline-warning">Ver</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+              <i class="bi bi-grid-3x3 text-warning"></i>
+            </div>
+            <h6 class="card-title">Lugares</h6>
+            <a href="{% url 'lista_lugares' %}" class="btn btn-sm btn-outline-warning">Ver</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Additional Services Section -->
+  <div class="mb-5">
+    <div class="d-flex align-items-center mb-4">
+      <div class="bg-info rounded-circle p-2 me-3">
+        <i class="bi bi-plus-circle text-white"></i>
+      </div>
+      <h2 class="h4 mb-0">Serviços e Produtos</h2>
+    </div>
+    <div class="row g-3">
+      <div class="col-sm-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+              <i class="bi bi-bag text-info"></i>
+            </div>
+            <h6 class="card-title">Produtos</h6>
+            <a href="{% url 'lista_produtos' %}" class="btn btn-sm btn-outline-info">Ver</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+              <i class="bi bi-list-ul text-info"></i>
+            </div>
+            <h6 class="card-title">Linhas de Venda</h6>
+            <a href="{% url 'lista_vendaslinhas' %}" class="btn btn-sm btn-outline-info">Ver</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+              <i class="bi bi-star text-info"></i>
+            </div>
+            <h6 class="card-title">Avaliações</h6>
+            <a href="{% url 'lista_avaliacoes' %}" class="btn btn-sm btn-outline-info">Ver</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuration Section -->
+  <div class="mb-4">
+    <div class="d-flex align-items-center mb-4">
+      <div class="bg-secondary rounded-circle p-2 me-3">
+        <i class="bi bi-sliders text-white"></i>
+      </div>
+      <h2 class="h4 mb-0">Configurações</h2>
+    </div>
+    <div class="row g-3">
+      <div class="col-sm-6">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+              <i class="bi bi-tags text-secondary"></i>
+            </div>
+            <h6 class="card-title">Categorias</h6>
+            <p class="card-text text-muted small">Categorias de filmes</p>
+            <a href="{% url 'lista_categorias' %}" class="btn btn-sm btn-outline-secondary">Ver</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <div class="card-body text-center p-4">
+            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+              <i class="bi bi-shield-check text-secondary"></i>
+            </div>
+            <h6 class="card-title">Classificações Etárias</h6>
+            <p class="card-text text-muted small">Idades recomendadas</p>
+            <a href="{% url 'lista_classificacoesetarias' %}" class="btn btn-sm btn-outline-secondary">Ver</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.hover-card {
+  transition: all 0.3s ease;
+}
+.hover-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
 {% endblock %}

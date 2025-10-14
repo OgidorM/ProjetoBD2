@@ -1,0 +1,39 @@
+{% extends 'vendaslinhas_front/base.html' %}
+
+{% block title %}Adicionar Linha de Venda{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Adicionar Linha de Venda</h2>
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="{{ form.vendaid.id_for_label }}" class="form-label">Venda</label>
+            {{ form.vendaid }}
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.produtoid.id_for_label }}" class="form-label">Produto</label>
+            {{ form.produtoid }}
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.bilheteid.id_for_label }}" class="form-label">Bilhete (opcional)</label>
+            {{ form.bilheteid }}
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.quantidade.id_for_label }}" class="form-label">Quantidade</label>
+            {{ form.quantidade }}
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.precolinha.id_for_label }}" class="form-label">Preço da Linha (€)</label>
+            {{ form.precolinha }}
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.total_linha.id_for_label }}" class="form-label">Total da Linha (€)</label>
+            {{ form.total_linha }}
+        </div>
+        <button type="submit" class="btn btn-success">Guardar Linha</button>
+        <a href="{% url 'lista_vendaslinhas' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

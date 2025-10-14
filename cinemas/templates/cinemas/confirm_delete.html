@@ -1,0 +1,74 @@
+{% extends 'cinemas/base.html' %}
+
+{% block title %}Confirmar Eliminação - {{ cinema.nomecinema }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Confirmar Eliminação</h5>
+        </div>
+        <div class="card-body">
+            {% if has_related_objects %}
+                <div class="alert alert-danger" role="alert">
+                    <h6><i class="bi bi-exclamation-triangle"></i> Não é possível eliminar este cinema</h6>
+                    <p class="mb-2">O cinema <strong>{{ cinema.nomecinema }}</strong> (ID {{ cinema.cinemaid }}) tem os seguintes objetos relacionados que impedem a sua eliminação:</p>
+
+                    {% if related_filmes %}
+                        <div class="mb-3">
+                            <h6 class="text-danger">Filmes ({{ related_filmes.count }}):</h6>
+                            <ul class="list-unstyled ms-3">
+                                {% for filme in related_filmes|slice:":5" %}
+                                    <li><small>• {{ filme.titulo }}</small></li>
+                                {% endfor %}
+                                {% if related_filmes.count > 5 %}
+                                    <li><small>• ... e mais {{ related_filmes.count|add:"-5" }} filmes</small></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    {% if related_salas %}
+                        <div class="mb-3">
+                            <h6 class="text-danger">Salas ({{ related_salas.count }}):</h6>
+                            <ul class="list-unstyled ms-3">
+                                {% for sala in related_salas|slice:":5" %}
+                                    <li><small>• {{ sala.nomesala|default:"Sala sem nome" }} (ID: {{ sala.salaid }})</small></li>
+                                {% endfor %}
+                                {% if related_salas.count > 5 %}
+                                    <li><small>• ... e mais {{ related_salas.count|add:"-5" }} salas</small></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <p class="mb-0"><strong>Para eliminar este cinema, primeiro elimine todos os filmes e salas associados.</strong></p>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'cinemas:list' %}" class="btn btn-primary">Voltar à Lista</a>
+                </div>
+            {% else %}
+                <p class="mb-3">Tens a certeza que queres eliminar o cinema <strong>{{ cinema.nomecinema }}</strong> (ID {{ cinema.cinemaid }})?</p>
+                <div class="alert alert-warning" role="alert">
+                    <strong>Atenção:</strong> Esta ação não pode ser desfeita.
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <a href="{% url 'cinemas:list' %}" class="btn btn-secondary me-2">Cancelar</a>
+                    <button type="submit" class="btn btn-danger">Sim, Eliminar</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'classificacoesetarias_front/base.html' %}
+{% block title %}Lista de Classificações Etárias{% endblock %}
+{% block content %}
+    <!-- Botão de adicionar removido, já existe na navbar -->
+    {% if classificacoes %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Classificações Etárias</h2>
+        <table class="table table-striped table-hover table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for classificacao in classificacoes %}
+                <tr>
+                    <td>{{ classificacao.classificacaoid }}</td>
+                    <td>{{ classificacao.nomeclassificacao }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            Nenhuma classificação etária registada ainda.
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

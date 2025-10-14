@@ -1,0 +1,45 @@
+{% extends 'avaliacoes_front/base.html' %}
+
+{% block title %}Adicionar Avaliação{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Adicionar Avaliação</h2>
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="{{ form.venda.id_for_label }}" class="form-label">Venda</label>
+            {{ form.venda }}
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.tituloavaliacao.id_for_label }}" class="form-label">Título da Avaliação</label>
+            {{ form.tituloavaliacao }}
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="{{ form.avaliacaocinema.id_for_label }}" class="form-label">Avaliação Cinema (1-5)</label>
+                {{ form.avaliacaocinema }}
+                <div class="form-text">Avalie o cinema de 1 a 5 estrelas</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="{{ form.avaliacaofilme.id_for_label }}" class="form-label">Avaliação Filme (1-5)</label>
+                {{ form.avaliacaofilme }}
+                <div class="form-text">Avalie o filme de 1 a 5 estrelas</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="{{ form.avaliacaofuncionario.id_for_label }}" class="form-label">Avaliação Funcionário (1-5)</label>
+                {{ form.avaliacaofuncionario }}
+                <div class="form-text">Avalie o atendimento de 1 a 5 estrelas</div>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.comentario.id_for_label }}" class="form-label">Comentário</label>
+            {{ form.comentario }}
+            <div class="form-text">Deixe um comentário sobre a experiência (opcional)</div>
+        </div>
+        <button type="submit" class="btn btn-success">Guardar Avaliação</button>
+        <a href="{% url 'lista_avaliacoes' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

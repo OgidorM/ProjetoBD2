@@ -1,0 +1,51 @@
+{% extends 'salas_front/base.html' %}
+
+{% block title %}Confirmar Eliminação{% endblock %}
+
+{% block content %}
+    <div class="container py-4">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                Confirmar eliminação
+            </div>
+            <div class="card-body">
+                <p>Tens a certeza que queres eliminar a sala <strong>{{ salas.nomesala|default:"(sem nome)" }}</strong> (ID {{ salas.salaid }})?</p>
+
+                {% if has_related_objects %}
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Atenção!</h5>
+                        <p>Esta sala não pode ser eliminada porque possui dados relacionados:</p>
+                        <ul>
+                            {% if lugares_count > 0 %}
+                                <li>{{ lugares_count }} lugar{% if lugares_count != 1 %}es{% endif %}</li>
+                            {% endif %}
+                            {% if sessoes_count > 0 %}
+                                <li>{{ sessoes_count }} sessã{% if sessoes_count == 1 %}o{% else %}ões{% endif %}</li>
+                            {% endif %}
+                        </ul>
+                        <p class="mb-0">Para eliminar esta sala, primeiro é necessário remover todos os dados relacionados.</p>
+                    </div>
+                {% endif %}
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <a href="{% url 'lista_salas' %}" class="btn btn-secondary">Cancelar</a>
+                    {% if not has_related_objects %}
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    {% else %}
+                        <button type="button" class="btn btn-danger" disabled title="Não é possível eliminar esta sala porque possui dados relacionados">Eliminar</button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

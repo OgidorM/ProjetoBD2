@@ -1,0 +1,37 @@
+{% extends 'salas_front/base.html' %}
+
+{% block title %}Adicionar Sala{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Adicionar Sala</h2>
+
+    <form method="post" class="card p-4 shadow-sm">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Nome da Sala</label>
+        {{ form.nomesala }}
+        {{ form.nomesala.errors }}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Cinema</label>
+        {{ form.cinemaid }}
+        {{ form.cinemaid.errors }}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Capacidade</label>
+        {{ form.capacidade }}
+        {{ form.capacidade.errors }}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Tipo de Sala</label>
+        {{ form.tiposala }}
+        {{ form.tiposala.errors }}
+      </div>
+      <div class="mt-3">
+        <a href="{% url 'lista_salas' %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

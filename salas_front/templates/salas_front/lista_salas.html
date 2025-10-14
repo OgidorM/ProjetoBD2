@@ -1,0 +1,44 @@
+{% extends 'salas_front/base.html' %}
+
+{% block title %}Lista de Salas{% endblock %}
+
+{% block content %}
+    {% if salas %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Salas</h2>
+        <table class="table table-striped table-hover table-bordered align-middle text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Cinema</th>
+                    <th>Capacidade</th>
+                    <th>Tipo</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sala in salas %}
+                <tr>
+                    <td>{{ sala.salaid }}</td>
+                    <td>{{ sala.nomesala }}</td>
+                    <td>{{ sala.cinemaid.nomecinema }}</td>
+                    <td>{{ sala.capacidade }}</td>
+                    <td>{{ sala.tiposala }}</td>
+                    <td>
+                        <a href="{% url 'editar_sala' sala.salaid %}" class="btn btn-warning btn-sm">Editar</a>
+                        <a href="{% url 'apagar_sala' sala.salaid %}" class="btn btn-danger btn-sm">Apagar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            Nenhuma sala registada ainda.
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

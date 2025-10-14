@@ -1,0 +1,57 @@
+{% extends 'clientes/base.html' %}
+
+{% block title %}{% if mode == 'create' %}Adicionar Cliente{% else %}Editar Cliente{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">{% if mode == 'create' %}Adicionar Cliente{% else %}Editar Cliente{% endif %}</h2>
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Nome do Cliente</label>
+            {{ form.nomecliente }}
+            {{ form.nomecliente.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            {{ form.emailcliente }}
+            {{ form.emailcliente.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Telefone</label>
+            {{ form.telefonecliente }}
+            {{ form.telefonecliente.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Data de Nascimento</label>
+            {{ form.datanascimento }}
+            {{ form.datanascimento.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Morada</label>
+            {{ form.moradacliente }}
+            {{ form.moradacliente.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Código Postal</label>
+            {{ form.codigopostalcliente }}
+            {{ form.codigopostalcliente.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Localidade</label>
+            {{ form.localidadecliente }}
+            {{ form.localidadecliente.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">NIF</label>
+            {{ form.nif }}
+            {{ form.nif.errors }}
+        </div>
+        <div class="mt-3">
+            <a href="{% url 'clientes:list' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

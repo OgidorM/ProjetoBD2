@@ -38,6 +38,23 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bd2ap1',
+    # Domain (proxy) apps for clean layering
+    'cinemas',
+    'clientes',
+    'funcionarios',
+    # Interface/front apps (legacy UI)
+    'filmes_front',
+    'salas_front',
+    'lugares_front',
+    'bilhetes_front',
+    'produtos_front',
+    'vendas_front',
+    'vendaslinhas_front',
+    'avaliacoes_front',
+    'sessoes_front',                
+    'categorias_front',             
+    'classificacoesetarias_front',  
+
 ]
 
 MIDDLEWARE = [
@@ -55,8 +72,10 @@ ROOT_URLCONF = 'b2da1.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
+        'DIRS': [
+            BASE_DIR / 'templates',
+            BASE_DIR / 'filmes_front' / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -77,11 +96,11 @@ WSGI_APPLICATION = 'b2da1.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'cinemaDB',
-        'USER': 'admin',
+        'NAME': 'postgres',
+        'USER': 'postgres',
         'PASSWORD': 'admin',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5434',
     }
 }
 
