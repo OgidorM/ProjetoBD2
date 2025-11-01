@@ -3,9 +3,14 @@
 {% block title %}Lista de Produtos{% endblock %}
 
 {% block content %}
-    {% if produtos %}
-    <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mt-4">
         <h2 class="mb-3">Lista de Produtos</h2>
+        <div class="btn-group">
+          <a href="{% url 'adicionar_produto' %}" class="btn btn-success">Adicionar</a>
+        </div>
+    </div>
+    {% if produtos %}
+    <div class="container mt-2">
         <table class="table table-striped table-hover table-bordered align-middle text-center">
             <thead class="table-dark">
                 <tr>
@@ -14,6 +19,7 @@
                     <th>Preço</th>
                     <th>Stock</th>
                     <th>Ativo</th>
+                    <th style="width: 180px;">Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,6 +35,10 @@
                         {% else %}
                             <span class="badge bg-danger">Não</span>
                         {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'editar_produto' produto.produtoid %}" class="btn btn-sm btn-warning">Editar</a>
+                        <a href="{% url 'apagar_produto' produto.produtoid %}" class="btn btn-sm btn-danger">Apagar</a>
                     </td>
                 </tr>
                 {% endfor %}
