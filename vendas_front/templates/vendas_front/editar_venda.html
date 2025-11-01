@@ -1,0 +1,16 @@
+{% extends 'vendas_front/base.html' %}
+
+{% block title %}Editar Venda{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Editar Venda</h2>
+
+        <form method="post" class="card p-4 shadow-sm">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success">Guardar Venda</button>
+            <a href="{% url 'lista_vendas' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+{% endblock %}

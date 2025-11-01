@@ -31,3 +31,12 @@ class SessaoForm(forms.ModelForm):
             'inicio': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control', 'style': 'max-width: 180px; display: inline-block;', 'step': '300'}),
             'fim': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control', 'style': 'max-width: 180px; display: inline-block;', 'step': '300'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Convert datetime to time for display if instance exists
+        if self.instance and self.instance.pk:
+            if self.instance.inicio and hasattr(self.instance.inicio, 'time'):
+                self.initial['inicio'] = self.instance.inicio.time()
+            if self.instance.fim and hasattr(self.instance.fim, 'time'):
+                self.initial['fim'] = self.instance.fim.time()
