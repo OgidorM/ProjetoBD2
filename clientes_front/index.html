@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CinemaHub - A Sua Experiência de Cinema</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        /* === INÍCIO: PALETA DE CORES === */
+        :root {
+            --primary-color: hsl(0, 72%, 51%);     /* Vermelho (#E51D14) */
+            --accent-color: hsl(45, 100%, 51%);   /* Amarelo/Ouro (#FFD500) */
+            --dark-bg: hsl(0, 0%, 7%);          /* Fundo (#121212) */
+            --card-bg: hsl(0, 0%, 10%);         /* Cartões (#1A1A1A) */
+            --input-bg: hsl(0, 0%, 15%);        /* Inputs (#262626) */
+            --border-color: hsl(0, 0%, 20%);      /* Bordas (#333333) */
+            --foreground: hsl(0, 0%, 98%);      /* Texto (#FAFAFA) */
+            --muted-foreground: hsl(0, 0%, 65%); /* Texto Muted (#A6A6A6) */
+            --radius: 0.75rem;
+        }
+        /* === FIM: PALETA DE CORES === */
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--foreground);
+            min-height: 100vh;
+            padding-top: 64px; /* Espaço para o header fixo */
+        }
+
+        /* === INÍCIO: NAVBAR === */
+        .navbar {
+            background: #181818;
+            padding: 0 2rem;
+            border-bottom: 1px solid var(--border-color);
+            height: 64px; /* Altura fixa */
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--foreground) !important;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .navbar-brand .logo-icon {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+        .nav-link {
+            color: var(--foreground) !important;
+            font-weight: 500;
+            margin: 0 0.25rem;
+            transition: all 0.3s;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .nav-link:hover {
+            color: var(--muted-foreground) !important;
+            transform: none;
+        }
+        .navbar .btn-cart {
+            position: relative;
+            background: transparent;
+            color: var(--foreground);
+            border: none;
+            padding: 0.5rem;
+            margin: 0 0.25rem;
+            font-size: 1.25rem;
+        }
+        .navbar .btn-cart:hover {
+            color: var(--muted-foreground) !important;
+        }
+        .cart-badge {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            background: var(--primary-color);
+            color: var(--foreground);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border: 2px solid #181818;
+        }
+        .btn-user-profile {
+            color: var(--foreground) !important;
+            border: 1px solid var(--border-color);
+            border-radius: 99px;
+            padding: 0.375rem 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-user-profile:hover {
+            background-color: var(--input-bg);
+            border-color: #555;
+        }
+        .dropdown-menu {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+        }
+        .dropdown-item {
+            color: var(--foreground);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .dropdown-item:hover, .dropdown-item:focus {
+            background-color: var(--input-bg);
+            color: var(--primary-color);
+        }
+        .dropdown-divider { border-top-color: var(--border-color); }
+        .dropdown-header { color: var(--muted-foreground); }
+        /* === FIM: NAVBAR === */
+
+        /* === Componente: Hero === */
+        .hero {
+            background: var(--dark-bg);
+            padding: 2rem;
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: left;
+        }
+        .hero .container { padding-left: 2rem; }
+        .hero h1 { font-size: 3.5rem; font-weight: bold; margin-bottom: 1.5rem; }
+        .hero p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            color: var(--muted-foreground);
+            max-width: 500px;
+        }
+        .hero .btn {
+            border-radius: 8px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            height: 44px;
+        }
+        .hero .btn-primary-custom {
+             background: var(--primary-color);
+             color: var(--foreground);
+             border: none;
+        }
+         .hero .btn-primary-custom:hover { background: hsl(0, 72%, 45%); }
+        .hero .btn-secondary-custom {
+            background: var(--input-bg);
+            color: var(--foreground);
+            border: 1px solid var(--border-color);
+        }
+        .hero .btn-secondary-custom:hover { background: #333; }
+
+        /* === Componente: Card === */
+        .card {
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--foreground);
+        }
+
+        /* === Secção: Home === */
+        #homeEmCartaz { padding: 0 2rem 3rem 2rem; }
+        .home-section-header {
+             padding-left: 2rem;
+             padding-right: 2rem;
+             margin-bottom: 1.5rem;
+        }
+        .section-title-home {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--foreground);
+            margin-bottom: 0.25rem;
+        }
+        .section-subtitle-home { color: var(--muted-foreground); }
+        .see-all-link {
+            color: var(--muted-foreground);
+            text-decoration: none;
+            font-weight: 500;
+            white-space: nowrap;
+            background: none;
+            border: none;
+            padding: 0.5rem;
+        }
+        .see-all-link:hover { color: var(--primary-color); }
+        .age-badge {
+            position: absolute; top: 10px; right: 10px; background: var(--accent-color);
+            color: #000; font-weight: bold; padding: 4px 8px;
+            border-radius: 4px; font-size: 0.8rem;
+        }
+        .section { padding: 3rem 0; }
+        .section-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--foreground);
+            text-align: left;
+        }
+        .features-section {
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            background-color: hsla(0, 0%, 15%, 0.1);
+            padding: 4rem 0;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 2rem;
+        }
+        .feature-item { text-align: center; padding: 1.5rem; }
+        .feature-icon-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 99px;
+            background-color: hsla(0, 72%, 51%, 0.1);
+            margin-bottom: 1rem;
+        }
+        .feature-icon-wrapper i { font-size: 1.5rem; color: var(--primary-color); }
+        .feature-item h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .feature-item p { font-size: 0.875rem; color: var(--muted-foreground); }
+
+        /* === Secção: Filmes (Movies.tsx) === */
+        .movie-card-link { text-decoration: none; color: inherit; }
+        .movie-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+            cursor: pointer;
+            height: 100%;
+        }
+        .movie-card:hover { border-color: var(--primary-color); }
+        .movie-poster-container {
+            position: relative;
+            aspect-ratio: 2 / 3;
+            overflow: hidden;
+            background-color: var(--input-bg);
+        }
+        .movie-poster-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .movie-card:hover .movie-poster-img { transform: scale(1.05); }
+        .movie-poster-container .age-badge {
+            background-color: hsla(0, 0%, 10%, 0.8);
+            backdrop-filter: blur(4px);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+        }
+        .movie-info { padding: 1rem; }
+        .movie-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--foreground);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .movie-card:hover .movie-title { color: var(--primary-color); }
+        .movie-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--muted-foreground);
+            margin-bottom: 0.75rem;
+        }
+        .movie-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .movie-meta-item .bi-star-fill { color: var(--accent-color); }
+        .movie-category-badge {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--muted-foreground);
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        /* === INÍCIO: NOVOS FILTROS DE FILMES (image_f9c6cb.jpg) === */
+        .filter-bar-wrapper {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .search-bar-wrapper {
+            flex-grow: 1; /* Ocupa o espaço disponível */
+            position: relative;
+        }
+        .search-bar-wrapper .bi-search {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted-foreground);
+        }
+        .search-bar-new {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--foreground);
+            border-radius: 8px;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            width: 100%;
+            height: 50px;
+        }
+        .search-bar-new::placeholder { color: var(--muted-foreground); }
+        .search-bar-new:focus {
+             background: var(--input-bg);
+             color: var(--foreground);
+             outline: none;
+             border-color: var(--primary-color);
+             box-shadow: none;
+        }
+        /* Dropdown de Categoria (Curto) */
+        .filter-dropdown-new {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--muted-foreground);
+            border-radius: 8px;
+            height: 50px;
+            width: auto; /* Tamanho automático */
+            min-width: 200px; /* Largura mínima */
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23A6A6A6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-left: 1rem;
+            padding-right: 2.5rem; /* Espaço para a seta */
+        }
+         .filter-dropdown-new:focus {
+             background: var(--input-bg);
+             color: var(--muted-foreground);
+             outline: none;
+             border-color: var(--primary-color);
+             box-shadow: none;
+        }
+        /* === FIM: NOVOS FILTROS DE FILMES === */
+
+        /* === Secção: Detalhe do Filme (MovieDetail.tsx) === */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        .detail-poster-wrapper {
+            aspect-ratio: 2 / 3;
+            position: relative;
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .detail-poster-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .detail-poster-wrapper .badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1rem;
+            padding: 0.5rem 0.75rem;
+            background-color: hsla(0, 0%, 10%, 0.8);
+            backdrop-filter: blur(4px);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+        }
+        .detail-info-card {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border-top: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+        .detail-info-card .bi-star-fill { color: var(--accent-color); }
+        .detail-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .detail-content h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .detail-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--muted-foreground);
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+        .detail-text { color: var(--foreground); line-height: 1.6; }
+        .detail-subgrid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        .session-card {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            transition: all 0.2s;
+        }
+        .session-card:hover { border-color: var(--primary-color); }
+        .session-details { flex: 1; }
+        .session-time {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .session-location {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+        }
+        .session-buy {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.5rem;
+            text-align: right;
+            width: 100%;
+        }
+        .session-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .session-button {
+            background: var(--primary-color);
+            color: var(--foreground);
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .session-button:hover { background: hsl(0, 72%, 45%); }
+
+
+        /* === Secção: Assentos (SeatSelection.tsx) === */
+        .seat-page-header { margin-bottom: 2rem; }
+        .seat-page-header h1 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .seat-page-header p { color: var(--muted-foreground); }
+        .seat-grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        .seat-map-card { padding: 1.5rem; }
+        .screen-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .screen-bar-text {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+            font-weight: 500;
+        }
+        .screen-bar-line {
+            height: 8px;
+            width: 100%;
+            background: var(--primary-color);
+            border-radius: 99px;
+            box-shadow: 0 0 20px var(--primary-color);
+        }
+        .seat-grid-map {
+            display: grid;
+            grid-template-columns: 30px repeat(12, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .seat-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--muted-foreground);
+        }
+        .seat {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 0.5rem 0.5rem 0 0;
+            border: 2px solid var(--border-color);
+            background-color: var(--card-bg);
+            transition: all 0.2s;
+            cursor: pointer;
+            padding: 0;
+        }
+        .seat:not(:disabled):hover {
+            border-color: var(--primary-color);
+            background-color: hsla(0, 72%, 51%, 0.1);
+        }
+        .seat.selected {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 20px hsla(0, 72%, 51%, 0.5);
+        }
+        .seat.selected i {
+            color: var(--foreground);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        .seat:disabled {
+            background-color: var(--muted);
+            border-color: var(--muted);
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .seat-legend {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .legend-item { display: flex; align-items: center; gap: 0.5rem; }
+        .legend-item .seat-preview {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 0.375rem 0.375rem 0 0;
+            border: 2px solid var(--border-color);
+            background-color: var(--card-bg);
+        }
+        .legend-item .seat-preview.selected { background-color: var(--primary-color); border-color: var(--primary-color); }
+        .legend-item .seat-preview.occupied { background-color: var(--muted); border-color: var(--muted); opacity: 0.5; }
+        .legend-item span { font-size: 0.875rem; color: var(--muted-foreground); }
+
+        .summary-card { padding: 1.5rem; position: sticky; top: 80px; }
+        .summary-card h3 { font-weight: 600; font-size: 1.125rem; }
+        .summary-empty { text-align: center; padding: 2rem 0; }
+        .summary-empty i {
+            font-size: 3rem;
+            color: var(--muted-foreground);
+            opacity: 0.5;
+            margin-bottom: 0.75rem;
+        }
+        .summary-empty p { font-size: 0.875rem; color: var(--muted-foreground); }
+        .summary-seats-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .summary-seat-badge {
+            background-color: var(--input-bg);
+            color: var(--foreground);
+            border-color: var(--border-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .summary-seat-badge i { font-size: 0.75rem; }
+        .summary-total {
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .summary-total-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .summary-total-line span:first-child { color: var(--muted-foreground); }
+        .summary-total-line.total {
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+        .summary-total-line.total span:last-child { color: var(--primary-color); }
+        .btn-primary-custom {
+            background: var(--primary-color);
+            color: var(--foreground);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .btn-primary-custom:hover { background: hsl(0, 72%, 45%); }
+        /* Botão Laranja/Accent */
+        .btn-accent-custom {
+            background: var(--accent-color);
+            color: var(--secondary-foreground); /* Texto escuro */
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .btn-accent-custom:hover {
+            background: hsl(45, 100%, 45%); /* Amarelo mais escuro */
+        }
+
+        /* === Secção: Loja (Products) - ATUALIZADO === */
+        .product-card-grid {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .product-card-grid:hover {
+            border-color: var(--primary-color);
+        }
+        .product-icon-grid {
+            font-size: 4rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            line-height: 1;
+        }
+        .product-name-grid {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .product-price-grid {
+            font-size: 1.5rem;
+            color: var(--primary-color) !important;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+        .product-controls-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .product-controls-wrapper .btn-primary-custom {
+            padding: 0.5rem 1rem;
+            height: 38px;
+        }
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .quantity-selector button {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--foreground);
+            width: 38px;
+            height: 38px;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .quantity-selector span {
+            font-size: 1.1rem;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+            padding: 0 0.5rem;
+        }
+
+
+        /* === Secção: Carrinho (Cart) - ATUALIZADO === */
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        .cart-item-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem; /* Aumentado */
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .cart-item-info h5 {
+            font-size: 1.25rem; /* Aumentado */
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .cart-item-info .price {
+            color: var(--primary-color);
+            font-size: 1.1rem; /* Aumentado */
+            margin: 0;
+            font-weight: 600;
+        }
+        .cart-item-info .details {
+             color: var(--muted-foreground);
+             font-size: 0.8rem;
+             font-weight: 400;
+        }
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .cart-item-controls .quantity-selector {
+            margin: 0;
+        }
+        .cart-item-controls .quantity-selector button {
+            width: 42px; /* Aumentado */
+            height: 42px; /* Aumentado */
+        }
+        .cart-item-controls .quantity-selector span {
+            font-size: 1.25rem; /* Aumentado */
+            padding: 0 0.5rem;
+        }
+        .btn-icon-danger {
+            background: transparent;
+            color: var(--muted-foreground);
+            border: none;
+            font-size: 1.5rem; /* Aumentado */
+            padding: 0.5rem;
+            transition: color 0.2s;
+        }
+        .btn-icon-danger:hover {
+            color: var(--destructive);
+        }
+        .summary-card h4 { font-weight: 700; font-size: 1.5rem; }
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted-foreground);
+            margin-bottom: 1rem; /* Aumentado */
+            font-size: 1rem; /* Aumentado */
+        }
+        .summary-line span:first-child { color: var(--foreground); }
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 1.75rem; /* Aumentado */
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .text-total-price { color: var(--primary-color); }
+        .summary-card .btn-primary-custom {
+            padding: 1rem; /* Aumentado */
+            font-size: 1.1rem; /* Aumentado */
+        }
+        .summary-card .btn-link-dark {
+            padding: 1rem; /* Aumentado */
+            font-size: 1.1rem; /* Aumentado */
+        }
+        .btn-link-dark {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--muted-foreground);
+            text-decoration: none;
+            padding: 0.75rem;
+            width: 100%;
+            margin-top: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-link-dark:hover {
+            color: var(--foreground);
+            background: var(--border-color);
+        }
+        .empty-cart-container {
+            text-align: center;
+            padding: 4rem 0;
+            color: var(--muted-foreground);
+        }
+        .empty-cart-container i { font-size: 5rem; }
+
+        /* Footer */
+        .footer { background: var(--card-bg); border-top: 1px solid var(--border-color); color: var(--muted-foreground); padding: 2rem 0; margin-top: 4rem; text-align: center; }
+
+        /* === INÍCIO: ESTILOS DO TOAST === */
+        #toastContainer {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1050;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .toast-notification {
+            background-color: #222;
+            color: var(--foreground);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.4s cubic-bezier(0.21, 1.02, 0.73, 1);
+        }
+        .toast-notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .toast-notification i {
+            color: var(--muted-foreground);
+            font-size: 1.25rem;
+        }
+        /* === FIM: ESTILOS DO TOAST === */
+
+        /* Utilities */
+        .hidden { display: none !important; }
+
+        /* Media Queries (Layout) */
+        @media (min-width: 768px) { /* md: */
+            .features-grid { grid-template-columns: repeat(3, 1fr); }
+            .session-card { flex-direction: row; align-items: center; }
+            .session-buy { text-align: right; width: auto; }
+            .detail-subgrid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 992px) { /* lg: (Bootstrap LG) */
+            .detail-grid { grid-template-columns: 300px 1fr; gap: 3rem; }
+            .detail-poster-col { grid-column: span 1 / span 1; }
+            .detail-content-col { grid-column: span 1 / span 1; }
+            .seat-grid-layout { grid-template-columns: 1fr 400px; }
+            .cart-layout {
+                grid-template-columns: 2fr 1fr;
+                gap: 2rem;
+            }
+        }
+        @media (max-width: 991px) { /* Breakpoint LG */
+            .summary-card { position: static; margin-top: 2rem; }
+            .navbar-collapse {
+                background: var(--card-bg);
+                border: 1px solid var(--border-color);
+                border-top: none;
+                padding: 1rem;
+                margin-top: 0.5rem;
+                border-radius: 0 0 8px 8px;
+            }
+        }
+        @media (max-width: 768px) {
+            .hero { padding: 2rem 1rem; text-align: center; min-height: 50vh; }
+            .hero h1 { font-size: 2.5rem; }
+            .hero .container { padding: 0 1rem; }
+            .hero p { max-width: 100%; }
+            .home-section-header { padding: 0 1rem 1rem 1rem; }
+            #homeEmCartaz { padding: 0 1rem 3rem 1rem; }
+            .seat-grid-map { grid-template-columns: 20px repeat(12, 1fr); gap: 4px; }
+            .cart-item-card { flex-direction: column; align-items: stretch; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#homePage" onclick="showSection('homePage')">
+                <i class="bi bi-ticket-detailed-fill logo-icon"></i>
+                <span>CinemaHub</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 d-flex align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#moviesPage" onclick="showSection('moviesPage')">Filmes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#storePage" onclick="showSection('storePage')">
+                            <i class="bi bi-cup-straw"></i> <span>Loja</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-cart" onclick="showSection('cartPage')">
+                            <i class="bi bi-cart3"></i>
+                            <span class="cart-badge hidden" id="cartCount">0</span>
+                        </button>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link btn-user-profile dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i>
+                            <span>João</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                            <li><h6 class="dropdown-header">Minha Conta</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person-fill"></i>Perfil</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-clock-history"></i>Histórico</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-right"></i>Sair</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+
+        <div id="homePage">
+            <section class="hero">
+                <div class="container hero-content">
+                    <h1>A Magia do Cinema na Palma da Sua Mão</h1>
+                    <p>
+                        Reserve seus ingressos online, escolha seus assentos preferidos e aproveite a melhor experiência cinematográfica.
+                    </p>
+                    <div class="d-flex gap-4 flex-wrap">
+                        <button class="btn btn-primary-custom" onclick="showSection('moviesPage')">
+                            <i class="bi bi-ticket-perforated me-2"></i>Comprar Ingressos
+                        </button>
+                        <button class="btn btn-secondary-custom" onclick="showSection('moviesPage')">
+                            <i class="bi bi-play-circle me-2"></i>Ver Filmes
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="container" id="homeEmCartaz">
+                <div class="d-flex justify-content-between align-items-end home-section-header">
+                    <div>
+                        <h2 class="section-title-home">Em Cartaz</h2>
+                        <p class="section-subtitle-home">Os melhores filmes do momento</p>
+                    </div>
+                    <button class="see-all-link" onclick="showSection('moviesPage')">
+                        Ver Todos <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+                <div class="row px-lg-4" id="homeMoviesGrid">
+                    </div>
+            </section>
+
+            <section class="features-section">
+                <div class="container">
+                    <div class="features-grid">
+                        <div class="feature-item">
+                            <div class="feature-icon-wrapper">
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                            <h3>Melhores Salas</h3>
+                            <p class="text-muted-foreground text-sm">
+                                Tecnologia de ponta em som e imagem
+                            </p>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon-wrapper">
+                                <i class="bi bi-cup-straw"></i>
+                            </div>
+                            <h3>Loja de Produtos</h3>
+                            <p class="text-muted-foreground text-sm">
+                                Pipoca, bebidas e snacks para sua sessão
+                            </p>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon-wrapper">
+                                <i class="bi bi-ticket-detailed"></i>
+                            </div>
+                            <h3>Reserva Fácil</h3>
+                            <p class="text-muted-foreground text-sm">
+                                Escolha seus assentos em poucos cliques
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="moviesPage" class="hidden">
+            <div class="section container-fluid px-3 px-md-5">
+                <h1 class="section-title">Filmes em Cartaz</h1>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+                    <div class="search-container flex-grow-1 w-100">
+                        <i class="bi bi-search input-group-icon"></i>
+                        <input type="text" id="movieSearchNew" class="search-bar-new" placeholder="Buscar Filmes..." onkeyup="filterMovies()">
+                    </div>
+                    <select id="categoryFilterNew" class="form-select filter-dropdown-new" onchange="filterMovies()">
+                        <option value="all">Todas Categorias</option>
+                        <option value="Ficção Científica">Ficção Científica</option>
+                        <option value="Suspense">Suspense</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Ação">Ação</option>
+                        <option value="Drama">Drama</option>
+                        <option value="Animação">Animação</option>
+                    </select>
+                </div>
+                <hr style="border-color: var(--border-color); margin-top: 0; margin-bottom: 2rem;">
+            </div>
+
+            <div class="container-fluid px-3 px-md-5">
+                <div class="row" id="moviesGrid">
+                    </div>
+                <div id="noMoviesFound" class="text-center py-5 hidden">
+                    <p class="text-muted-foreground">Nenhum filme encontrado.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="movieDetailPage" class="hidden">
+             <div class="container section">
+                <div class="detail-grid">
+                    <div class="detail-poster-col">
+                        <div class="card detail-poster-card">
+                            <div class="detail-poster-wrapper">
+                                <img src="" alt="" id="detail-poster-img" class="detail-poster-img" />
+                                <span class="badge" id="detail-age-badge"></span>
+                            </div>
+                            <div class="detail-info-card">
+                                <div class="d-flex align-items-center gap-2 fs-5">
+                                    <i class="bi bi-star-fill"></i>
+                                    <span class="fw-semibold" id="detail-rating"></span>
+                                    <span class="text-muted-foreground">/ 5.0</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 text-muted-foreground">
+                                    <i class="bi bi-clock"></i>
+                                    <span id="detail-duration"></span>
+                                </div>
+                                <span class="badge badge-outline" id="detail-category"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-content-col">
+                        <div class="detail-content">
+                            <div>
+                                <h1 id="detail-title"></h1>
+                                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                    <div>
+                                        <h3 class="detail-label">SINOPSE</h3>
+                                        <p class="detail-text" id="detail-synopsis"></p>
+                                    </div>
+                                    <div class="detail-subgrid">
+                                        <div>
+                                            <h3 class="detail-label">DIRETOR</h3>
+                                            <p id="detail-director"></p>
+                                        </div>
+                                        <div>
+                                            <h3 class="detail-label">ELENCO</h3>
+                                            <p id="detail-cast"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h2 class="fs-2 fw-bold mb-4">Sessões Disponíveis</h2>
+                                <div id="detail-sessions-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="seatSelectionPage" class="section container hidden">
+            <div class="seat-page-header">
+                <h1 id="seat-page-title"></h1>
+                <p id="seat-page-info" class="text-muted-foreground"></p>
+            </div>
+            <div class="seat-grid-layout">
+                <div class="seat-map-col">
+                    <div class="card seat-map-card">
+                        <div class="screen-bar">
+                            <span class="screen-bar-text"><i class="bi bi-display"></i> TELA</span>
+                            <div class="screen-bar-line"></div>
+                        </div>
+                        <div id="seatGrid" class="seat-grid-map">
+                            </div>
+                        <div class="seat-legend">
+                            <div class="legend-item">
+                                <div class="seat-preview"></div>
+                                <span>Disponível</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="seat-preview selected"></div>
+                                <span>Selecionado</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="seat-preview occupied"></div>
+                                <span>Ocupado</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="seat-summary-col">
+                    <div class="card summary-card">
+                        <h3 class="fw-semibold fs-5 mb-4">Resumo</h3>
+                        <div id="summaryEmpty" class="summary-empty">
+                            <i class="bi bi-person-circle"></i>
+                            <p class="text-sm text-muted-foreground">
+                                Selecione seus assentos no mapa
+                            </p>
+                        </div>
+                        <div id="summaryActive" class="hidden">
+                            <div>
+                                <p class="text-sm text-muted-foreground mb-2">Assentos Selecionados:</p>
+                                <div id="summarySeatsList" class="summary-seats-list">
+                                    </div>
+                            </div>
+                            <div class="summary-total">
+                                <div class="summary-total-line">
+                                    <span class="text-muted-foreground" id="summaryQuantity">Ingressos (0)</span>
+                                    <span id="summarySubtotal">€0.00</span>
+                                </div>
+                                <div class="summary-total-line total">
+                                    <span>Total</span>
+                                    <span class="text-primary" id="summaryTotal">€0.00</span>
+                                </div>
+                            </div>
+                            <button id="confirmSeatsBtn" class="btn btn-primary-custom w-100 mt-3" onclick="addTicketsToCartFromPage()">
+                                Confirmar Seleção
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="storePage" class="section container-fluid hidden px-3 px-md-5">
+            <h1 class="section-title">Loja de Produtos</h1>
+            <div id="productsGrid" class="row">
+                </div>
+        </div>
+
+        <div id="cartPage" class="section container-fluid hidden px-3 px-md-5">
+            <h1 class="section-title">Carrinho</h1>
+            <div class="cart-layout">
+                <div id="cartItemsColumn" class="seat-map-col d-flex flex-column gap-3">
+                    </div>
+                <div id="cartSummaryColumn" class="seat-summary-col">
+                    </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p class="text-center mb-0">&copy; 2025 CinemaHub. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <div id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // === DADOS MOCK (Simulando o Django) ===
+        const MOCK_MOVIES = [
+            { id: 1, titulo: "Aventura nas Estrelas", categoria: "Ficção Científica", classificacao: "M/12", ranking: 4.8, duracao: 142, sinopse: "Uma emocionante jornada através do cosmos...", diretor: "John Smith", elenco: "Maria Silva, João Santos, Ana Costa", imageUrl: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1000" },
+            { id: 2, titulo: "Mistério na Mansão", categoria: "Suspense", classificacao: "M/14", ranking: 4.5, duracao: 118, sinopse: "Um detetive brilhante é chamado...", diretor: "Jane Doe", elenco: "Carlos Pereira, Sofia Alves", imageUrl: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=1000" },
+            { id: 3, titulo: "Comédia Romântica", categoria: "Romance", classificacao: "L", ranking: 4.3, duracao: 95, sinopse: "Dois estranhos encontram-se em Paris...", diretor: "Pierre Dubois", elenco: "Ana Martins, Rui Gomes", imageUrl: "https://images.unsplash.com/photo-1513106580091-1d82408b8cd6?q=80&w=1000" },
+            { id: 4, titulo: "Ação Total", categoria: "Ação", classificacao: "M/16", ranking: 4.6, duracao: 128, sinopse: "Um agente secreto tem de impedir...", diretor: "Michael Bay", elenco: "John Action, Silva Stalone", imageUrl: "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=1000" },
+            { id: 5, titulo: "Drama Histórico", categoria: "Drama", classificacao: "M/14", ranking: 4.7, duracao: 156, sinopse: "Baseado em factos reais...", diretor: "Maria Almeida", elenco: "Diogo Costa, Beatriz Lima", imageUrl: "https://images.unsplash.com/photo-1594908900066-3f47337549d8?q=80&w=1000" },
+            { id: 6, titulo: "Animação Encantada", categoria: "Animação", classificacao: "L", ranking: 4.9, duracao: 98, sinopse: "Uma jovem princesa embarca...", diretor: "Walt Disney", elenco: "Vozes de Inês Brasil, Bruno Nogueira", imageUrl: "https://images.unsplash.com/photo-1616530940355-351fabd9524b?q=80&w=1000" }
+        ];
+        const MOCK_SESSIONS = [
+            { id: 1, movieId: 1, cinema: "Cinema Centro", sala: "Sala 1", horario: "14:00", data: "2025-11-15", preco: 25.00 },
+            { id: 2, movieId: 1, cinema: "Cinema Centro", sala: "Sala 2", horario: "16:30", data: "2025-11-15", preco: 25.00 },
+            { id: 3, movieId: 1, cinema: "Cinema Norte", sala: "Sala 3", horario: "19:00", data: "2025-11-15", preco: 30.00 },
+            { id: 4, movieId: 1, cinema: "Cinema Centro", sala: "Sala 1", horario: "21:30", data: "2025-11-15", preco: 30.00 },
+            { id: 5, movieId: 2, cinema: "Cinema Porto", sala: "Sala 1", horario: "15:00", data: "2025-11-15", preco: 15.00 },
+            { id: 6, movieId: 2, cinema: "Cinema Norte", sala: "Sala 4", horario: "18:00", data: "2025-11-15", preco: 15.00 },
+            { id: 7, movieId: 3, cinema: "Cinema Centro", sala: "Sala 5", horario: "17:00", data: "2025-11-15", preco: 12.00 },
+            { id: 8, movieId: 4, cinema: "Cinema Norte", sala: "Sala 1", horario: "22:00", data: "2025-11-15", preco: 20.00 },
+            { id: 9, movieId: 5, cinema: "Cinema Centro", sala: "Sala 3", horario: "14:00", data: "2025-11-15", preco: 12.00 },
+            { id: 10, movieId: 6, cinema: "Cinema Centro", sala: "Sala IMAX", horario: "11:00", data: "2025-11-15", preco: 18.00 },
+        ];
+        const MOCK_PRODUCTS = [
+            { id: 101, name: "Pipoca Pequena", price: 5.00, icon: "🍿" },
+            { id: 102, name: "Pipoca Média", price: 7.00, icon: "🍿" },
+            { id: 103, name: "Pipoca Grande", price: 9.00, icon: "🍿" },
+            { id: 104, name: "Refrigerante 500ml", price: 4.50, icon: "🥤" },
+            { id: 105, name: "Refrigerante 1L", price: 7.00, icon: "🥤" },
+            { id: 106, name: "Água Mineral", price: 3.00, icon: "💧" }
+        ];
+
+        // === GESTÃO DO CARRINHO (LocalStorage) ===
+        // ATUALIZADO: Lógica de não-agrupamento
+        let cart = JSON.parse(localStorage.getItem('cinemaCart')) || [];
+
+        function saveCart() {
+            localStorage.setItem('cinemaCart', JSON.stringify(cart));
+            updateCartCount();
+        }
+
+        // ATUALIZADO: Conta o NÚMERO DE LINHAS (cart.length)
+        function updateCartCount() {
+            const badge = document.getElementById('cartCount');
+            if (!badge) return;
+            const totalItems = cart.length;
+            if (totalItems > 0) {
+                badge.textContent = totalItems;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // === GESTÃO DO ESTADO ===
+        let currentMovie = null;
+        let currentSession = null;
+        let selectedSeats = [];
+
+        // === NAVEGAÇÃO (Router) ===
+        const pageIds = ['homePage', 'moviesPage', 'storePage', 'cartPage', 'movieDetailPage', 'seatSelectionPage'];
+
+        function showSection(pageId) {
+            pageIds.forEach(id => {
+                const page = document.getElementById(id);
+                if (page) page.classList.add('hidden');
+            });
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+            }
+            if (pageId !== 'seatSelectionPage') {
+                currentMovie = null;
+                currentSession = null;
+                selectedSeats = [];
+            }
+            if (pageId === 'homePage') renderHomeMovies();
+            else if (pageId === 'moviesPage') renderMovies();
+            else if (pageId === 'storePage') renderProducts();
+            else if (pageId === 'cartPage') renderCartPage();
+            window.scrollTo(0, 0);
+        }
+
+        // === PÁGINA: Home (Render ATUALIZADO) ===
+        function renderHomeMovies() {
+            const grid = document.getElementById('homeMoviesGrid');
+            const homeMovies = MOCK_MOVIES.slice(0, 4);
+            grid.innerHTML = homeMovies.map(movie => `
+                <div class="col-6 col-md-4 col-lg-3 mb-4" data-category="${movie.categoria}" data-title="${movie.titulo.toLowerCase()}">
+                    <div class="movie-card" onclick="showMovieDetailsPage(${movie.id})">
+                        <div class="movie-poster-container">
+                            <img src="${movie.imageUrl}" alt="${movie.titulo}" class="movie-poster-img" />
+                            <span class="badge age-badge">${movie.classificacao}</span>
+                        </div>
+                        <div class="movie-info">
+                            <h3 class="movie-title">${movie.titulo}</h3>
+                            <div class="movie-meta">
+                                <span class="movie-meta-item">
+                                    <i class="bi bi-star-fill"></i> ${movie.ranking.toFixed(1)}
+                                </span>
+                                <span class="movie-meta-item">
+                                    <i class="bi bi-clock"></i> ${movie.duracao}min
+                                </span>
+                            </div>
+                            <span class="badge badge-outline movie-category-badge">${movie.categoria}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // === PÁGINA: Filmes (Render e Filtros) ===
+        function renderMovies() {
+            const grid = document.getElementById('moviesGrid');
+            grid.innerHTML = MOCK_MOVIES.map(movie => `
+                <div class="col-6 col-md-4 col-lg-3 mb-4" data-category="${movie.categoria}" data-title="${movie.titulo.toLowerCase()}">
+                    <div class="movie-card" onclick="showMovieDetailsPage(${movie.id})">
+                        <div class="movie-poster-container">
+                            <img src="${movie.imageUrl}" alt="${movie.titulo}" class="movie-poster-img" />
+                            <span class="badge age-badge">${movie.classificacao}</span>
+                        </div>
+                        <div class="movie-info">
+                            <h3 class="movie-title">${movie.titulo}</h3>
+                            <div class="movie-meta">
+                                <span class="movie-meta-item">
+                                    <i class="bi bi-star-fill"></i> ${movie.ranking.toFixed(1)}
+                                </span>
+                                <span class="movie-meta-item">
+                                    <i class="bi bi-clock"></i> ${movie.duracao}min
+                                </span>
+                            </div>
+                            <span class="badge badge-outline movie-category-badge">${movie.categoria}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            filterMovies();
+        }
+
+        function filterMovies() {
+            const search = document.getElementById('movieSearchNew').value.toLowerCase();
+            const category = document.getElementById('categoryFilterNew').value;
+            const cards = document.querySelectorAll('#moviesGrid > div');
+            let foundMovies = false;
+            cards.forEach(card => {
+                const title = card.dataset.title;
+                const cardCategory = card.dataset.category;
+                const matchesSearch = title.includes(search);
+                const matchesCategory = (category === 'all' || cardCategory === category);
+                if (matchesSearch && matchesCategory) {
+                    card.style.display = 'block';
+                    foundMovies = true;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            document.getElementById('noMoviesFound').style.display = foundMovies ? 'none' : 'block';
+        }
+
+        // === PÁGINA: Detalhe do Filme (Render) ===
+        function showMovieDetailsPage(movieId) {
+            currentMovie = MOCK_MOVIES.find(m => m.id === movieId);
+            if (!currentMovie) return;
+
+            document.getElementById('detail-poster-img').src = currentMovie.imageUrl;
+            document.getElementById('detail-age-badge').textContent = currentMovie.classificacao;
+            document.getElementById('detail-rating').textContent = currentMovie.ranking.toFixed(1);
+            document.getElementById('detail-duration').textContent = `${currentMovie.duracao} minutos`;
+            document.getElementById('detail-category').textContent = currentMovie.categoria;
+            document.getElementById('detail-title').textContent = currentMovie.titulo;
+            document.getElementById('detail-synopsis').textContent = currentMovie.sinopse;
+            document.getElementById('detail-director').textContent = currentMovie.diretor;
+            document.getElementById('detail-cast').textContent = currentMovie.elenco;
+
+            const movieSessions = MOCK_SESSIONS.filter(s => s.movieId === movieId);
+            const sessionsList = document.getElementById('detail-sessions-list');
+            if (movieSessions.length > 0) {
+                sessionsList.innerHTML = movieSessions.map(session => `
+                    <div class="card session-card">
+                        <div class="session-details">
+                            <div class="session-time">
+                                <i class="bi bi-calendar"></i>
+                                <span>${session.horario}</span>
+                            </div>
+                            <div class="session-location">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                <span>${session.cinema} - ${session.sala}</span>
+                            </div>
+                        </div>
+                        <div class="session-buy">
+                            <p class="session-price">€${session.preco.toFixed(2)}</p>
+                            <button class="session-button" onclick="showSeatSelection(${session.id})">
+                                Selecionar Assentos
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                sessionsList.innerHTML = '<p class="text-muted-foreground">Não existem sessões disponíveis para este filme.</p>';
+            }
+            showSection('movieDetailPage');
+        }
+
+        // === PÁGINA: Assentos (Render e Lógica) ===
+        function showSeatSelection(sessionId) {
+            currentSession = MOCK_SESSIONS.find(s => s.id === sessionId);
+            if (!currentSession) return;
+            currentMovie = MOCK_MOVIES.find(m => m.id === currentSession.movieId);
+            selectedSeats = [];
+            document.getElementById('seat-page-title').textContent = currentMovie.titulo;
+            document.getElementById('seat-page-info').textContent =
+                `${currentSession.cinema} - ${currentSession.sala} às ${currentSession.horario}`;
+            generateSeats();
+            updateSeatSummary();
+            showSection('seatSelectionPage');
+        }
+
+        function generateSeats() {
+            const grid = document.getElementById('seatGrid');
+            grid.innerHTML = '';
+            const rowChars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+            for (const row of rowChars) {
+                const label = document.createElement('div');
+                label.className = 'seat-label';
+                label.textContent = row;
+                grid.appendChild(label);
+                for (let num = 1; num <= 12; num++) {
+                    const seatId = `${row}${num}`;
+                    // ATUALIZADO: Verifica se o assento já está no carrinho
+                    const isOccupiedByCart = cart.some(item =>
+                        item.type === 'ticket' &&
+                        item.cartItemId.startsWith(`${currentSession.id}-`) && // Verifica se é da mesma sessão
+                        item.details.includes(`Assento ${seatId}`) // Verifica se é este assento
+                    );
+                    const isRandomOccupied = Math.random() > 0.7;
+
+                    const seat = document.createElement('button');
+                    seat.className = 'seat';
+                    seat.id = `seat-${seatId}`;
+                    seat.dataset.seatId = seatId;
+                    if (isOccupiedByCart || isRandomOccupied) {
+                        seat.classList.add('occupied');
+                        seat.disabled = true;
+                        seat.title = `${seatId} - Ocupado`;
+                    } else {
+                        seat.onclick = () => toggleSeat(seatId);
+                        seat.title = `${seatId} - Disponível`;
+                    }
+                    grid.appendChild(seat);
+                }
+            }
+        }
+
+        function toggleSeat(seatId) {
+            const seatEl = document.getElementById(`seat-${seatId}`);
+            if (seatEl.classList.contains('occupied')) return;
+            if (selectedSeats.includes(seatId)) {
+                selectedSeats = selectedSeats.filter(s => s !== seatId);
+                seatEl.classList.remove('selected');
+                seatEl.innerHTML = '';
+            } else {
+                selectedSeats.push(seatId);
+                seatEl.classList.add('selected');
+                seatEl.innerHTML = '<i class="bi bi-person-fill"></i>';
+            }
+            updateSeatSummary();
+        }
+
+        function updateSeatSummary() {
+            const emptyEl = document.getElementById('summaryEmpty');
+            const activeEl = document.getElementById('summaryActive');
+            if (selectedSeats.length === 0) {
+                emptyEl.classList.remove('hidden');
+                activeEl.classList.add('hidden');
+            } else {
+                emptyEl.classList.add('hidden');
+                activeEl.classList.remove('hidden');
+                const listEl = document.getElementById('summarySeatsList');
+                listEl.innerHTML = selectedSeats.map(seatId => `
+                    <span class="badge summary-seat-badge" onclick="toggleSeat('${seatId}')">
+                        ${seatId} <i class="bi bi-x"></i>
+                    </span>
+                `).join('');
+                const total = selectedSeats.length * currentSession.preco;
+                document.getElementById('summaryQuantity').textContent = `Ingressos (${selectedSeats.length})`;
+                document.getElementById('summarySubtotal').textContent = `€${total.toFixed(2)}`;
+                document.getElementById('summaryTotal').textContent = `€${total.toFixed(2)}`;
+            }
+        }
+
+        // ATUALIZADO: Adiciona CADA bilhete como um item separado
+        function addTicketsToCartFromPage() {
+            if (selectedSeats.length === 0) {
+                showToast("Selecione pelo menos um assento");
+                return;
+            }
+            selectedSeats.forEach(seatId => {
+                cart.push({
+                    type: 'ticket',
+                    cartItemId: `${currentSession.id}-${seatId}`, // ID único por assento
+                    name: `${currentMovie.titulo}`,
+                    price: currentSession.preco,
+                    quantity: 1, // Quantidade é sempre 1 por linha
+                    details: `${currentSession.cinema} - ${currentSession.sala} às ${currentSession.horario} - Assento ${seatId}`
+                });
+            });
+            saveCart();
+            showToast(`${selectedSeats.length} ingresso(s) adicionado(s) ao carrinho`);
+            showSection('cartPage');
+        }
+
+        // === PÁGINA: Loja (Render e Lógica ATUALIZADOS) ===
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            if (!grid) return;
+
+            grid.innerHTML = MOCK_PRODUCTS.map(product => `
+                <div class="col-md-6 col-lg-4">
+                    <div class="product-card-grid">
+                        <div>
+                            <div class="product-icon-grid">${product.icon}</div>
+                            <h3 class="product-name-grid">${product.name}</h3>
+                            <p class="product-price-grid">€${product.price.toFixed(2)}</p>
+                        </div>
+                        <div class="product-controls-wrapper">
+                            <div class="quantity-selector">
+                                <button class="btn-quantity" onclick="updateProductQuantity('prod-qty-${product.id}', -1)">-</button>
+                                <span id="prod-qty-${product.id}">1</span>
+                                <button class="btn-quantity" onclick="updateProductQuantity('prod-qty-${product.id}', 1)">+</button>
+                            </div>
+                            <button class="btn btn-primary-custom" onclick="addProductToCart(${product.id}, 'prod-qty-${product.id}')">
+                                Adicionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.updateProductQuantity = (elementId, change) => {
+            const qtyEl = document.getElementById(elementId);
+            let qty = parseInt(qtyEl.textContent);
+            qty += change;
+            if (qty < 1) qty = 1;
+            qtyEl.textContent = qty;
+        }
+
+        // ATUALIZADO: Adiciona como um novo item, não agrupa
+        window.addProductToCart = (productId, qtyElementId) => {
+            const product = MOCK_PRODUCTS.find(p => p.id === productId);
+            const qtyEl = document.getElementById(qtyElementId);
+            const quantity = parseInt(qtyEl.textContent);
+
+            cart.push({
+                type: 'product',
+                id: product.id,
+                cartItemId: `${product.id}-${Date.now()}`, // ID único para o item do carrinho
+                name: product.name,
+                price: product.price,
+                icon: product.icon,
+                quantity: quantity,
+            });
+
+            saveCart();
+            qtyEl.textContent = '1';
+            showToast(`${quantity}x ${product.name} adicionado(s) ao carrinho`);
+        }
+
+        // === PÁGINA: Carrinho (Render e Lógica ATUALIZADOS) ===
+        function renderCartPage() {
+            const itemsCol = document.getElementById('cartItemsColumn');
+            const summaryCol = document.getElementById('cartSummaryColumn');
+            if (!itemsCol || !summaryCol) return;
+
+            if (cart.length === 0) {
+                itemsCol.innerHTML = `
+                    <div class="empty-cart-container card">
+                        <i class="bi bi-cart-x"></i>
+                        <h3 style="font-size: 1.5rem; margin-top: 1rem;">Carrinho Vazio</h3>
+                        <p>Adicione filmes ou produtos ao seu carrinho</p>
+                    </div>`;
+                summaryCol.innerHTML = '<div class="card summary-card"><h4 class="mb-3">Resumo</h4><p class="text-muted-foreground">Seu carrinho está vazio.</p></div>';
+                return;
+            }
+
+            let itemsHtml = '';
+            let summaryItemsHtml = '';
+            let total = 0;
+
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+
+                const qtySelectorDisabled = item.type === 'ticket' ? 'disabled' : '';
+
+                itemsHtml += `
+                    <div class="cart-item-card">
+                        <div class="cart-item-info">
+                            <h5>${item.type === 'ticket' ? '' : item.icon} ${item.name}</h5>
+                            ${item.type === 'ticket' ? `<p class="details">${item.details}</p>` : ''}
+                            <p class="price">€${item.price.toFixed(2)}</p>
+                        </div>
+                        <div class="cart-item-controls">
+                            <div class="quantity-selector">
+                                <button class="btn-quantity" onclick="updateCartQuantity(${index}, -1)" ${qtySelectorDisabled}>-</button>
+                                <span style="font-weight: 600; font-size: 1.25rem; padding: 0 0.5rem;">${item.quantity}</span>
+                                <button class="btn-quantity" onclick="updateCartQuantity(${index}, 1)" ${qtySelectorDisabled}>+</button>
+                            </div>
+                            <button class="btn-icon-danger" onclick="removeFromCart(${index})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                summaryItemsHtml += `
+                    <div class="summary-line">
+                        <span>${item.quantity}x ${item.name} ${item.type === 'ticket' ? `(${item.details.split('Assento ')[1]})` : ''}</span>
+                        <span>€${itemTotal.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+            itemsCol.innerHTML = itemsHtml;
+
+            summaryCol.innerHTML = `
+                <div class="card summary-card">
+                    <h4>Resumo</h4>
+                    <div style="margin-top: 1rem;">
+                        ${summaryItemsHtml}
+                    </div>
+                    <div class="summary-total">
+                        <span>Total</span>
+                        <span class="text-total-price">€${total.toFixed(2)}</span>
+                    </div>
+                    <button class="btn btn-primary-custom w-100" style="margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem;" onclick="checkout()">
+                        Finalizar Compra
+                    </button>
+                    <button class="btn btn-link-dark" style="padding: 1rem; font-size: 1.1rem;" onclick="clearCart()">
+                        Limpar Carrinho
+                    </button>
+                </div>
+            `;
+        }
+
+        window.removeFromCart = (index) => {
+            cart.splice(index, 1);
+            saveCart();
+            renderCartPage();
+        }
+
+        window.updateCartQuantity = (index, change) => {
+            if (cart[index].type === 'product') {
+                cart[index].quantity += change;
+                if (cart[index].quantity <= 0) {
+                    cart.splice(index, 1);
+                }
+                saveCart();
+                renderCartPage();
+            }
+        }
+
+        window.clearCart = () => {
+            if (confirm('Tem a certeza que quer limpar o carrinho?')) {
+                cart = [];
+                saveCart();
+                renderCartPage();
+            }
+        }
+
+        window.checkout = () => {
+            if (cart.length === 0) {
+                showToast("Seu carrinho está vazio!");
+                return;
+            }
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            showToast("Compra finalizada com sucesso!");
+            cart = [];
+            saveCart();
+            showSection('homePage');
+        }
+
+        // === NOVA FUNÇÃO: Toast Notification ===
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.innerHTML = `<i class="bi bi-check-circle-fill"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 500);
+            }, 3000);
+        }
+
+        // === INICIALIZAÇÃO ===
+        document.addEventListener('DOMContentLoaded', function() {
+            showSection('homePage');
+            updateCartCount();
+
+            document.querySelectorAll('.navbar-brand, .nav-link:not(.dropdown-toggle), .btn-cart').forEach(link => {
+                let targetPageId = '';
+
+                if (link.classList.contains('btn-cart')) {
+                    targetPageId = 'cartPage';
+                } else {
+                    const href = link.getAttribute('href');
+                    if (href && href.startsWith('#')) {
+                        targetPageId = href.substring(1);
+                    }
+                }
+
+                if (targetPageId) {
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        const navbarCollapse = document.getElementById('navbarNav');
+                        if (navbarCollapse.classList.contains('show')) {
+                            const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse) || new bootstrap.Collapse(navbarCollapse, { toggle: false });
+                            bsCollapse.hide();
+                        }
+                        showSection(targetPageId);
+                    };
+                }
+            });
+        });
+    </script>
+    </body>
+</html>
