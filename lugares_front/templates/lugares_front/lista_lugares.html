@@ -15,6 +15,7 @@
                     <th>Lugarnumero</th>
                     <th>Tipolugar</th>
                     <th>Estadolugar</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -26,6 +27,10 @@
                     <td>{{ lugar.numero }}</td>
                     <td>{{ lugar.tipolugar }}</td>
                     <td>{{ lugar.estadolugar }}</td>
+                    <td>
+                        <a href="{% url 'editar_lugar' lugar.lugarid %}" class="btn btn-warning btn-sm">Editar</a>
+                        <a href="{% url 'remover_lugar' lugar.lugarid %}" class="btn btn-danger btn-sm">Remover</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
