@@ -1,189 +1,170 @@
 import pytest
 from django.db import connections
+from datetime import datetime
+
+pytestmark = pytest.mark.django_db(transaction=True)
+
+# ============================================================
+#  TESTES AOS PROCEDIMENTOS DO SISTEMA DE CINEMA
+# ============================================================
 
 
-# ==============================================================
-#  TESTES AOS PROCEDIMENTOS CRUD DO SISTEMA DE CINEMA
-#  (utilizam transações BEGIN / ROLLBACK para não persistir dados)
-# ==============================================================
-
-
-# 1️⃣ Inserir Filme
-@pytest.mark.django_db(transaction=True)
-def test_inserir_filme_ok():
+def test_inserir_filme():
     cur = connections['default'].cursor()
     cur.execute("BEGIN;")
-    cur.execute("""
-        CALL inserir_filme(
-            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-        );
-    """, [
-        1,  # categoriaid
-        1,  # cinemaid
-        'Filme Teste Pytest',
-        '2025-01-01',
-        120,
-        'Produtora X',
-        '2025-12-31',
-        'PT',
-        'Sinopse teste',
-        1,  # classificacaoid
-        0.0
-    ])
-    cur.execute("SELECT COUNT(*) FROM filmes WHERE titulo = %s;", ['Filme Teste Pytest'])
-    count = cur.fetchone()[0]
-    assert count == 1, "Falha ao inserir filme"
-    cur.execute("ROLLBACK;")
+    try:
+        titulo = f"Filme Teste {datetime.now().strftime('%H%M%S')}"
+
+        cur.execute("""
+            CALL inserir_filme(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """, [
+            1, 1, titulo,
+            '2025-01-01', 120, 'Produtora X',
+            '2025-12-31', 'PT', 'Sinopse de teste',
+            1, 4.5
+        ])
+
+        cur.execute("SELECT COUNT(*) FROM filmes WHERE titulo = %s;", [titulo])
+        count = cur.fetchone()[0]
+        assert count == 1, "O filme não foi inserido corretamente."
+        print("SUCESSO: o procedimento inserir_filme executou corretamente.")
+    except Exception as e:
+        pytest.fail(f"Falha ao executar inserir_filme. Detalhes: {e}")
+    finally:
+        cur.execute("ROLLBACK;")
 
 
-# 2️⃣ Inserir Sessão
-@pytest.mark.django_db(transaction=True)
-def test_inserir_sessao_ok():
+def test_inserir_sessao():
     cur = connections['default'].cursor()
     cur.execute("BEGIN;")
-    cur.execute("""
-        CALL inserir_sessao(
-            %s, %s, %s, %s, %s, %s, %s
-        );
-    """, [
-        1,  # salaid
-        1,  # filmeid
-        '2025-11-10 15:00:00',
-        '2025-11-10 17:00:00',
-        '2D',
-        'Agendada',
-        10.00
-    ])
-    cur.execute("""
-        SELECT COUNT(*) FROM sessoes
-        WHERE salaid = %s AND filmeid = %s
-          AND inicio = %s;
-    """, [1, 1, '2025-11-10 15:00:00'])
-    count = cur.fetchone()[0]
-    assert count == 1, "Falha ao inserir sessão"
-    cur.execute("ROLLBACK;")
+    try:
+        inicio = '2025-11-10 15:00:00'
+        fim = '2025-11-10 17:00:00'
+
+        cur.execute("""
+            CALL inserir_sessao(%s, %s, %s, %s, %s, %s, %s);
+        """, [1, 1, inicio, fim, '2D', 'Agendada', 9.50])
+
+        cur.execute("""
+            SELECT COUNT(*) FROM sessoes
+            WHERE salaid = %s AND filmeid = %s AND inicio = %s;
+        """, [1, 1, inicio])
+        count = cur.fetchone()[0]
+        assert count == 1, "A sessão não foi criada corretamente."
+        print("SUCESSO: o procedimento inserir_sessao executou corretamente.")
+    except Exception as e:
+        pytest.fail(f"Falha ao executar inserir_sessao. Detalhes: {e}")
+    finally:
+        cur.execute("ROLLBACK;")
 
 
-# 3️⃣ Inserir Produto
-@pytest.mark.django_db(transaction=True)
-def test_inserir_produto_ok():
+def test_inserir_produto():
     cur = connections['default'].cursor()
     cur.execute("BEGIN;")
-    cur.execute("CALL inserir_produto(%s, %s, %s, %s);", [
-        'Produto Teste', 9.99, 100, True
-    ])
-    cur.execute("SELECT COUNT(*) FROM produtos WHERE nomeproduto = %s;", ['Produto Teste'])
-    count = cur.fetchone()[0]
-    assert count == 1, "Falha ao inserir produto"
-    cur.execute("ROLLBACK;")
+    try:
+        nome = f"Produto Teste {datetime.now().strftime('%H%M%S')}"
+        cur.execute("CALL inserir_produto(%s, %s, %s, %s);", [nome, 8.99, 25, True])
+        cur.execute("SELECT COUNT(*) FROM produtos WHERE nomeproduto = %s;", [nome])
+        count = cur.fetchone()[0]
+        assert count == 1, "O produto não foi inserido corretamente."
+        print("SUCESSO: o procedimento inserir_produto executou corretamente.")
+    except Exception as e:
+        pytest.fail(f"Falha ao executar inserir_produto. Detalhes: {e}")
+    finally:
+        cur.execute("ROLLBACK;")
 
 
-# 4️⃣ Inserir Avaliação
-@pytest.mark.django_db(transaction=True)
-def test_inserir_avaliacao_ok():
+def test_inserir_avaliacao():
     cur = connections['default'].cursor()
     cur.execute("BEGIN;")
-    # assumindo que existe vendaid=1 com estado 'Concluída'
-    cur.execute("""
-        CALL inserir_avaliacao(%s, %s, %s, %s, %s, %s);
-    """, [
-        1, 'Avaliação Teste', 5, 4, 5, 'Comentário Pytest'
-    ])
-    cur.execute("""
-        SELECT COUNT(*) FROM avaliacoes
-        WHERE vendaid = %s AND tituloavaliacao = %s;
-    """, [1, 'Avaliação Teste'])
-    count = cur.fetchone()[0]
-    assert count == 1, "Falha ao inserir avaliação"
-    cur.execute("ROLLBACK;")
+    try:
+        cur.execute("""
+            CALL inserir_avaliacao(%s, %s, %s, %s, %s, %s);
+        """, [4, 'Avaliação Teste', 5, 4, 5, 'Comentário de teste'])
+
+        cur.execute("SELECT COUNT(*) FROM avaliacoes WHERE vendaid = %s;", [4])
+        count = cur.fetchone()[0]
+        assert count == 1, "A avaliação não foi criada corretamente."
+        print("SUCESSO: o procedimento inserir_avaliacao executou corretamente.")
+    except Exception as e:
+        pytest.fail(f"Falha ao executar inserir_avaliacao. Detalhes: {e}")
+    finally:
+        cur.execute("ROLLBACK;")
 
 
-# 5️⃣ Inserir Cinema
-@pytest.mark.django_db(transaction=True)
-def test_inserir_cinema_ok():
+def test_inserir_cinema():
     cur = connections['default'].cursor()
     cur.execute("BEGIN;")
-    cur.execute("""
-        CALL inserir_cinema(%s, %s, %s, %s, %s, %s, %s);
-    """, [
-        'Cinema Teste',
-        'cinema@teste.pt',
-        '912345678',
-        'Rua Central, 10',
-        '1234-567',
-        'Cidade Teste',
-        0.0
-    ])
-    cur.execute("""
-        SELECT COUNT(*) FROM cinemas
-        WHERE nomecinema = %s AND localidadecinema = %s;
-    """, ['Cinema Teste', 'Cidade Teste'])
-    count = cur.fetchone()[0]
-    assert count == 1, "Falha ao inserir cinema"
-    cur.execute("ROLLBACK;")
+    try:
+        nome = f"Cinema Teste {datetime.now().strftime('%H%M%S')}"
+        cur.execute("""
+            CALL inserir_cinema(%s, %s, %s, %s, %s, %s, %s);
+        """, [nome, 'cinema@teste.pt', '911234567', 'Rua Central 1', '1234-567', 'Lisboa', 0.0])
+
+        cur.execute("SELECT COUNT(*) FROM cinemas WHERE nomecinema = %s;", [nome])
+        count = cur.fetchone()[0]
+        assert count == 1, "O cinema não foi inserido corretamente."
+        print("SUCESSO: o procedimento inserir_cinema executou corretamente.")
+    except Exception as e:
+        pytest.fail(f"Falha ao executar inserir_cinema. Detalhes: {e}")
+    finally:
+        cur.execute("ROLLBACK;")
 
 
-# 6️⃣ Inserir Cliente
-@pytest.mark.django_db(transaction=True)
-def test_inserir_cliente_ok():
+def test_inserir_cliente():
     cur = connections['default'].cursor()
     cur.execute("BEGIN;")
-    cur.execute("""
-        CALL inserir_cliente(%s, %s, %s, %s, %s, %s, %s, %s);
-    """, [
-        'Cliente Teste',
-        'cliente@teste.pt',
-        '912345679',
-        '2000-01-01',
-        'Rua das Rosas, 20',
-        '2345-678',
-        'Localidade Z',
-        '123456789'
-    ])
-    cur.execute("""
-        SELECT COUNT(*) FROM clientes
-        WHERE emailcliente = %s AND nif = %s;
-    """, ['cliente@teste.pt', '123456789'])
-    count = cur.fetchone()[0]
-    assert count == 1, "Falha ao inserir cliente"
-    cur.execute("ROLLBACK;")
+    try:
+        nif = f"{datetime.now().strftime('%H%M%S')}123"
+        email = f"cliente{datetime.now().strftime('%H%M%S')}@teste.pt"
+        cur.execute("""
+            CALL inserir_cliente(%s, %s, %s, %s, %s, %s, %s, %s);
+        """, ['Cliente Teste', email, '912345679', '2000-01-01', 'Rua das Rosas', '2345-678', 'Viseu', nif])
+
+        cur.execute("SELECT COUNT(*) FROM clientes WHERE nif = %s;", [nif])
+        count = cur.fetchone()[0]
+        assert count == 1, "O cliente não foi inserido corretamente."
+        print("SUCESSO: o procedimento inserir_cliente executou corretamente.")
+    except Exception as e:
+        pytest.fail(f"Falha ao executar inserir_cliente. Detalhes: {e}")
+    finally:
+        cur.execute("ROLLBACK;")
 
 
-# 7️⃣ Inserir Sala
-@pytest.mark.django_db(transaction=True)
-def test_inserir_sala_ok():
+def test_inserir_sala():
     cur = connections['default'].cursor()
     cur.execute("BEGIN;")
-    cur.execute("""
-        CALL inserir_sala(%s, %s, %s, %s);
-    """, [
-        1, 'Sala Teste', 150, 'Standard'
-    ])
-    cur.execute("""
-        SELECT COUNT(*) FROM salas
-        WHERE cinemaid = %s AND nomesala = %s;
-    """, [1, 'Sala Teste'])
-    count = cur.fetchone()[0]
-    assert count == 1, "Falha ao inserir sala"
-    cur.execute("ROLLBACK;")
+    try:
+        nome = f"Sala Teste {datetime.now().strftime('%H%M%S')}"
+        cur.execute("CALL inserir_sala(%s, %s, %s, %s);", [1, nome, 150, 'Standard'])
+
+        cur.execute("SELECT COUNT(*) FROM salas WHERE nomesala = %s;", [nome])
+        count = cur.fetchone()[0]
+        assert count == 1, "A sala não foi criada corretamente."
+        print("SUCESSO: o procedimento inserir_sala executou corretamente.")
+    except Exception as e:
+        pytest.fail(f"Falha ao executar inserir_sala. Detalhes: {e}")
+    finally:
+        cur.execute("ROLLBACK;")
 
 
-# 8️⃣ Inserir Bilhete
-@pytest.mark.django_db(transaction=True)
-def test_inserir_bilhete_ok():
+def test_inserir_bilhete():
     cur = connections['default'].cursor()
     cur.execute("BEGIN;")
-    # assumindo que lugarid=1 e sessaoid=1 existem
-    cur.execute("""
-        CALL inserir_bilhete(%s, %s, %s);
-    """, [
-        1, 1, 8.50
-    ])
-    cur.execute("""
-        SELECT COUNT(*) FROM bilhetes
-        WHERE lugarid = %s AND sessaoid = %s;
-    """, [1, 1])
-    count = cur.fetchone()[0]
-    assert count == 1, "Falha ao inserir bilhete"
-    cur.execute("ROLLBACK;")
+    try:
+        cur.execute("CALL inserir_bilhete(%s, %s, %s);", [3, 1, 8.50])
+
+        cur.execute("SELECT COUNT(*) FROM bilhetes WHERE lugarid = %s AND sessaoid = %s;", [3, 1])
+        count = cur.fetchone()[0]
+        assert count == 1, "O bilhete não foi criado corretamente."
+
+        cur.execute("SELECT estadolugar FROM lugares WHERE lugarid = %s;", [3])
+        estado = cur.fetchone()[0]
+        assert estado == 'Ocupado', "O estado do lugar não foi atualizado para 'Ocupado'."
+        print("SUCESSO: o procedimento inserir_bilhete executou corretamente.")
+    except Exception as e:
+        pytest.fail(f"Falha ao executar inserir_bilhete. Detalhes: {e}")
+    finally:
+        cur.execute("ROLLBACK;")
+
 

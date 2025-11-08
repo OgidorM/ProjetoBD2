@@ -3,7 +3,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
-# === Tabelas de domínio do projeto (excluí os modelos do auth/migrations do Django) ===
+# === Tabelas de domínio do projeto ===
 
 class Categorias(models.Model):
     categoriaid = models.AutoField(primary_key=True)
@@ -34,7 +34,7 @@ class Cinemas(models.Model):
         db_table = 'cinemas'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
+                condition=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
                 name='ck_cinemas_ranking_0_5',
             )
         ]
@@ -91,7 +91,7 @@ class Filmes(models.Model):
         db_table = 'filmes'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
+                condition=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
                 name='ck_filmes_ranking_0_5',
             )
         ]
@@ -216,7 +216,7 @@ class Funcionarios(models.Model):
         db_table = 'funcionarios'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
+                condition=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
                 name='ck_funcionarios_ranking_0_5',
             )
         ]
@@ -283,7 +283,7 @@ class Bilhetes(models.Model):
         related_name='bilhetes'
     )
     precobilhete = models.DecimalField(max_digits=5, decimal_places=2)
-    emissao = models.DateTimeField(db_column='emicao')
+    emissao = models.DateTimeField(db_column='emissao')
 
     class Meta:
         db_table = 'bilhetes'

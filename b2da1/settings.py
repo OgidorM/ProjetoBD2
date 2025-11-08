@@ -86,13 +86,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'cinemaDB',
         'USER': 'postgres',
-        'PASSWORD': 'zq11ny',
+        'PASSWORD': 'admin',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5434',
+        'TEST': {
+            'MIRROR': 'default',
+        },
     }
 }
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
