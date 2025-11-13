@@ -109,9 +109,9 @@ class Salas(models.Model):
         related_name='salas'
     )
     nomesala = models.CharField(max_length=80, blank=True, null=True)
-    capacidade = models.IntegerField()
-    filas = models.IntegerField()
-    colunas = models.IntegerField()
+    capacidade = models.IntegerField(null=True)
+    filas = models.IntegerField(default=0)
+    colunas = models.IntegerField(default=0)
     tiposala = models.CharField(max_length=20)
 
     class Meta:

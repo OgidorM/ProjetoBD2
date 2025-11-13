@@ -158,9 +158,9 @@ def test_inserir_bilhete():
         count = cur.fetchone()[0]
         assert count == 1, "O bilhete não foi criado corretamente."
 
-        cur.execute("SELECT estadolugar FROM lugares WHERE lugarid = %s;", [3])
-        estado = cur.fetchone()[0]
-        assert estado == 'Ocupado', "O estado do lugar não foi atualizado para 'Ocupado'."
+        cur.execute("SELECT lugarid FROM lugaressessao WHERE lugarid = %s;" , [3])
+        lugar_sessao = cur.fetchone()[0]
+        assert lugar_sessao.estado == 'Ocupado', "O estado do lugar não foi atualizado para 'Ocupado'."
         print("SUCESSO: o procedimento inserir_bilhete executou corretamente.")
     except Exception as e:
         pytest.fail(f"Falha ao executar inserir_bilhete. Detalhes: {e}")
