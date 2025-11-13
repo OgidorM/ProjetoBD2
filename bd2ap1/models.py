@@ -110,6 +110,8 @@ class Salas(models.Model):
     )
     nomesala = models.CharField(max_length=80, blank=True, null=True)
     capacidade = models.IntegerField()
+    filas = models.IntegerField()
+    colunas = models.IntegerField()
     tiposala = models.CharField(max_length=20)
 
     class Meta:
@@ -134,8 +136,8 @@ class Sessoes(models.Model):
         blank=True, null=True,
         related_name='sessoes'
     )
-    inicio = models.TimeField()
-    fim = models.TimeField()
+    inicio = models.DateTimeField()
+    fim = models.DateTimeField()
     versao = models.CharField(max_length=8)
     estadosessao = models.CharField(max_length=20)
     precosessao = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
@@ -146,12 +148,11 @@ class Sessoes(models.Model):
     def __str__(self) -> str:
         return f"{self.filmeid.titulo if self.filmeid_id else 'Sessão'} @ {self.inicio:%Y-%m-%d %H:%M}"
 
-
 class Lugares(models.Model):
     lugarid = models.AutoField(primary_key=True)
     salaid = models.ForeignKey(
         Salas,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.PROTECT,
         db_column='salaid',
         blank=True, null=True,
         related_name='lugares'
@@ -159,7 +160,6 @@ class Lugares(models.Model):
     fila = models.CharField(max_length=4)
     numero = models.IntegerField()
     tipolugar = models.CharField(max_length=20, blank=True, null=True)
-    estadolugar = models.CharField(max_length=20, blank=True, null=True)
 
     class Meta:
         db_table = 'lugares'
@@ -172,6 +172,35 @@ class Lugares(models.Model):
     def __str__(self) -> str:
         return f"Sala {self.salaid_id} - {self.fila}{self.numero}"
 
+class LugaresSessao(models.Model):
+    lugarsessaoid = models.AutoField(primary_key=True)
+    lugarid = models.ForeignKey(
+        Lugares,
+        on_delete=models.PROTECT,
+        db_column='lugarid',
+        blank=True, null=True,
+        related_name='lugaresta'
+    )
+    sessaoid = models.ForeignKey(
+        Sessoes,
+        on_delete=models.PROTECT,
+        db_column='sessaoid',
+        blank=True, null=True,
+        related_name='lugaresta'
+    )
+    estado = models.CharField(max_length=20, blank=True, null=True)
+    
+    class Meta:
+        db_table = 'lugaressessao'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['lugarsessaoid'], name='uq_lugaressessao_lugarsessaoid'
+            )
+        ]
+    
+    def __str__(self) -> str:
+        return f"Lugar {self.lugarid_id} - Sessão {self.sessaoid_id}"
+    
 
 class Clientes(models.Model):
     clienteid = models.AutoField(primary_key=True)
@@ -269,7 +298,7 @@ class Vendas(models.Model):
 class Bilhetes(models.Model):
     bilheteid = models.AutoField(primary_key=True)
     lugarid = models.ForeignKey(
-        Lugares,
+        LugaresSessao,
         on_delete=models.PROTECT,
         db_column='lugarid',
         blank=True, null=True,
