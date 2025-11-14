@@ -1,0 +1,48 @@
+{% extends 'lugares_front/base.html' %}
+
+{% block title %}Confirmar Remoção{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h2 class="mb-0">Confirmar Remoção</h2>
+            </div>
+            <div class="card-body">
+                <p>Tem a certeza que deseja remover o lugar <strong>Sala {{ lugar.salaid }}, {{ lugar.fila }}{{ lugar.numero }}</strong>?</p>
+
+                {% if has_related_objects %}
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Atenção!</h5>
+                        <p>Este lugar não pode ser removido porque possui dados relacionados:</p>
+                        <ul>
+                            {% if bilhetes_count > 0 %}
+                                <li>{{ bilhetes_count }} bilhete{% if bilhetes_count != 1 %}s{% endif %}</li>
+                            {% endif %}
+                        </ul>
+                        <p class="mb-0">Para remover este lugar, primeiro é necessário remover todos os bilhetes relacionados.</p>
+                    </div>
+                {% endif %}
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    {% if not has_related_objects %}
+                        <button type="submit" class="btn btn-danger">Remover</button>
+                    {% else %}
+                        <button type="button" class="btn btn-danger" disabled title="Não é possível remover este lugar porque possui bilhetes relacionados">Remover</button>
+                    {% endif %}
+                    <a href="{% url 'lista_lugares' %}" class="btn btn-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

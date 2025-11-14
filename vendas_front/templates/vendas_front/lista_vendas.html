@@ -15,6 +15,7 @@
                     <th>Data</th>
                     <th>Estado</th>
                     <th>Total</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -31,6 +32,10 @@
                         {% else %}
                             N/A
                         {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'editar_venda' venda.vendaid %}" class="btn btn-warning btn-sm">Editar</a>
+                        <a href="{% url 'remover_venda' venda.vendaid %}" class="btn btn-danger btn-sm">Remover</a>
                     </td>
                 </tr>
                 {% endfor %}
