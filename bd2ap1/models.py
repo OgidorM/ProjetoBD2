@@ -109,7 +109,7 @@ class Salas(models.Model):
         related_name='salas'
     )
     nomesala = models.CharField(max_length=80, blank=True, null=True)
-    capacidade = models.IntegerField(null=True)
+    capacidade = models.IntegerField(default=0, null=True)
     filas = models.IntegerField(default=0)
     colunas = models.IntegerField(default=0)
     tiposala = models.CharField(max_length=20)
@@ -188,7 +188,7 @@ class LugaresSessao(models.Model):
         blank=True, null=True,
         related_name='lugaresta'
     )
-    estado = models.CharField(max_length=20, blank=True, null=True)
+    estado = models.CharField(default='Livre', max_length=20, blank=True, null=True)
     
     class Meta:
         db_table = 'lugaressessao'

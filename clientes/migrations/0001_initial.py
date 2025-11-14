@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('bd2ap1', '__first__'),
+        ('bd2ap1', '0001_initial'),
     ]
 
     operations = [
