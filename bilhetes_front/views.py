@@ -9,7 +9,10 @@ def index(request):
     return redirect('listar_bilhetes')
 
 def lista_bilhetes(request):
-    bilhetes = Bilhetes.objects.select_related('sessaoid','lugarid').order_by('bilheteid')
+    bilhetes = Bilhetes.objects.select_related(
+        'lugarid__sessaoid',  
+        'lugarid__lugarid'    
+    ).order_by('bilheteid')
     return render(request, 'bilhetes_front/lista_bilhetes.html', {'bilhetes': bilhetes})
 
 def adicionar_bilhete(request):
