@@ -41,12 +41,13 @@ INSTALLED_APPS = [
     'avaliacoes_front',
     'sessoes_front',                
     'categorias_front',             
-    'classificacoesetarias_front',  
+    'classificacoesetarias_front',
 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS middleware (must be before CommonMiddleware)
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -85,13 +86,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'cinemaDB',
-        'USER': 'app_user',
-        'PASSWORD': 'app123',
+        'USER': 'postgres',
+        'PASSWORD': '266551050',
         'HOST': 'localhost',
-        'PORT': '5434', #win=5432, desk/others=5434
-        'TEST': {
-            'MIRROR': 'default',
-        },
+        'PORT': '5432',
     }
 }
 
@@ -135,3 +133,15 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# CORS settings for API access
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Vite default dev server
+    "http://localhost:3000",  # Alternative dev server
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
