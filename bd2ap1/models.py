@@ -3,7 +3,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
-# === Tabelas de domínio do projeto (excluí os modelos do auth/migrations do Django) ===
+# === Tabelas de domínio do projeto ===
 
 class Categorias(models.Model):
     categoriaid = models.AutoField(primary_key=True)
@@ -34,7 +34,7 @@ class Cinemas(models.Model):
         db_table = 'cinemas'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
+                condition=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
                 name='ck_cinemas_ranking_0_5',
             )
         ]
@@ -91,7 +91,7 @@ class Filmes(models.Model):
         db_table = 'filmes'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
+                condition=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
                 name='ck_filmes_ranking_0_5',
             )
         ]
@@ -109,7 +109,9 @@ class Salas(models.Model):
         related_name='salas'
     )
     nomesala = models.CharField(max_length=80, blank=True, null=True)
-    capacidade = models.IntegerField()
+    capacidade = models.IntegerField(default=0, null=True)
+    filas = models.IntegerField(default=0)
+    colunas = models.IntegerField(default=0)
     tiposala = models.CharField(max_length=20)
 
     class Meta:
@@ -134,8 +136,8 @@ class Sessoes(models.Model):
         blank=True, null=True,
         related_name='sessoes'
     )
-    inicio = models.TimeField()
-    fim = models.TimeField()
+    inicio = models.DateTimeField()
+    fim = models.DateTimeField()
     versao = models.CharField(max_length=8)
     estadosessao = models.CharField(max_length=20)
     precosessao = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
@@ -145,7 +147,6 @@ class Sessoes(models.Model):
 
     def __str__(self) -> str:
         return f"{self.filmeid.titulo if self.filmeid_id else 'Sessão'} @ {self.inicio:%Y-%m-%d %H:%M}"
-
 
 class Lugares(models.Model):
     lugarid = models.AutoField(primary_key=True)
@@ -159,7 +160,6 @@ class Lugares(models.Model):
     fila = models.CharField(max_length=4)
     numero = models.IntegerField()
     tipolugar = models.CharField(max_length=20, blank=True, null=True)
-    estadolugar = models.CharField(max_length=20, blank=True, null=True)
 
     class Meta:
         db_table = 'lugares'
@@ -172,6 +172,35 @@ class Lugares(models.Model):
     def __str__(self) -> str:
         return f"Sala {self.salaid_id} - {self.fila}{self.numero}"
 
+class LugaresSessao(models.Model):
+    lugarsessaoid = models.AutoField(primary_key=True)
+    lugarid = models.ForeignKey(
+        Lugares,
+        on_delete=models.PROTECT,
+        db_column='lugarid',
+        blank=True, null=True,
+        related_name='lugaresta'
+    )
+    sessaoid = models.ForeignKey(
+        Sessoes,
+        on_delete=models.PROTECT,
+        db_column='sessaoid',
+        blank=True, null=True,
+        related_name='lugaresta'
+    )
+    estado = models.CharField(default='Livre', max_length=20, blank=True, null=True)
+    
+    class Meta:
+        db_table = 'lugaressessao'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['lugarsessaoid'], name='uq_lugaressessao_lugarsessaoid'
+            )
+        ]
+    
+    def __str__(self) -> str:
+        return f"Lugar {self.lugarid_id} - Sessão {self.sessaoid_id}"
+    
 
 class Clientes(models.Model):
     clienteid = models.AutoField(primary_key=True)
@@ -216,7 +245,7 @@ class Funcionarios(models.Model):
         db_table = 'funcionarios'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
+                condition=models.Q(ranking__gte=0) & models.Q(ranking__lte=5),
                 name='ck_funcionarios_ranking_0_5',
             )
         ]
@@ -283,7 +312,7 @@ class Bilhetes(models.Model):
         related_name='bilhetes'
     )
     precobilhete = models.DecimalField(max_digits=5, decimal_places=2)
-    emissao = models.DateTimeField(db_column='emicao')
+    emissao = models.DateTimeField(db_column='emissao')
 
     class Meta:
         db_table = 'bilhetes'
