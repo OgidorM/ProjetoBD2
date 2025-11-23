@@ -64,7 +64,7 @@ def client_create(request: HttpRequest) -> HttpResponse:
 def client_update(request: HttpRequest, client_id: int) -> HttpResponse:
     client = _get_or_404(client_id)
     if request.method == 'POST':
-        form = ClienteForm(request.POST)
+        form = ClienteForm(request.POST, instance=client)
         if form.is_valid():
             services.update(client_id, **form.cleaned_data)
             return redirect(reverse('clientes:detail', args=[client_id]))
@@ -81,41 +81,26 @@ def client_update(request: HttpRequest, client_id: int) -> HttpResponse:
         })
     return render(request, 'clientes/form.html', {'form': form, 'mode': 'update', 'client': client})
 
-
 def client_delete(request: HttpRequest, client_id: int) -> HttpResponse:
     client = _get_or_404(client_id)
 
+    related_vendas = client.vendas.all()
+
     if request.method == 'POST':
         try:
-            # Check for related objects before attempting deletion
-            related_vendas = client.vendas.all()
-
-            if related_vendas.exists():
-                # Build error message with related objects
-                vendas_count = related_vendas.count()
-                error_message = f"Não é possível eliminar o cliente '{client.nomecliente or f'Cliente {client.clienteid}'}' porque tem {vendas_count} venda{'s' if vendas_count > 1 else ''} associada{'s' if vendas_count > 1 else ''}. Elimine primeiro as vendas relacionadas."
-                messages.error(request, error_message)
-                return render(request, 'clientes/confirm_delete.html', {
-                    'client': client,
-                    'related_vendas': related_vendas,
-                    'has_related_objects': True
-                })
-
-            # If no related objects, proceed with deletion
             services.delete(client_id)
             messages.success(request, f"Cliente '{client.nomecliente or f'Cliente {client.clienteid}'}' foi eliminado com sucesso.")
             return redirect(reverse('clientes:list'))
 
         except ProtectedError as e:
-            # Fallback error handling in case the service doesn't catch it
+            msg_debug = f"[ERRO-VIEW-CINEMA] O banco de dados bloqueou! Objetos protegidos: {e.protected_objects}"
+            messages.error(request, msg_debug)
             messages.error(request, f"Não é possível eliminar o cliente '{client.nomecliente or f'Cliente {client.clienteid}'}' porque tem objetos relacionados.")
             return render(request, 'clientes/confirm_delete.html', {
                 'client': client,
                 'has_related_objects': True
             })
 
-    # For GET requests, check if there are related objects to show warning
-    related_vendas = client.vendas.all()
     has_related = related_vendas.exists()
 
     return render(request, 'clientes/confirm_delete.html', {
@@ -123,7 +108,6 @@ def client_delete(request: HttpRequest, client_id: int) -> HttpResponse:
         'related_vendas': related_vendas,
         'has_related_objects': has_related
     })
-
 
 def client_search(request: HttpRequest) -> HttpResponse:
     term = request.GET.get('q', '').strip()

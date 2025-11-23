@@ -243,14 +243,14 @@ class Vendas(models.Model):
     vendaid = models.AutoField(primary_key=True)
     clienteid = models.ForeignKey(
         Clientes,
-        on_delete=models.CASCADE,  # SQL: NO ACTION
+        on_delete=models.SET_NULL,  # SQL: NO ACTION
         db_column='clienteid',
         blank=True, null=True,
         related_name='vendas'
     )
     funcionarioid = models.ForeignKey(
         Funcionarios,
-        on_delete=models.CASCADE,  # SQL: NO ACTION
+        on_delete=models.SET_NULL,  # SQL: NO ACTION
         db_column='funcionarioid',
         blank=True, null=True,
         related_name='vendas'
@@ -302,7 +302,7 @@ class VendaLinhas(models.Model):
     )
     produtoid = models.ForeignKey(
         Produtos,
-        on_delete=models.CASCADE,  # SQL: NO ACTION
+        on_delete=models.SET_NULL,  # SQL: NO ACTION
         db_column='produtoid',
         blank=True, null=True,
         related_name='linhas_venda'
