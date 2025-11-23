@@ -57,13 +57,13 @@ class Filmes(models.Model):
     filmeid = models.AutoField(primary_key=True)
     categoriaid = models.ForeignKey(
         Categorias,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='categoriaid',
         related_name='filmes'
     )
     cinemaid = models.ForeignKey(
         Cinemas,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='cinemaid',
         related_name='filmes'
     )
@@ -76,7 +76,7 @@ class Filmes(models.Model):
     sinopse = models.TextField(blank=True, null=True)
     classificacaoetaria = models.ForeignKey(
         ClassificacoesEtarias,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='classificacaoetaria',
         default=1,
         related_name='filmes'
@@ -103,7 +103,7 @@ class Salas(models.Model):
     salaid = models.AutoField(primary_key=True)
     cinemaid = models.ForeignKey(
         Cinemas,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='cinemaid',
         blank=True, null=True,
         related_name='salas'
@@ -122,14 +122,14 @@ class Sessoes(models.Model):
     sessaoid = models.AutoField(primary_key=True)
     salaid = models.ForeignKey(
         Salas,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='salaid',
         blank=True, null=True,
         related_name='sessoes'
     )
     filmeid = models.ForeignKey(
         Filmes,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='filmeid',
         blank=True, null=True,
         related_name='sessoes'
@@ -151,7 +151,7 @@ class Lugares(models.Model):
     lugarid = models.AutoField(primary_key=True)
     salaid = models.ForeignKey(
         Salas,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='salaid',
         blank=True, null=True,
         related_name='lugares'
@@ -195,7 +195,7 @@ class Funcionarios(models.Model):
     funcionarioid = models.AutoField(primary_key=True)
     cinemaid = models.ForeignKey(
         Cinemas,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='cinemaid',
         blank=True, null=True,
         related_name='funcionarios'
@@ -243,14 +243,14 @@ class Vendas(models.Model):
     vendaid = models.AutoField(primary_key=True)
     clienteid = models.ForeignKey(
         Clientes,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='clienteid',
         blank=True, null=True,
         related_name='vendas'
     )
     funcionarioid = models.ForeignKey(
         Funcionarios,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='funcionarioid',
         blank=True, null=True,
         related_name='vendas'
@@ -270,14 +270,14 @@ class Bilhetes(models.Model):
     bilheteid = models.AutoField(primary_key=True)
     lugarid = models.ForeignKey(
         Lugares,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         db_column='lugarid',
         blank=True, null=True,
         related_name='bilhetes'
     )
     sessaoid = models.ForeignKey(
         Sessoes,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         db_column='sessaoid',
         blank=True, null=True,
         related_name='bilhetes'
@@ -295,21 +295,21 @@ class VendaLinhas(models.Model):
     vendalinhaid = models.AutoField(primary_key=True)
     vendaid = models.ForeignKey(
         Vendas,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='vendaid',
         blank=True, null=True,
         related_name='linhas'
     )
     produtoid = models.ForeignKey(
         Produtos,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='produtoid',
         blank=True, null=True,
         related_name='linhas_venda'
     )
     bilheteid = models.ForeignKey(
         Bilhetes,
-        on_delete=models.PROTECT,  # SQL: NO ACTION
+        on_delete=models.CASCADE,  # SQL: NO ACTION
         db_column='bilheteid',
         blank=True, null=True,
         related_name='linhas_venda'

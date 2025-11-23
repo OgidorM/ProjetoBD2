@@ -94,11 +94,11 @@ WSGI_APPLICATION = 'b2da1.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+       'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'admin',
+        'NAME': 'cinemaDB',  # ou postgres, caso ainda não tenha criado cinemaDB
+        'USER': 'admin',     # ou postgres
+        'PASSWORD': 'admin', # ou postgres
         'HOST': 'localhost',
         'PORT': '5434',
     }
