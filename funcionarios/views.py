@@ -28,7 +28,8 @@ def employee_list(request: HttpRequest) -> HttpResponse:
                 'name': e.nomefuncionario,
                 'role': e.cargo,
                 'cinema_id': e.cinemaid_id,
-                'ranking': float(e.ranking),
+                # CORREÇÃO: Proteção contra ranking None
+                'ranking': float(e.ranking or 0),
             }
             for e in employees
         ]
@@ -48,7 +49,8 @@ def employee_detail(request: HttpRequest, employee_id: int) -> HttpResponse:
             'cinema_id': employee.cinemaid_id,
             'admission': employee.admissao.isoformat() if employee.admissao else None,
             'salary': float(employee.salario),
-            'ranking': float(employee.ranking),
+            # CORREÇÃO: Proteção contra ranking None
+            'ranking': float(employee.ranking or 0),
         }
         return JsonResponse(data)
     return render(request, 'funcionarios/detail.html', {'employee': employee})
@@ -68,7 +70,8 @@ def employee_create(request: HttpRequest) -> HttpResponse:
 def employee_update(request: HttpRequest, employee_id: int) -> HttpResponse:
     employee = _get_or_404(employee_id)
     if request.method == 'POST':
-        form = FuncionarioForm(request.POST)
+        # CORREÇÃO CRÍTICA: Adicionado instance=employee
+        form = FuncionarioForm(request.POST, instance=employee)
         if form.is_valid():
             services.update(employee_id, **form.cleaned_data)
             return redirect(reverse('funcionarios:detail', args=[employee_id]))
@@ -89,37 +92,28 @@ def employee_update(request: HttpRequest, employee_id: int) -> HttpResponse:
 def employee_delete(request: HttpRequest, employee_id: int) -> HttpResponse:
     employee = _get_or_404(employee_id)
 
+    related_vendas = employee.vendas.all()
+
     if request.method == 'POST':
         try:
-            # Check for related objects before attempting deletion
-            related_vendas = employee.vendas.all()
-
-            if related_vendas.exists():
-                # Build error message with related objects
-                vendas_count = related_vendas.count()
-                error_message = f"Não é possível eliminar o funcionário '{employee.nomefuncionario or f'Funcionário {employee.funcionarioid}'}' porque tem {vendas_count} venda{'s' if vendas_count > 1 else ''} associada{'s' if vendas_count > 1 else ''}. Elimine primeiro as vendas relacionadas."
-                messages.error(request, error_message)
-                return render(request, 'funcionarios/confirm_delete.html', {
-                    'employee': employee,
-                    'related_vendas': related_vendas,
-                    'has_related_objects': True
-                })
-
-            # If no related objects, proceed with deletion
+            #Não precisa de bloqueio aqui, os models ja tem a lógica necessária
             services.delete(employee_id)
-            messages.success(request, f"Funcionário '{employee.nomefuncionario or f'Funcionário {employee.funcionarioid}'}' foi eliminado com sucesso.")
+
+            emp_name = employee.nomefuncionario or f'Funcionário {employee.funcionarioid}'
+            messages.success(request,
+                             f"Funcionário '{emp_name}' eliminado. As vendas realizadas por ele foram mantidas (sem autor).")
             return redirect(reverse('funcionarios:list'))
 
         except ProtectedError as e:
-            # Fallback error handling in case the service doesn't catch it
-            messages.error(request, f"Não é possível eliminar o funcionário '{employee.nomefuncionario or f'Funcionário {employee.funcionarioid}'}' porque tem objetos relacionados.")
+            msg_debug = f"[ERRO-VIEW-FUNCIONARIO] O banco de dados bloqueou! Objetos protegidos: {e.protected_objects}"
+            messages.error(request, msg_debug)
+            messages.error(request, f"Não é possível eliminar o funcionário devido a restrições de integridade.")
             return render(request, 'funcionarios/confirm_delete.html', {
                 'employee': employee,
                 'has_related_objects': True
             })
 
-    # For GET requests, check if there are related objects to show warning
-    related_vendas = employee.vendas.all()
+    # Para o GET, verificamos se há vendas para mostrar o alerta
     has_related = related_vendas.exists()
 
     return render(request, 'funcionarios/confirm_delete.html', {
