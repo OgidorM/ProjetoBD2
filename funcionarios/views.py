@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import Any, List, Dict
+
+from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -11,7 +13,7 @@ from . import services
 from .forms import FuncionarioForm
 from .models import Funcionario
 
-
+@login_required
 def _get_or_404(employee_id: int) -> Funcionario:
     try:
         return services.get(employee_id)

@@ -5,4 +5,6 @@ urlpatterns = [
     path('', views.index, name='lugares_index'),
     path('listar/', views.lista_lugares, name='lista_lugares'),
     path('adicionar/', views.adicionar_lugar, name='adicionar_lugar'),
+    path('editar/<int:lugarid>/', views.editar_lugar, name='editar_lugar'),
+    path('remover/<int:lugarid>/', views.remover_lugar, name='remover_lugar'),
 ]

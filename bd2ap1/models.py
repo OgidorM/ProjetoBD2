@@ -309,7 +309,7 @@ class VendaLinhas(models.Model):
     )
     bilheteid = models.ForeignKey(
         Bilhetes,
-        on_delete=models.CASCADE,  # SQL: NO ACTION
+        on_delete=models.SET_NULL,  # SQL: NO ACTION
         db_column='bilheteid',
         blank=True, null=True,
         related_name='linhas_venda'

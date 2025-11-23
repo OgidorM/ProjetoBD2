@@ -1,46 +1,48 @@
-{% extends 'bilhetes_front/base.html' %}
-
-{% block title %}Confirmar Remoção{% endblock %}
+{% extends 'bilhetes_front/base.html' %} {% block title %}Confirmar Remoção - Bilhete #{{ bilhete.bilheteid }}{% endblock %}
 
 {% block content %}
     <div class="container mt-4">
-        <div class="card">
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card shadow-sm border-danger">
             <div class="card-header bg-danger text-white">
-                <h2 class="mb-0">Confirmar Remoção</h2>
+                <h4 class="mb-0"><i class="fas fa-trash-alt"></i> Confirmar Remoção</h4>
             </div>
             <div class="card-body">
-                <p>Tem a certeza que deseja remover o bilhete <strong>#{{ bilhete.bilheteid }}</strong>?</p>
+                <h5 class="card-title">Tem a certeza que deseja remover o bilhete <strong>#{{ bilhete.bilheteid }}</strong>?</h5>
+                <p class="text-muted">Valor: {{ bilhete.precobilhete }}€</p>
 
                 {% if has_related_objects %}
-                    <div class="alert alert-warning">
-                        <h5><i class="fas fa-exclamation-triangle"></i> Atenção!</h5>
-                        <p>Este bilhete não pode ser removido porque possui dados relacionados:</p>
-                        <ul>
-                            {% if vendalinhas_count > 0 %}
-                                <li>{{ vendalinhas_count }} venda linha{% if vendalinhas_count != 1 %}s{% endif %}</li>
-                            {% endif %}
+                    <div class="alert alert-info border-info mt-3">
+                        <h5><i class="fas fa-info-circle"></i> Nota Financeira</h5>
+                        <p class="mb-2">Este bilhete já foi vendido. Devido à integridade contabilística:</p>
+                        <ul class="mb-0">
+                            <li>O registo da venda <strong>NÃO</strong> será apagado.</li>
+                            <li>A linha da venda manterá o preço ({{ bilhete.precobilhete }}€), mas perderá a referência a este bilhete específico.</li>
+                            <li>O total da fatura não será alterado.</li>
                         </ul>
-                        <p class="mb-0">Para remover este bilhete, primeiro é necessário remover todos os dados relacionados.</p>
+                    </div>
+                {% else %}
+                    <div class="alert alert-secondary mt-3">
+                        <i class="fas fa-check-circle"></i> Este bilhete nunca foi vendido. Pode remover livremente.
                     </div>
                 {% endif %}
 
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-
-                <form method="post">
+                <form method="post" class="mt-4 d-flex gap-2 justify-content-end">
                     {% csrf_token %}
-                    {% if not has_related_objects %}
-                        <button type="submit" class="btn btn-danger">Remover</button>
-                    {% else %}
-                        <button type="button" class="btn btn-danger" disabled title="Não é possível remover este bilhete porque possui dados relacionados">Remover</button>
-                    {% endif %}
                     <a href="{% url 'lista_bilhetes' %}" class="btn btn-secondary">Cancelar</a>
+                    
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Sim, Remover Bilhete
+                    </button>
                 </form>
             </div>
         </div>
