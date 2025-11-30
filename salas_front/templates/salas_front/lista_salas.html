@@ -12,7 +12,9 @@
                     <th>ID</th>
                     <th>Nome</th>
                     <th>Cinema</th>
-                    <th>Capacidade</th>
+                    <th>Capacidade</th> 
+                    <th>Filas</th>
+                    <th>Colunas</th>
                     <th>Tipo</th>
                     <th>Ações</th>
                 </tr>
@@ -24,6 +26,8 @@
                     <td>{{ sala.nomesala }}</td>
                     <td>{{ sala.cinemaid.nomecinema }}</td>
                     <td>{{ sala.capacidade }}</td>
+                    <td>{{ sala.filas }}</td>
+                    <td>{{ sala.colunas }}</td>
                     <td>{{ sala.tiposala }}</td>
                     <td>
                         <a href="{% url 'editar_sala' sala.salaid %}" class="btn btn-warning btn-sm">Editar</a>
