@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import Any, List, Dict
+
+from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -7,6 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.deletion import ProtectedError
 from django.contrib import messages
 
+from bd2ap1.mongo_logger import log_action
 from . import services
 from .forms import FuncionarioForm
 from .models import Funcionario
@@ -19,6 +22,7 @@ def _get_or_404(employee_id: int) -> Funcionario:
         raise Http404("Employee not found") from exc
 
 
+@login_required
 def employee_list(request: HttpRequest) -> HttpResponse:
     employees = services.list_all()
     if request.GET.get('format') == 'json':
@@ -28,7 +32,6 @@ def employee_list(request: HttpRequest) -> HttpResponse:
                 'name': e.nomefuncionario,
                 'role': e.cargo,
                 'cinema_id': e.cinemaid_id,
-                # CORREÇÃO: Proteção contra ranking None
                 'ranking': float(e.ranking or 0),
             }
             for e in employees
@@ -37,6 +40,7 @@ def employee_list(request: HttpRequest) -> HttpResponse:
     return render(request, 'funcionarios/list.html', {'employees': employees})
 
 
+@login_required
 def employee_detail(request: HttpRequest, employee_id: int) -> HttpResponse:
     employee = _get_or_404(employee_id)
     if request.GET.get('format') == 'json':
@@ -49,31 +53,50 @@ def employee_detail(request: HttpRequest, employee_id: int) -> HttpResponse:
             'cinema_id': employee.cinemaid_id,
             'admission': employee.admissao.isoformat() if employee.admissao else None,
             'salary': float(employee.salario),
-            # CORREÇÃO: Proteção contra ranking None
             'ranking': float(employee.ranking or 0),
         }
         return JsonResponse(data)
     return render(request, 'funcionarios/detail.html', {'employee': employee})
 
 
+@login_required
 def employee_create(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
         form = FuncionarioForm(request.POST)
         if form.is_valid():
             employee = services.create(**form.cleaned_data)
+
+            log_action(
+                user=request.user,
+                action='CREATE',
+                target_model='Funcionario',
+                target_id=employee.funcionarioid,
+                details={'nome': employee.nomefuncionario, 'cargo': employee.cargo}
+            )
+
             return redirect(reverse('funcionarios:detail', args=[employee.funcionarioid]))
     else:
         form = FuncionarioForm()
     return render(request, 'funcionarios/form.html', {'form': form, 'mode': 'create'})
 
 
+@login_required
 def employee_update(request: HttpRequest, employee_id: int) -> HttpResponse:
     employee = _get_or_404(employee_id)
     if request.method == 'POST':
-        # CORREÇÃO CRÍTICA: Adicionado instance=employee
         form = FuncionarioForm(request.POST, instance=employee)
         if form.is_valid():
+            old_name = employee.nomefuncionario
             services.update(employee_id, **form.cleaned_data)
+
+            log_action(
+                user=request.user,
+                action='UPDATE',
+                target_model='Funcionario',
+                target_id=employee_id,
+                details={'changed_from': old_name, 'changed_to': employee.nomefuncionario}
+            )
+
             return redirect(reverse('funcionarios:detail', args=[employee_id]))
     else:
         form = FuncionarioForm(initial={
@@ -89,31 +112,41 @@ def employee_update(request: HttpRequest, employee_id: int) -> HttpResponse:
     return render(request, 'funcionarios/form.html', {'form': form, 'mode': 'update', 'employee': employee})
 
 
+@login_required
 def employee_delete(request: HttpRequest, employee_id: int) -> HttpResponse:
+    """
+    Remove o funcionário mas MANTÉM as vendas (campo 'funcionarioid' fica NULL).
+    Garante a integridade dos relatórios de vendas por cinema.
+    """
     employee = _get_or_404(employee_id)
-
     related_vendas = employee.vendas.all()
 
     if request.method == 'POST':
         try:
-            #Não precisa de bloqueio aqui, os models ja tem a lógica necessária
+            emp_name = employee.nomefuncionario
+
             services.delete(employee_id)
 
-            emp_name = employee.nomefuncionario or f'Funcionário {employee.funcionarioid}'
-            messages.success(request,
-                             f"Funcionário '{emp_name}' eliminado. As vendas realizadas por ele foram mantidas (sem autor).")
+            log_action(
+                user=request.user,
+                action='DELETE',
+                target_model='Funcionario',
+                target_id=employee_id,
+                details={'nome_apagado': emp_name, 'tipo': 'SET_NULL_VENDAS'}
+            )
+
+            messages.success(request, f"Funcionário '{emp_name}' eliminado. Vendas mantidas sem autor.")
             return redirect(reverse('funcionarios:list'))
 
         except ProtectedError as e:
-            msg_debug = f"[ERRO-VIEW-FUNCIONARIO] O banco de dados bloqueou! Objetos protegidos: {e.protected_objects}"
+            msg_debug = f"[ERRO-VIEW-FUNCIONARIO] Bloqueio de integridade DB: {e.protected_objects}"
             messages.error(request, msg_debug)
-            messages.error(request, f"Não é possível eliminar o funcionário devido a restrições de integridade.")
+            messages.error(request, "Não é possível eliminar o funcionário devido a restrições de integridade.")
             return render(request, 'funcionarios/confirm_delete.html', {
                 'employee': employee,
                 'has_related_objects': True
             })
 
-    # Para o GET, verificamos se há vendas para mostrar o alerta
     has_related = related_vendas.exists()
 
     return render(request, 'funcionarios/confirm_delete.html', {
@@ -123,6 +156,7 @@ def employee_delete(request: HttpRequest, employee_id: int) -> HttpResponse:
     })
 
 
+@login_required
 def employee_search(request: HttpRequest) -> HttpResponse:
     term = request.GET.get('q', '').strip()
     limit_raw = request.GET.get('limit')

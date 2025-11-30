@@ -1,7 +1,9 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from bd2ap1.models import VendaLinhas
 from .forms import VendaLinhaForm
 
+@login_required
 def index(request):
     return redirect('lista_vendaslinhas')
 

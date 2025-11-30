@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import Any, List, Dict
+
+from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -7,6 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.deletion import ProtectedError
 from django.contrib import messages
 
+from bd2ap1.mongo_logger import log_action
 from . import services
 from .forms import CinemaForm
 from .models import Cinema
@@ -20,6 +23,7 @@ def _get_or_404(cinema_id: int) -> Cinema:
         raise Http404("Cinema not found") from exc
 
 
+@login_required
 def cinema_list(request: HttpRequest) -> HttpResponse:
     cinemas = services.list_all()
     if request.GET.get('format') == 'json':
@@ -52,24 +56,41 @@ def cinema_detail(request: HttpRequest, cinema_id: int) -> HttpResponse:
         return JsonResponse(data)
     return render(request, 'cinemas/detail.html', {'cinema': cinema})
 
-
+@login_required()
 def cinema_create(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
         form = CinemaForm(request.POST)
         if form.is_valid():
             cinema = services.create(**form.cleaned_data)
+            log_action(
+                user=request.user,
+                action='CREATE',
+                target_model='Cinema',
+                target_id=cinema.cinemaid,
+                details={'nome': cinema.nomecinema, 'city': cinema.localidadecinema}
+            )
+            # ---------------------------------------
             return redirect(reverse('cinemas:detail', args=[cinema.cinemaid]))
     else:
         form = CinemaForm()
     return render(request, 'cinemas/form.html', {'form': form, 'mode': 'create'})
 
-
+@login_required()
 def cinema_update(request: HttpRequest, cinema_id: int) -> HttpResponse:
     cinema = _get_or_404(cinema_id)
     if request.method == 'POST':
         form = CinemaForm(request.POST, instance=cinema)
         if form.is_valid():
+            old_name = cinema.nomecinema
             services.update(cinema_id, **form.cleaned_data)
+            log_action(
+                user=request.user,
+                action='UPDATE',
+                target_model='Cinema',
+                target_id=cinema_id,
+                details={'changed_from': old_name, 'changed_to': form.cleaned_data['nomecinema']}
+            )
+
             return redirect(reverse('cinemas:detail', args=[cinema_id]))
     else:
         form = CinemaForm(initial={
@@ -83,7 +104,7 @@ def cinema_update(request: HttpRequest, cinema_id: int) -> HttpResponse:
         })
     return render(request, 'cinemas/form.html', {'form': form, 'mode': 'update', 'cinema': cinema})
 
-
+@login_required()
 def cinema_delete(request: HttpRequest, cinema_id: int) -> HttpResponse:
     cinema = _get_or_404(cinema_id)
 
@@ -92,15 +113,24 @@ def cinema_delete(request: HttpRequest, cinema_id: int) -> HttpResponse:
 
     if request.method == 'POST':
         try:
+            cinema_nome = cinema.nomecinema
             # Tenta apagar. O DB com Cascade leva tudo o resto.
             services.delete(cinema_id)
+            log_action(
+                user=request.user,
+                action='DELETE',
+                target_model='Cinema',
+                target_id=cinema_id,
+                details={'nome_apagado': cinema_nome, 'tipo': 'CASCADE_DELETE'}
+            )
+
             messages.success(request,
              f"Cinema '{cinema.nomecinema}' e toda a sua infraestrutura (salas/filmes) foram eliminados.")
             return redirect(reverse('cinemas:list'))
 
         except ProtectedError as e:
             # Se cair aqui, é porque algo na BD (não visto nas migrations) bloqueou
-            msg_debug = f"[ERRO-VIEW-CLIENTE] O banco de dados bloqueou! Objetos protegidos: {e.protected_objects}"
+            msg_debug = f"[ERRO-VIEW-CINEMA] O banco de dados bloqueou! Objetos protegidos: {e.protected_objects}"
             messages.error(request, msg_debug)
             messages.error(request, f"Não é possível eliminar o cinema '{cinema.nomecinema}' devido a um erro de integridade.")
             return render(request, 'cinemas/confirm_delete.html', {

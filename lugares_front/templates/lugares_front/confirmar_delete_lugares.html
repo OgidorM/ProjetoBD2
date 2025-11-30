@@ -1,15 +1,44 @@
-<div class="container py-4">
-    <div class="card">
-        <div class="card-header bg-danger text-white">
-            Confirmar eliminação
+{% extends 'lugares_front/base.html' %}
+
+{% block title %}Confirmar Remoção - Lugar {{ lugar.fila }}{{ lugar.numero }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">⚠️ Confirmar Remoção de Lugar</h5>
         </div>
         <div class="card-body">
-            <p>Tens a certeza que queres eliminar a sala <strong>{{ salas.nomesala|default:"(sem nome)" }}</strong> (ID {{ salas.salaid }})?</p>
-            <form method="post">
-            {% csrf_token %}
-                <a href="{% url 'lista_salas' %}" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-danger">Eliminar</button>
+            <h5 class="card-title">Deseja remover o lugar <strong>{{ lugar.fila }}{{ lugar.numero }}</strong> (Sala: {{ lugar.salaid }})?</h5>
+            
+            {% if has_related_objects %}
+                <div class="alert alert-warning mt-3 border-warning">
+                    <h6><i class="bi bi-exclamation-triangle-fill"></i> Atenção: Bilhetes Associados</h6>
+                    <p class="mb-1">Este lugar tem <strong>{{ bilhetes_count }}</strong> bilhete(s) emitido(s).</p>
+                    <small>Ao remover o lugar, os bilhetes serão apagados. As vendas financeiras serão mantidas mas perderão a referência ao lugar.</small>
+                </div>
+            {% else %}
+                <div class="alert alert-secondary mt-3">
+                    <i class="bi bi-check-circle"></i> Este lugar não tem histórico de bilhetes. Remoção segura.
+                </div>
+            {% endif %}
+
+            <form method="post" class="mt-4 d-flex justify-content-end gap-2">
+                {% csrf_token %}
+                <a href="{% url 'lista_lugares' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-danger">Sim, Remover</button>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
