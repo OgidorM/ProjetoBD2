@@ -5,7 +5,12 @@
 {% block content %}
     {% if vendas %}
     <div class="container mt-4">
-        <h2 class="mb-3">Lista de Vendas</h2>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">Lista de Vendas</h2>
+            <a href="{% url 'export_mv_vendas_diarias_csv' %}" class="btn btn-outline-primary btn-sm">
+                Exportar vendas diárias (CSV)
+            </a>
+        </div>
         <table class="table table-striped table-hover table-bordered align-middle text-center">
             <thead class="table-dark">
                 <tr>
