@@ -21,7 +21,6 @@ def fetch_mv_vendas_diarias(*, start: Optional[date] = None, end: Optional[date]
     - start/end: intervalo inclusivo.
     - Retorna lista ordenada por data.
 
-    Nota: usa SQL direto porque é um relatório agregado (read-only).
     """
 
     where_parts: list[str] = []
