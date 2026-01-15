@@ -1,4 +1,6 @@
-{% extends 'cinemas/base.html' %}
+{% extends 'core/base.html' %}
+
+{% block title %}Registar{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -6,13 +8,12 @@
         <div class="col-md-5">
             <div class="card shadow">
                 <div class="card-header bg-success text-white text-center">
-                    <h4><i class="bi bi-person-plus-fill"></i> Criar Conta</h4>
+                    <h4>Criar Conta</h4>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
-                        
-                        <!-- Renderiza o formulário do Django com classes Bootstrap -->
+
                         {% for field in form %}
                             <div class="mb-3">
                                 <label class="form-label fw-bold">{{ field.label }}</label>

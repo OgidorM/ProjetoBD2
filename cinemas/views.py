@@ -23,7 +23,6 @@ def _get_or_404(cinema_id: int) -> Cinema:
         raise Http404("Cinema not found") from exc
 
 
-@login_required
 def cinema_list(request: HttpRequest) -> HttpResponse:
     cinemas = services.list_all()
     if request.GET.get('format') == 'json':
@@ -40,7 +39,6 @@ def cinema_list(request: HttpRequest) -> HttpResponse:
     return render(request, 'cinemas/list.html', {'cinemas': cinemas})
 
 
-@login_required
 def cinema_detail(request: HttpRequest, cinema_id: int) -> HttpResponse:
     cinema = _get_or_404(cinema_id)
     if request.GET.get('format') == 'json':

@@ -11,7 +11,6 @@ from .forms import CategoriaForm
 def index(request):
     return redirect('lista_categorias')
 
-@login_required
 def lista_categorias(request):
     categorias = Categorias.objects.order_by('categoriaid')
     return render(request, 'categorias_front/lista_categorias.html', {'categorias': categorias})
