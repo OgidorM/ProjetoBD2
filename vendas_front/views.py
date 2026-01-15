@@ -11,10 +11,12 @@ from .forms import VendaForm
 def index(request):
     return redirect('lista_vendas')
 
+@login_required
 def lista_vendas(request):
     vendas = Vendas.objects.select_related('clienteid', 'funcionarioid').order_by('vendaid')
     return render(request, 'vendas_front/lista_vendas.html', {'vendas': vendas})
 
+@login_required
 def adicionar_venda(request):
     if request.method == 'POST':
         form = VendaForm(request.POST)
