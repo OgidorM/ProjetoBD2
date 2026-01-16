@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
@@ -5,13 +6,17 @@ from django.db import connection
 from bd2ap1.models import Vendas
 from .forms import VendaForm
 
+
+@login_required
 def index(request):
     return redirect('lista_vendas')
 
+@login_required
 def lista_vendas(request):
     vendas = Vendas.objects.select_related('clienteid', 'funcionarioid').order_by('vendaid')
     return render(request, 'vendas_front/lista_vendas.html', {'vendas': vendas})
 
+@login_required
 def adicionar_venda(request):
     if request.method == 'POST':
         form = VendaForm(request.POST)

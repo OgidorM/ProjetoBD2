@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from bd2ap1.views import home
+from bd2ap1.views import home, SignUpView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -21,4 +21,8 @@ urlpatterns = [
     path('sessoes/', include('sessoes_front.urls')),
     path('categorias/', include('categorias_front.urls')),
     path('classificacoesetarias/', include('classificacoesetarias_front.urls')),
+
+    path('accounts/', include('django.contrib.auth.urls')),
+
+    path('accounts/signup/', SignUpView.as_view(), name='signup'),
 ]

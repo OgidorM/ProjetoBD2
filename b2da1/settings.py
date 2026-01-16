@@ -1,4 +1,9 @@
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -13,7 +18,7 @@ SECRET_KEY = 'django-insecure-1)n4y9=-uso7+bpj(8mmco0e)x6=0q4eq@y(5c+y)@q4qd$qwy
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver']
 
 
 # Application definition
@@ -82,11 +87,11 @@ WSGI_APPLICATION = 'b2da1.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+       'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'cinemaDB',
-        'USER': 'app_user',
-        'PASSWORD': 'app123',
+        'NAME': 'cinemaDB',  # ou postgres, caso ainda não tenha criado cinemaDB
+        'USER': 'admin',     # ou postgres
+        'PASSWORD': 'admin', # ou postgres
         'HOST': 'localhost',
         'PORT': '5434', #win=5432, desk/others=5434
         'TEST': {
@@ -135,3 +140,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
+LOGIN_URL = '/accounts/login/'

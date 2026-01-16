@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Confirmar Eliminação - {{ client.nomecliente|default:"Cliente "|add:client.clienteid }}</title>
-    <!-- Adicione aqui os links para os arquivos CSS do Bootstrap e outros estilos necessários -->
-</head>
-<body>
+{% extends 'clientes/base.html' %}
+
+{% block title %}Confirmar Eliminação - {{ client.nomecliente }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -14,52 +13,59 @@
         {% endfor %}
     {% endif %}
 
-    <div class="container mt-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0">Confirmar Eliminação</h5>
-            </div>
-            <div class="card-body">
-                {% if has_related_objects %}
-                    <div class="alert alert-danger" role="alert">
-                        <h6><i class="bi bi-exclamation-triangle"></i> Não é possível eliminar este cliente</h6>
-                        <p class="mb-2">O cliente <strong>{{ client.nomecliente|default:"Cliente "|add:client.clienteid }}</strong> (ID {{ client.clienteid }}) tem os seguintes objetos relacionados que impedem a sua eliminação:</p>
+    <div class="card shadow-sm border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">🗑️ Confirmar Eliminação de Cliente</h5>
+        </div>
+        <div class="card-body">
 
-                        {% if related_vendas %}
-                            <div class="mb-3">
-                                <h6 class="text-danger">Vendas ({{ related_vendas.count }}):</h6>
-                                <ul class="list-unstyled ms-3">
-                                    {% for venda in related_vendas|slice:":5" %}
-                                        <li><small>• Venda ID: {{ venda.vendaid }} - Data: {{ venda.data|default:"N/A" }} - Total: {{ venda.totalvenda|default:"N/A" }}€</small></li>
-                                    {% endfor %}
-                                    {% if related_vendas.count > 5 %}
-                                        <li><small>• ... e mais {{ related_vendas.count|add:"-5" }} vendas</small></li>
-                                    {% endif %}
-                                </ul>
-                            </div>
-                        {% endif %}
+            <h5 class="card-title mb-4">Tem a certeza que deseja eliminar o cliente "<strong>{{ client.nomecliente|default:"Cliente sem nome" }}</strong>" (ID {{ client.clienteid }})?</h5>
 
-                        <p class="mb-0"><strong>Para eliminar este cliente, primeiro elimine todas as vendas associadas.</strong></p>
-                    </div>
+            {% if has_related_objects %}
+                <div class="alert alert-info border-info" role="alert">
+                    <h6 class="fw-bold"><i class="bi bi-info-circle-fill"></i> Nota sobre Histórico Financeiro</h6>
+                    <p class="mb-2">Este cliente possui registos de vendas. Devido às políticas de integridade de dados:</p>
 
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'clientes:list' %}" class="btn btn-primary">Voltar à Lista</a>
+                    <ul class="mb-3">
+                        <li>As vendas <strong>NÃO</strong> serão apagadas.</li>
+                        <li>Os registos ficarão associados a um <strong>Cliente Anónimo (NULL)</strong>.</li>
+                        <li>O valor financeiro total se manterá correto.</li>
+                    </ul>
+
+                    <div class="card bg-light border-0 mb-3">
+                        <div class="card-body py-2">
+                            <h6 class="text-secondary fw-bold small">Registos que serão desassociados ({{ related_vendas.count }}):</h6>
+                            <ul class="list-unstyled ms-3 mb-0 text-muted">
+                                {% for venda in related_vendas|slice:":5" %}
+                                    <li>
+                                        <small>
+                                            • Venda #{{ venda.vendaid }}
+                                            {% if venda.data %}- {{ venda.data|date:"d/m/Y" }}{% endif %}
+                                            {% if venda.totalvenda %}({{ venda.totalvenda }}€){% endif %}
+                                        </small>
+                                    </li>
+                                {% endfor %}
+                                {% if related_vendas.count > 5 %}
+                                    <li><small>• ... e mais {{ related_vendas.count|add:"-5" }} vendas</small></li>
+                                {% endif %}
+                            </ul>
+                        </div>
                     </div>
-                {% else %}
-                    <p class="mb-3">Tens a certeza que queres eliminar o cliente <strong>{{ client.nomecliente|default:"Cliente "|add:client.clienteid }}</strong> (ID {{ client.clienteid }})?</p>
-                    <div class="alert alert-warning" role="alert">
-                        <strong>Atenção:</strong> Esta ação não pode ser desfeita.
-                    </div>
-                    <form method="post">
-                        {% csrf_token %}
-                        <a href="{% url 'clientes:list' %}" class="btn btn-secondary me-2">Cancelar</a>
-                        <button type="submit" class="btn btn-danger">Sim, Eliminar</button>
-                    </form>
-                {% endif %}
-            </div>
+                </div>
+            {% else %}
+                <div class="alert alert-secondary" role="alert">
+                    <i class="bi bi-check-circle"></i> Este cliente não tem histórico de vendas. Pode eliminar sem impacto.
+                </div>
+            {% endif %}
+
+            <form method="post" class="mt-4 d-flex justify-content-end gap-2">
+                {% csrf_token %}
+                <a href="{% url 'clientes:list' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Sim, Eliminar Cliente
+                </button>
+            </form>
         </div>
     </div>
-
-    <!-- Adicione aqui os scripts do Bootstrap e outros scripts necessários -->
-</body>
-</html>
+</div>
+{% endblock %}

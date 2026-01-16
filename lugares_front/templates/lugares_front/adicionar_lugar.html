@@ -4,28 +4,44 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-3">Adicionar Lugar</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Adicionar Novo Lugar</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
 
-    <form method="post" class="card p-4 shadow-sm">
-        {% csrf_token %}
-        <div class="mb-3">
-            Sala
-            {{ form.salaid }}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="text-danger small">
+                                        {{ field.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'lista_lugares' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-lg"></i> Criar Lugar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            Fila
-            {{ form.fila }}
-        </div>
-        <div class="mb-3">
-            Número
-            {{ form.numero }}
-        </div>
-        <div class="mb-3">
-            Tipo
-            {{ form.tipolugar }}
-        </div>
-        <button type="submit" class="btn btn-success">Guardar Lugar</button>
-        <a href="{% url 'lista_lugares' %}" class="btn btn-secondary">Cancelar</a>
-    </form>
+    </div>
 </div>
+
+<script>
+    document.querySelectorAll('input, select, textarea').forEach(element => {
+        element.classList.add('form-control');
+    });
+</script>
 {% endblock %}
