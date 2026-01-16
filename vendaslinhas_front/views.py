@@ -7,10 +7,12 @@ from .forms import VendaLinhaForm
 def index(request):
     return redirect('lista_vendaslinhas')
 
+@login_required
 def lista_vendaslinhas(request):
     vendaslinhas = VendaLinhas.objects.select_related('vendaid', 'produtoid').order_by('vendalinhaid')
     return render(request, 'vendaslinhas_front/lista_vendaslinhas.html', {'vendaslinhas': vendaslinhas})
 
+@login_required
 def adicionar_vendalinha(request):
     if request.method == 'POST':
         form = VendaLinhaForm(request.POST)

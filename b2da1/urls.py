@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from bd2ap1.views import home, SignUpView
+from bd2ap1 import views as api_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -21,6 +22,8 @@ urlpatterns = [
     path('sessoes/', include('sessoes_front.urls')),
     path('categorias/', include('categorias_front.urls')),
     path('classificacoesetarias/', include('classificacoesetarias_front.urls')),
+    # API endpoints
+    path('api/filmes/', api_views.filmes_api, name='filmes_api'),
 
     path('accounts/', include('django.contrib.auth.urls')),
 

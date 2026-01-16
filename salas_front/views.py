@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
@@ -8,10 +9,12 @@ from .forms import SalaForm
 def index(request):
     return redirect('listar_salas')
 
+@login_required
 def lista_salas(request):
     salas = Salas.objects.select_related('cinemaid').order_by('salaid')
     return render(request, 'salas_front/lista_salas.html', {'salas': salas})
 
+@login_required
 def adicionar_sala(request):
     if request.method == 'POST':
         form = SalaForm(request.POST)
@@ -22,6 +25,7 @@ def adicionar_sala(request):
         form = SalaForm()
     return render(request, 'salas_front/adicionar_sala.html', {'form': form})
 
+@login_required
 def editar_sala(request, salaid):
     salas = Salas.objects.get(pk=salaid)
     if request.method == 'POST':
@@ -33,6 +37,7 @@ def editar_sala(request, salaid):
         form = SalaForm(instance=salas)
     return render(request, 'salas_front/editar_sala.html', {'form': form, 'salas': salas})
 
+@login_required
 def remover_sala(request, salaid):
     salas = Salas.objects.get(salaid=salaid)
 

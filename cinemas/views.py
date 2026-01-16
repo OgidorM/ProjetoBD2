@@ -40,6 +40,7 @@ def cinema_list(request: HttpRequest) -> HttpResponse:
     return render(request, 'cinemas/list.html', {'cinemas': cinemas})
 
 
+@login_required
 def cinema_detail(request: HttpRequest, cinema_id: int) -> HttpResponse:
     cinema = _get_or_404(cinema_id)
     if request.GET.get('format') == 'json':
@@ -148,6 +149,7 @@ def cinema_delete(request: HttpRequest, cinema_id: int) -> HttpResponse:
     })
 
 
+@login_required
 def cinema_search(request: HttpRequest) -> HttpResponse:
     term = request.GET.get('q', '').strip()
     limit_raw = request.GET.get('limit')
