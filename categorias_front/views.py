@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -6,13 +7,16 @@ from django.db import connection
 from bd2ap1.models import Categorias
 from .forms import CategoriaForm
 
+@login_required
 def index(request):
     return redirect('lista_categorias')
 
+@login_required
 def lista_categorias(request):
     categorias = Categorias.objects.order_by('categoriaid')
     return render(request, 'categorias_front/lista_categorias.html', {'categorias': categorias})
 
+@login_required
 def adicionar_categoria(request):
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
