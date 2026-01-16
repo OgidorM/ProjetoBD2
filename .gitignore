@@ -1,10 +1,121 @@
+# === Python / Django ===
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.env
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environments
 .venv/
+venv/
+env/
+ENV/
+.python-venv/
+
+# Environment / secrets
+.env
+.env.*
+*.env
+secrets/
+secret.json
+*.pem
+*.key
+
+# Django stuff
+# Local SQLite DB (project uses PostgreSQL in settings)
 db.sqlite3
+# Collected static & media (rebuild or regenerate in deployment)
+static/
+staticfiles/
+media/
+
+# Logs
+*.log
+logs/
+
+# Coverage / testing
+htmlcov/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+pytest_cache/
+
+# Type checking / linters
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+ruff_cache/
+.pyright/
+
+# Build / packaging artifacts
+dist/
+build/
+.eggs/
+*.egg-info/
+*.egg
+
+# Jupyter / notebook
+.ipynb_checkpoints/
+
+# OS / misc
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
 .idea/
 .vscode/
-*.log
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Wheel metadata
+pip-wheel-metadata/
+
+# Caches
+pip-cache/
+__pypackages__/
+
+# Local tooling
+.tox/
+.nox/
+.poetry-cache/
+.pdm.toml
+.pdm-python
+
+# Translation templates (uncompiled)
+*.pot
+
+# SQLite journal / temp files
+*.sqlite3-journal
+
+# Optional: uncomment if you generate compiled messages or static build hashes
+# locale/**/django.mo
+
+# Node (if front-end assets ever added)
+node_modules/
+*.tsbuildinfo
+
+# Ignore backup / swap files
+*~
+*.swp
+*.swx
+
+# JetBrains specific (already covered by .idea/; keep selective files if desired)
+# If you want to keep code style or inspections, remove .idea/ above and whitelist specific XML files.
+
+# Pyenv & similar
+.python-version
+
+# VSCode data
+.history/
+
+# End of file
+
