@@ -67,6 +67,8 @@ Thumbs.db
 
 # IDE / Editor
 .idea/
+!.idea/vcs.xml
+!.idea/modules.xml
 .vscode/
 *.iml
 *.sublime-project
@@ -102,6 +104,7 @@ __pypackages__/
 # Node (if front-end assets ever added)
 node_modules/
 *.tsbuildinfo
+.vite/
 
 # Ignore backup / swap files
 *~
