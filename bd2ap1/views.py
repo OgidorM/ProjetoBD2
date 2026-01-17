@@ -149,6 +149,114 @@ def criar_sessao_api(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
+def lista_sessoes_api(request):
+    """
+    API endpoint to list all sessions (for admin)
+    """
+    sessoes = Sessoes.objects.select_related('filmeid', 'salaid').order_by('-inicio')
+    serializer = SessoesSerializer(sessoes, many=True)
+    return Response(serializer.data)
+
+@api_view(['DELETE'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def deletar_sessao_api(request, sessaoid):
+    """
+    API endpoint to delete a session (Admin only)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        
+    try:
+        sessao = Sessoes.objects.get(pk=sessaoid)
+        
+        # Check for sold tickets (Bilhetes)
+        if sessao.bilhetes.count() > 0:
+            return Response({"error": "Cannot delete session with sold tickets"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Clean up LugaresSessao (if using CASCADE it would be automatic, but let's be safe or if it's PROTECT)
+        # LugaresSessao is PROTECT on sessao, so we must delete them first
+        LugaresSessao.objects.filter(sessaoid=sessao).delete()
+        
+        sessao.delete()
+        return Response({"message": "Session deleted successfully"}, status=status.HTTP_200_OK)
+    except Sessoes.DoesNotExist:
+        return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def bilhetes_sessao_api(request, sessaoid):
+    """
+    API to list all tickets for a session (Admin)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+    
+    bilhetes = Bilhetes.objects.filter(sessaoid=sessaoid).select_related('lugarid')
+    data = []
+    for b in bilhetes:
+        try:
+            linha = VendaLinhas.objects.filter(bilheteid=b).select_related('vendaid__clienteid').first()
+            if linha and linha.vendaid:
+                cliente = linha.vendaid.clienteid
+                cliente_info = f"{cliente.nomecliente}" if cliente else "Unknown"
+                venda_id = linha.vendaid.vendaid
+            else:
+                cliente_info = "N/A"
+                venda_id = None
+        except Exception:
+            cliente_info = "Error"
+            venda_id = None
+            
+        data.append({
+            "bilheteid": b.bilheteid,
+            "lugar": f"{b.lugarid.fila}{b.lugarid.numero}",
+            "cliente": cliente_info,
+            "venda_id": venda_id,
+            "preco": b.precobilhete
+        })
+    return Response(data)
+
+@api_view(['DELETE'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def cancelar_bilhete_api(request, bilheteid):
+    """
+    API to cancel a ticket (Admin)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        
+    try:
+        with transaction.atomic():
+            bilhete = Bilhetes.objects.get(pk=bilheteid)
+            lugar = bilhete.lugarid
+            sessao = bilhete.sessaoid
+            
+            # 1. Update LugaresSessao to Livre
+            try:
+                ls = LugaresSessao.objects.get(lugarid=lugar, sessaoid=sessao)
+                ls.estado = 'Livre'
+                ls.save()
+            except LugaresSessao.DoesNotExist:
+                pass
+            
+            # 2. Delete VendaLinha
+            VendaLinhas.objects.filter(bilheteid=bilhete).delete()
+            
+            # 3. Delete Bilhete
+            bilhete.delete()
+            
+            return Response({"message": "Ticket cancelled successfully"})
+    except Bilhetes.DoesNotExist:
+        return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
 def lugares_sessao_api(request, sessaoid):
     """
     API endpoint to get seats for a session

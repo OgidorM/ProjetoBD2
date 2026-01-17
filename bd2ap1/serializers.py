@@ -51,7 +51,7 @@ class SessoesSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Sessoes
-        fields = ['sessaoid', 'sala', 'inicio', 'fim', 'versao', 'precosessao']
+        fields = ['sessaoid', 'sala', 'filmeid', 'inicio', 'fim', 'versao', 'precosessao']
 
 class SessaoCreateSerializer(serializers.ModelSerializer):
     class Meta:

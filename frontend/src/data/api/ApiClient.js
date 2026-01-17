@@ -10,6 +10,10 @@ export const API_CONFIG = {
         CREATE_SALE: '/api/vendas/criar/',
         MY_SALES: '/api/vendas/minhas/',
         CREATE_SESSION: '/api/sessoes/criar/',
+        ALL_SESSIONS: '/api/sessoes/',
+        DELETE_SESSION: (id) => `/api/sessoes/${id}/deletar/`,
+        SESSION_TICKETS: (id) => `/api/sessoes/${id}/bilhetes/`,
+        CANCEL_TICKET: (id) => `/api/bilhetes/${id}/cancelar/`,
         ROOMS: '/api/salas/',
         LOGOUT: '/api/logout/',
     },
@@ -22,6 +26,42 @@ export const API_CONFIG = {
 export class ApiClient {
     constructor(baseUrl = API_CONFIG.BASE_URL) {
         this.baseUrl = baseUrl;
+    }
+
+    /**
+     * Make a DELETE request
+     * @param {string} endpoint - API endpoint
+     * @returns {Promise<any>}
+     */
+    async delete(endpoint) {
+        try {
+            // Get CSRF token from cookie if available
+            const csrfToken = this._getCookie('csrftoken');
+            
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+            
+            if (csrfToken) {
+                headers['X-CSRFToken'] = csrfToken;
+            }
+
+            const response = await fetch(`${this.baseUrl}${endpoint}`, {
+                method: 'DELETE',
+                headers: headers,
+                credentials: 'include', // Send cookies
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API Error:', error);
+            throw error;
+        }
     }
 
     /**
