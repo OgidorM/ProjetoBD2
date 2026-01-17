@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Funcionarios, Lugares, Salas, Cinemas
 from .serializers import FilmesSerializer, SessoesSerializer, LugaresSessaoSerializer, SessaoCreateSerializer, SalasSerializer, CinemasSerializer
+from .mongo_logger import log_action
 
 def index(request):
     return render(request, 'core/index.html')
@@ -37,6 +38,8 @@ def login_api(request):
     user = authenticate(request, username=username, password=password)
     if user is not None:
         login(request, user)
+        # Log successful login to Mongo
+        log_action(user, 'login', 'User', user.id, {"status": "success"})
         return Response({
             "message": "Login successful", 
             "username": user.username,
@@ -60,6 +63,19 @@ def signup_api(request):
     try:
         user = User.objects.create_user(username=username, email=email, password=password)
         user.save()
+        
+        # Create corresponding Cliente record immediately to avoid confusion
+        cliente, created = Clientes.objects.get_or_create(
+            nomecliente=user.username,
+            defaults={'emailcliente': user.email}
+        )
+        
+        # Log signup to Mongo
+        log_action(user, 'signup', 'User', user.id, {
+            "email": email,
+            "cliente_id": cliente.clienteid
+        })
+        
         # Optional: Auto-login after signup
         login(request, user)
         return Response({"message": "User created successfully", "username": user.username}, status=status.HTTP_201_CREATED)
@@ -278,35 +294,35 @@ def lugares_sessao_api(request, sessaoid):
     API endpoint to get seats for a session
     """
     try:
-        # Get all seats for the session (LugaresSessao)
-        # Assuming LugaresSessao are pre-generated. 
-        # If not, we might need to get all Lugares for the room and left join with LugaresSessao.
-        # For now, let's assume we can fetch what's in LugaresSessao.
-        
-        # Strategy: Get the session to find the room
-        sessao = Sessoes.objects.get(pk=sessaoid)
-        
-        # Check if we have LugaresSessao records
-        lugares_ocupados = LugaresSessao.objects.filter(sessaoid=sessaoid)
-        
-        if not lugares_ocupados.exists():
-            # If no records exist yet, generate them from the room's seats
-            sala = sessao.salaid
-            if sala:
-                lugares = Lugares.objects.filter(salaid=sala)
-                lugares_sessao_novos = [
-                    LugaresSessao(
-                        lugarid=lugar,
-                        sessaoid=sessao,
-                        estado='Livre'
-                    ) for lugar in lugares
-                ]
-                LugaresSessao.objects.bulk_create(lugares_sessao_novos)
-                # Re-fetch the newly created seats
-                lugares_ocupados = LugaresSessao.objects.filter(sessaoid=sessaoid)
+        with transaction.atomic():
+            # Strategy: Get the session to find the room
+            sessao = Sessoes.objects.select_for_update().get(pk=sessaoid)
+            
+            # Check if we have LugaresSessao records
+            lugares_ocupados = LugaresSessao.objects.filter(sessaoid=sessaoid)
+            
+            if not lugares_ocupados.exists():
+                # If no records exist yet, generate them from the room's seats
+                sala = sessao.salaid
+                if sala:
+                    lugares = Lugares.objects.filter(salaid=sala)
+                    # Use get_or_create logic or bulk_create with safety
+                    # Since we are in a transaction with select_for_update, 
+                    # we can safely create if they still don't exist.
+                    lugares_sessao_novos = [
+                        LugaresSessao(
+                            lugarid=lugar,
+                            sessaoid=sessao,
+                            estado='Livre'
+                        ) for lugar in lugares
+                    ]
+                    LugaresSessao.objects.bulk_create(lugares_sessao_novos)
+                    # Re-fetch the newly created seats
+                    lugares_ocupados = LugaresSessao.objects.filter(sessaoid=sessaoid)
 
         # Use the serializer which includes the Lugar details
-        serializer = LugaresSessaoSerializer(lugares_ocupados, many=True)
+        # Ensure we return distinct seats by lugarid to avoid displaying duplicates if any remained
+        serializer = LugaresSessaoSerializer(lugares_ocupados.select_related('lugarid'), many=True)
         return Response(serializer.data)
     except Sessoes.DoesNotExist:
         return Response({"error": "Sessão not found"}, status=status.HTTP_404_NOT_FOUND)
