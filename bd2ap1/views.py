@@ -290,10 +290,20 @@ def lugares_sessao_api(request, sessaoid):
         lugares_ocupados = LugaresSessao.objects.filter(sessaoid=sessaoid)
         
         if not lugares_ocupados.exists():
-            # If no records exist yet, maybe we need to treat all room seats as free?
-            # Or maybe the system requires a procedure to generate them.
-            # Let's try to fetch all Lugares for the sala
-            pass
+            # If no records exist yet, generate them from the room's seats
+            sala = sessao.salaid
+            if sala:
+                lugares = Lugares.objects.filter(salaid=sala)
+                lugares_sessao_novos = [
+                    LugaresSessao(
+                        lugarid=lugar,
+                        sessaoid=sessao,
+                        estado='Livre'
+                    ) for lugar in lugares
+                ]
+                LugaresSessao.objects.bulk_create(lugares_sessao_novos)
+                # Re-fetch the newly created seats
+                lugares_ocupados = LugaresSessao.objects.filter(sessaoid=sessaoid)
 
         # Use the serializer which includes the Lugar details
         serializer = LugaresSessaoSerializer(lugares_ocupados, many=True)
