@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useBooking } from '../hooks/useBooking';
 import { ApiClient, API_CONFIG } from '../../data/api/ApiClient';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const UserPage = () => {
     const navigate = useNavigate();
@@ -41,6 +43,67 @@ const UserPage = () => {
             // Trigger storage event so Navbar updates
             window.dispatchEvent(new Event("storage"));
             navigate('/login');
+        }
+    };
+
+    const exportToPDF = (sale) => {
+        console.log("Starting PDF export for sale:", sale);
+        try {
+            const doc = new jsPDF();
+            
+            // Add Title
+            doc.setFontSize(22);
+            doc.setTextColor(231, 211, 147); // Yellow color
+            doc.text('CINEMA EXPERIENCE', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(16);
+            doc.setTextColor(40, 40, 40);
+            doc.text(`Order Confirmation #${sale.id}`, 20, 40);
+            
+            doc.setFontSize(12);
+            doc.text(`Customer: ${user.username}`, 20, 50);
+            doc.text(`Date: ${new Date(sale.data).toLocaleDateString()}`, 20, 57);
+            doc.text(`Total Paid: EUR ${sale.total}`, 20, 64);
+
+            // Table Header
+            const tableColumn = ["Movie", "Date/Time", "Room", "Seat"];
+            const tableRows = [];
+
+            sale.tickets.forEach(ticket => {
+                const ticketData = [
+                    ticket.filme,
+                    new Date(ticket.data).toLocaleString(),
+                    ticket.sala,
+                    ticket.lugar
+                ];
+                tableRows.push(ticketData);
+            });
+
+            console.log("Generating table with rows:", tableRows);
+
+            // Add Table using the autoTable function directly
+            autoTable(doc, {
+                startY: 75,
+                head: [tableColumn],
+                body: tableRows,
+                theme: 'striped',
+                headStyles: { fillColor: [231, 211, 147], textColor: [0, 0, 0] },
+            });
+
+            // Footer
+            const finalY = doc.lastAutoTable?.finalY || 150;
+            doc.setFontSize(10);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Thank you for choosing Cinema Experience!', 105, finalY + 20, { align: 'center' });
+            doc.text('Please present this PDF at the entrance.', 105, finalY + 27, { align: 'center' });
+
+            console.log("Saving PDF...");
+            // Save PDF
+            doc.save(`cinema_ticket_${sale.id}.pdf`);
+            console.log("PDF saved successfully");
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+            alert("Error generating PDF. Please check the console for details.");
         }
     };
 
@@ -134,9 +197,17 @@ const UserPage = () => {
                                         <div className="space-y-4">
                                             {userTickets.map((sale) => (
                                                 <div key={sale.id} className="bg-white/5 p-4 rounded-xl border border-white/10">
-                                                    <div className="flex justify-between items-center mb-2 border-b border-white/10 pb-2">
-                                                        <span className="text-sm text-white/60">Order #{sale.id}</span>
-                                                        <span className="text-yellow font-bold">€ {sale.total}</span>
+                                                    <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm text-white/60">Order #{sale.id}</span>
+                                                            <span className="text-yellow font-bold">€ {sale.total}</span>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => exportToPDF(sale)}
+                                                            className="px-4 py-2 bg-yellow/10 border border-yellow/20 text-yellow text-xs font-bold rounded-lg hover:bg-yellow hover:text-black transition-all"
+                                                        >
+                                                            Export PDF
+                                                        </button>
                                                     </div>
                                                     <div className="space-y-2">
                                                         {sale.tickets.map((ticket, idx) => (
