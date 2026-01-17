@@ -3,8 +3,12 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
 from django.db import connection
+from django.http import Http404
+from django.utils.dateparse import parse_date
+
 from bd2ap1.models import Vendas
 from .forms import VendaForm
+from .reports.mv_vendas_diarias import fetch_mv_vendas_diarias, build_mv_vendas_diarias_csv_response
 
 
 @login_required
@@ -84,3 +88,38 @@ def remover_venda(request, vendaid):
     }
 
     return render(request, 'vendas_front/confirmar_delete_venda.html', context)
+
+@login_required
+def export_mv_vendas_diarias_csv(request):
+    """Exporta a materialized view `mv_vendas_diarias` como CSV.
+
+    Query params opcionais:
+      - start=YYYY-MM-DD
+      - end=YYYY-MM-DD
+    """
+
+    start_raw = request.GET.get('start')
+    end_raw = request.GET.get('end')
+
+    start = parse_date(start_raw) if start_raw else None
+    end = parse_date(end_raw) if end_raw else None
+
+    # Se o usuário passou valor inválido, falha de forma explícita (evita export incorreto)
+    if start_raw and start is None:
+        raise Http404("Parâmetro 'start' inválido. Use YYYY-MM-DD.")
+    if end_raw and end is None:
+        raise Http404("Parâmetro 'end' inválido. Use YYYY-MM-DD.")
+
+    try:
+        rows = fetch_mv_vendas_diarias(start=start, end=end)
+    except Exception as exc:
+        raise Http404("Relatório mv_vendas_diarias indisponível.") from exc
+
+    suffix_parts = []
+    if start:
+        suffix_parts.append(f"from-{start.isoformat()}")
+    if end:
+        suffix_parts.append(f"to-{end.isoformat()}")
+    suffix = ("_" + "_".join(suffix_parts)) if suffix_parts else ""
+
+    return build_mv_vendas_diarias_csv_response(rows=rows, filename=f"mv_vendas_diarias{suffix}.csv")
