@@ -66,8 +66,9 @@ const MoviesPage = () => {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {movies.map((movie, index) => (
-                            <div
+                            <Link
                                 key={movie.id}
+                                to={`/filmes/${movie.id}`}
                                 className="group bg-gradient-to-br from-stone-900/40 to-neutral-900/20 backdrop-blur-sm rounded-lg overflow-hidden border border-white/10 hover:border-yellow/50 transition-all duration-300 hover:scale-105"
                             >
                                 <div className="p-6 h-full flex flex-col">
@@ -133,7 +134,7 @@ const MoviesPage = () => {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 )}

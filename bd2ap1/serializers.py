@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Filmes, Categorias, ClassificacoesEtarias, Cinemas
+from .models import Filmes, Categorias, ClassificacoesEtarias, Cinemas, Sessoes, Salas, Lugares, LugaresSessao
 
 
 class CategoriasSerializer(serializers.ModelSerializer):
@@ -40,4 +40,33 @@ class FilmesSerializer(serializers.ModelSerializer):
             'classificacao',
             'cinema'
         ]
+
+class SalasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Salas
+        fields = ['salaid', 'nomesala', 'tiposala']
+
+class SessoesSerializer(serializers.ModelSerializer):
+    sala = SalasSerializer(source='salaid', read_only=True)
+    
+    class Meta:
+        model = Sessoes
+        fields = ['sessaoid', 'sala', 'inicio', 'fim', 'versao', 'precosessao']
+
+class SessaoCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sessoes
+        fields = ['sessaoid', 'salaid', 'filmeid', 'inicio', 'fim', 'versao', 'estadosessao', 'precosessao']
+
+class LugaresSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lugares
+        fields = ['lugarid', 'fila', 'numero', 'tipolugar']
+
+class LugaresSessaoSerializer(serializers.ModelSerializer):
+    lugar = LugaresSerializer(source='lugarid', read_only=True)
+    
+    class Meta:
+        model = LugaresSessao
+        fields = ['lugarsessaoid', 'lugar', 'estado']
 

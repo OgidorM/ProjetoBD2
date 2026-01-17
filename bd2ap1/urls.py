@@ -19,4 +19,12 @@ urlpatterns = [
 
     # API endpoints
     path('api/filmes/', views.filmes_api, name='filmes_api'),
+    path('api/filmes/<int:filmeid>/sessoes/', views.sessoes_por_filme_api, name='sessoes_por_filme_api'),
+    path('api/sessoes/<int:sessaoid>/lugares/', views.lugares_sessao_api, name='lugares_sessao_api'),
+    path('api/vendas/criar/', views.criar_venda_api, name='criar_venda_api'),
+    path('api/vendas/minhas/', views.minhas_vendas_api, name='minhas_vendas_api'),
+    path('api/sessoes/criar/', views.criar_sessao_api, name='criar_sessao_api'),
+    path('api/salas/', views.salas_api, name='salas_api'),
+    path('api/login/', views.login_api, name='login_api'),
+    path('api/signup/', views.signup_api, name='signup_api'),
 ]

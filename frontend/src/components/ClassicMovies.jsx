@@ -109,11 +109,12 @@ const ClassicMovies = () => {
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
                             {movies.map((movie, i) => (
-                                <div
+                                <Link
                                     key={movie.id}
+                                    to={`/filmes/${movie.id}`}
                                     ref={(el) => (cardsRef.current[i] = el)}
                                     style={{ opacity: 1 }}
-                                    className={`card bg-gradient-to-br from-stone-900/40 to-neutral-900/20`}
+                                    className={`card bg-gradient-to-br from-stone-900/40 to-neutral-900/20 block no-underline`}
                                 >
                                     <div className="flex justify-between items-start mb-6">
                                         <span>{movie.year}</span>
@@ -139,7 +140,7 @@ const ClassicMovies = () => {
                                             </p>
                                         )}
                                     </div>
-                                </div>
+                                </Link>
                             ))}
                         </div>
 

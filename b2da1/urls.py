@@ -23,7 +23,17 @@ urlpatterns = [
     path('categorias/', include('categorias_front.urls')),
     path('classificacoesetarias/', include('classificacoesetarias_front.urls')),
     # API endpoints
+    path('api/whoami/', api_views.whoami_api, name='whoami_api'),
     path('api/filmes/', api_views.filmes_api, name='filmes_api'),
+    path('api/filmes/<int:filmeid>/sessoes/', api_views.sessoes_por_filme_api, name='sessoes_por_filme_api'),
+    path('api/sessoes/<int:sessaoid>/lugares/', api_views.lugares_sessao_api, name='lugares_sessao_api'),
+    path('api/vendas/criar/', api_views.criar_venda_api, name='criar_venda_api'),
+    path('api/vendas/minhas/', api_views.minhas_vendas_api, name='minhas_vendas_api'),
+    path('api/sessoes/criar/', api_views.criar_sessao_api, name='criar_sessao_api'),
+    path('api/salas/', api_views.salas_api, name='salas_api'),
+    path('api/login/', api_views.login_api, name='login_api'),
+    path('api/logout/', api_views.logout_api, name='logout_api'),
+    path('api/signup/', api_views.signup_api, name='signup_api'),
 
     path('accounts/', include('django.contrib.auth.urls')),
 

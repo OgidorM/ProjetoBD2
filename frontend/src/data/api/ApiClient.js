@@ -5,6 +5,13 @@ export const API_CONFIG = {
     BASE_URL: 'http://localhost:8000',
     ENDPOINTS: {
         MOVIES: '/api/filmes/',
+        SESSIONS_BY_MOVIE: (id) => `/api/filmes/${id}/sessoes/`,
+        SEATS_BY_SESSION: (id) => `/api/sessoes/${id}/lugares/`,
+        CREATE_SALE: '/api/vendas/criar/',
+        MY_SALES: '/api/vendas/minhas/',
+        CREATE_SESSION: '/api/sessoes/criar/',
+        ROOMS: '/api/salas/',
+        LOGOUT: '/api/logout/',
     },
     TIMEOUT: 10000,
 };
@@ -24,11 +31,13 @@ export class ApiClient {
      */
     async get(endpoint) {
         try {
+            console.log(`GET ${endpoint} - Cookies:`, document.cookie);
             const response = await fetch(`${this.baseUrl}${endpoint}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include', // Send cookies
             });
 
             if (!response.ok) {
@@ -50,16 +59,27 @@ export class ApiClient {
      */
     async post(endpoint, data) {
         try {
+            // Get CSRF token from cookie if available
+            const csrfToken = this._getCookie('csrftoken');
+            
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+            
+            if (csrfToken) {
+                headers['X-CSRFToken'] = csrfToken;
+            }
+
             const response = await fetch(`${this.baseUrl}${endpoint}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: headers,
                 body: JSON.stringify(data),
+                credentials: 'include', // Send cookies
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
 
             return await response.json();
@@ -67,6 +87,21 @@ export class ApiClient {
             console.error('API Error:', error);
             throw error;
         }
+    }
+    
+    _getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
 }
 
