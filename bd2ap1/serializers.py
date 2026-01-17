@@ -42,9 +42,10 @@ class FilmesSerializer(serializers.ModelSerializer):
         ]
 
 class SalasSerializer(serializers.ModelSerializer):
+    cinema = CinemasSerializer(source='cinemaid', read_only=True)
     class Meta:
         model = Salas
-        fields = ['salaid', 'nomesala', 'tiposala']
+        fields = ['salaid', 'nomesala', 'tiposala', 'cinema']
 
 class SessoesSerializer(serializers.ModelSerializer):
     sala = SalasSerializer(source='salaid', read_only=True)

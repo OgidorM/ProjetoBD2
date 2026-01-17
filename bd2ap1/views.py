@@ -15,8 +15,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Funcionarios, Lugares, Salas
-from .serializers import FilmesSerializer, SessoesSerializer, LugaresSessaoSerializer, SessaoCreateSerializer, SalasSerializer
+from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Funcionarios, Lugares, Salas, Cinemas
+from .serializers import FilmesSerializer, SessoesSerializer, LugaresSessaoSerializer, SessaoCreateSerializer, SalasSerializer, CinemasSerializer
 
 def index(request):
     return render(request, 'core/index.html')
@@ -85,10 +85,26 @@ def whoami_api(request):
 @api_view(['GET'])
 def filmes_api(request):
     """
-    API endpoint to get all movies in JSON format
+    API endpoint to get all movies in JSON format, optionally filtered by cinema
     """
-    filmes = Filmes.objects.select_related('categoriaid', 'classificacaoetaria', 'cinemaid').all()
+    cinema_id = request.query_params.get('cinema')
+    queryset = Filmes.objects.select_related('categoriaid', 'classificacaoetaria', 'cinemaid')
+    
+    if cinema_id:
+        queryset = queryset.filter(cinemaid=cinema_id)
+        
+    filmes = queryset.all()
     serializer = FilmesSerializer(filmes, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def cinemas_api(request):
+    """
+    API endpoint to get all cinemas in JSON format
+    """
+    cinemas = Cinemas.objects.all()
+    serializer = CinemasSerializer(cinemas, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
@@ -106,7 +122,7 @@ def sessoes_por_filme_api(request, filmeid):
     API endpoint to get sessions for a specific movie
     """
     try:
-        sessoes = Sessoes.objects.filter(filmeid=filmeid).select_related('salaid').order_by('inicio')
+        sessoes = Sessoes.objects.filter(filmeid=filmeid).select_related('salaid__cinemaid').order_by('inicio')
         serializer = SessoesSerializer(sessoes, many=True)
         return Response(serializer.data)
     except Exception as e:

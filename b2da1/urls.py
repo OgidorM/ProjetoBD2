@@ -24,6 +24,7 @@ urlpatterns = [
     path('classificacoesetarias/', include('classificacoesetarias_front.urls')),
     # API endpoints
     path('api/whoami/', api_views.whoami_api, name='whoami_api'),
+    path('api/cinemas/', api_views.cinemas_api, name='cinemas_api'),
     path('api/filmes/', api_views.filmes_api, name='filmes_api'),
     path('api/filmes/<int:filmeid>/sessoes/', api_views.sessoes_por_filme_api, name='sessoes_por_filme_api'),
     path('api/sessoes/<int:sessaoid>/lugares/', api_views.lugares_sessao_api, name='lugares_sessao_api'),

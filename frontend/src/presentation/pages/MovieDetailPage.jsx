@@ -71,27 +71,43 @@ const MovieDetailPage = () => {
                         ) : sessions.length === 0 ? (
                             <div className="text-white/50">No sessions available.</div>
                         ) : (
-                            <div className="space-y-4">
-                                {sessions.map(session => (
-                                    <div key={session.sessaoid} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:border-yellow/50 transition-colors">
-                                        <div>
-                                            <div className="text-xl text-white font-bold">
-                                                {new Date(session.inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </div>
-                                            <div className="text-sm text-white/60">
-                                                {new Date(session.inicio).toLocaleDateString()} • {session.sala.nomesala}
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-yellow font-bold text-lg">
-                                                € {parseFloat(session.precosessao).toFixed(2)}
-                                            </div>
-                                            <Link 
-                                                to={`/booking/${session.sessaoid}`}
-                                                className="inline-block mt-2 px-4 py-1 bg-yellow text-black text-sm font-bold rounded hover:bg-white transition-colors"
-                                            >
-                                                Book
-                                            </Link>
+                            <div className="space-y-8">
+                                {Object.entries(
+                                    sessions.reduce((acc, session) => {
+                                        const cinemaName = session.sala?.cinema?.nomecinema || 'Unknown Cinema';
+                                        if (!acc[cinemaName]) acc[cinemaName] = [];
+                                        acc[cinemaName].push(session);
+                                        return acc;
+                                    }, {})
+                                ).map(([cinemaName, cinemaSessions]) => (
+                                    <div key={cinemaName}>
+                                        <h3 className="text-xl font-bold text-yellow mb-4 border-b border-white/10 pb-2">
+                                            {cinemaName}
+                                        </h3>
+                                        <div className="space-y-4">
+                                            {cinemaSessions.map(session => (
+                                                <div key={session.sessaoid} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:border-yellow/50 transition-colors">
+                                                    <div>
+                                                        <div className="text-xl text-white font-bold">
+                                                            {new Date(session.inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </div>
+                                                        <div className="text-sm text-white/60">
+                                                            {new Date(session.inicio).toLocaleDateString()} • {session.sala?.nomesala || 'Sala N/A'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-yellow font-bold text-lg">
+                                                            € {parseFloat(session.precosessao).toFixed(2)}
+                                                        </div>
+                                                        <Link 
+                                                            to={`/booking/${session.sessaoid}`}
+                                                            className="inline-block mt-2 px-4 py-1 bg-yellow text-black text-sm font-bold rounded hover:bg-white transition-colors"
+                                                        >
+                                                            Book
+                                                        </Link>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 ))}

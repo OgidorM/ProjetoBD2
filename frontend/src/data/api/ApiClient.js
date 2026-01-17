@@ -4,7 +4,9 @@
 export const API_CONFIG = {
     BASE_URL: 'http://localhost:8000',
     ENDPOINTS: {
+        CINEMAS: '/api/cinemas/',
         MOVIES: '/api/filmes/',
+        MOVIES_BY_CINEMA: (id) => `/api/filmes/?cinema=${id}`,
         SESSIONS_BY_MOVIE: (id) => `/api/filmes/${id}/sessoes/`,
         SEATS_BY_SESSION: (id) => `/api/sessoes/${id}/lugares/`,
         CREATE_SALE: '/api/vendas/criar/',

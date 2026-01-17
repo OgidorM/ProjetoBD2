@@ -30,6 +30,7 @@ const Sidebar = () => {
     const links = [
         { title: 'Home', path: '/' },
         { title: 'Movies', path: '/filmes' },
+        { title: 'Cinemas', path: '/cinemas' },
         { title: 'My Tickets', path: '/profile' },
     ];
 
