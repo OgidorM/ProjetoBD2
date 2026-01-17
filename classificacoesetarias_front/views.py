@@ -11,7 +11,6 @@ from .forms import ClassificacaoEtariaForm
 def index(request):
     return redirect('lista_classificacoesetarias')
 
-@login_required
 def lista_classificacoesetarias(request):
     classificacoes = ClassificacoesEtarias.objects.order_by('classificacaoid')
     return render(request, 'classificacoesetarias_front/lista_classificacoesetarias.html', {'classificacoes': classificacoes})

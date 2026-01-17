@@ -9,7 +9,6 @@ from .forms import SalaForm
 def index(request):
     return redirect('listar_salas')
 
-@login_required
 def lista_salas(request):
     salas = Salas.objects.select_related('cinemaid').order_by('salaid')
     return render(request, 'salas_front/lista_salas.html', {'salas': salas})

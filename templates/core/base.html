@@ -16,17 +16,33 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
+          <!-- Público (catálogo/consulta) -->
           <li class="nav-item"><a class="nav-link" href="{% url 'lista_filmes' %}">Filmes</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'lista_salas' %}">Salas</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'lista_lugares' %}">Lugares</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'lista_bilhetes' %}">Bilhetes</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'lista_produtos' %}">Produtos</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'lista_vendas' %}">Vendas</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'lista_vendaslinhas' %}">Linhas</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'lista_avaliacoes' %}">Avaliações</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'lista_sessoes' %}">Sessões</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'lista_categorias' %}">Categorias</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'lista_classificacoesetarias' %}">Classificações Etárias</a></li>
+
+          <!-- Itens mais "backoffice" / operações: só mostrar a quem está autenticado -->
+          {% if user.is_authenticated %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'lista_salas' %}">Salas</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'lista_lugares' %}">Lugares</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'lista_bilhetes' %}">Bilhetes</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'lista_produtos' %}">Produtos</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'lista_vendas' %}">Vendas</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'lista_vendaslinhas' %}">Linhas</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'lista_avaliacoes' %}">Avaliações</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'lista_categorias' %}">Categorias</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'lista_classificacoesetarias' %}">Classificações Etárias</a></li>
+
+            <li class="nav-item"><span class="nav-link disabled">{{ user.username }}</span></li>
+            <li class="nav-item">
+              <form action="{% url 'logout' %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="nav-link btn btn-link p-0" style="text-decoration: none;">Logout</button>
+              </form>
+            </li>
+          {% else %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'signup' %}">Registar</a></li>
+          {% endif %}
         </ul>
       </div>
     </div>

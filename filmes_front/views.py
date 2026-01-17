@@ -3,14 +3,15 @@ from django.shortcuts import render, redirect
 from bd2ap1.models import Filmes
 from .forms import FilmeForm
 
-@login_required
+
 def index(request):
     return redirect('lista_filmes')
 
-@login_required
+
 def lista_filmes(request):
     filmes = Filmes.objects.all()
     return render(request, 'filmes_front/lista_filmes.html', {'filmes': filmes})
+
 
 @login_required
 def adicionar_filme(request):

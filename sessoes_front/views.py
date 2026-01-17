@@ -7,14 +7,16 @@ from django.db import connection
 from bd2ap1.models import Sessoes
 from .forms import SessaoForm
 
-@login_required
+
 def index(request):
     return redirect('lista_sessoes')
 
-@login_required
+
 def lista_sessoes(request):
     sessoes = Sessoes.objects.select_related('filmeid', 'salaid').order_by('sessaoid')
     return render(request, 'sessoes_front/lista_sessoes.html', {'sessoes': sessoes})
+
+
 
 @login_required
 def adicionar_sessao(request):
@@ -45,6 +47,8 @@ def adicionar_sessao(request):
         form = SessaoForm()
     return render(request, 'sessoes_front/adicionar_sessao.html', {'form': form})
 
+
+@login_required
 def editar_sessao(request, sessaoid):
     sessao = Sessoes.objects.get(sessaoid=sessaoid)
     if request.method == 'POST':
@@ -83,6 +87,8 @@ def editar_sessao(request, sessaoid):
         form = SessaoForm(instance=sessao)
     return render(request, 'sessoes_front/editar_sessao.html', {'form': form, 'sessao': sessao})
 
+
+@login_required
 def remover_sessao(request, sessaoid):
     sessao = Sessoes.objects.get(sessaoid=sessaoid)
 

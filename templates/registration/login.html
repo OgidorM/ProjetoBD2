@@ -1,0 +1,43 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4>Login</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                User ou Password incorretos.
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="id_username">Username</label>
+                            <input id="id_username" type="text" name="username" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_password">Password</label>
+                            <input id="id_password" type="password" name="password" class="form-control" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Entrar</button>
+
+                        <div class="text-center mt-3">
+                            <a href="{% url 'signup' %}">Ainda não tens conta? Regista-te</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
