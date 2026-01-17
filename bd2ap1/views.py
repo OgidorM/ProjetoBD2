@@ -135,10 +135,14 @@ def salas_api(request):
 @api_view(['GET'])
 def sessoes_por_filme_api(request, filmeid):
     """
-    API endpoint to get sessions for a specific movie
+    API endpoint to get future sessions for a specific movie
     """
     try:
-        sessoes = Sessoes.objects.filter(filmeid=filmeid).select_related('salaid__cinemaid').order_by('inicio')
+        now = timezone.now()
+        sessoes = Sessoes.objects.filter(
+            filmeid=filmeid, 
+            inicio__gte=now
+        ).select_related('salaid__cinemaid').order_by('inicio')
         serializer = SessoesSerializer(sessoes, many=True)
         return Response(serializer.data)
     except Exception as e:
@@ -183,9 +187,10 @@ def criar_sessao_api(request):
 @api_view(['GET'])
 def lista_sessoes_api(request):
     """
-    API endpoint to list all sessions (for admin)
+    API endpoint to list all future sessions (for admin)
     """
-    sessoes = Sessoes.objects.select_related('filmeid', 'salaid').order_by('-inicio')
+    now = timezone.now()
+    sessoes = Sessoes.objects.filter(inicio__gte=now).select_related('filmeid', 'salaid').order_by('inicio')
     serializer = SessoesSerializer(sessoes, many=True)
     return Response(serializer.data)
 
