@@ -5,7 +5,11 @@
 {% block content %}
     {% if filmes %}
     <div class="container mt-4">
-        <h2 class="mb-3">Lista de Filmes</h2>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">Lista de Filmes</h2>
+            <a class="btn btn-outline-primary" href="{% url 'importar_sinopses' %}">Importar sinopses</a>
+        </div>
+
         <table class="table table-striped table-hover table-bordered align-middle text-center">
             <thead class="table-dark">
                 <tr>
@@ -13,6 +17,7 @@
                     <th>Título</th>
                     <th>Categoria</th>
                     <th>Duração (min)</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -22,11 +27,88 @@
                     <td>{{ filme.titulo }}</td>
                     <td>{{ filme.categoriaid.nomecategoria }}</td>
                     <td>{{ filme.duracao }}</td>
+                    <td>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-secondary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#filmeModal"
+                            data-filme-id="{{ filme.filmeid }}"
+                        >
+                            Ver descrição
+                        </button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="filmeModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="filmeModalTitle">Detalhes do filme</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2 text-muted" id="filmeModalMeta"></div>
+            <p id="filmeModalSinopse" style="white-space: pre-wrap;">A carregar...</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const modalEl = document.getElementById('filmeModal');
+        if (!modalEl) return;
+
+        const titleEl = document.getElementById('filmeModalTitle');
+        const metaEl = document.getElementById('filmeModalMeta');
+        const sinopseEl = document.getElementById('filmeModalSinopse');
+
+        modalEl.addEventListener('show.bs.modal', async function (event) {
+          const button = event.relatedTarget;
+          const filmeId = button?.getAttribute('data-filme-id');
+
+          titleEl.textContent = 'Detalhes do filme';
+          metaEl.textContent = '';
+          sinopseEl.textContent = 'A carregar...';
+
+          if (!filmeId) {
+            sinopseEl.textContent = 'Filme inválido.';
+            return;
+          }
+
+          try {
+            const res = await fetch(`/filmes/detalhe/${filmeId}/`, { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) {
+              sinopseEl.textContent = 'Não foi possível carregar o filme.';
+              return;
+            }
+            const data = await res.json();
+
+            titleEl.textContent = data.titulo || 'Detalhes do filme';
+            const parts = [];
+            if (data.categoria) parts.push(`Categoria: ${data.categoria}`);
+            if (data.duracao) parts.push(`Duração: ${data.duracao} min`);
+            if (data.classificacao) parts.push(`Classificação: ${data.classificacao}`);
+            if (data.cinema) parts.push(`Cinema: ${data.cinema}`);
+            metaEl.textContent = parts.join(' • ');
+
+            sinopseEl.textContent = data.sinopse ? data.sinopse : 'Sem descrição disponível.';
+          } catch (e) {
+            sinopseEl.textContent = 'Erro ao carregar.';
+          }
+        });
+      })();
+    </script>
+
     {% else %}
     <div class="container mt-4">
         <div class="alert alert-warning text-center">
