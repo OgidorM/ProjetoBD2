@@ -49,7 +49,6 @@ const Sidebar = () => {
         { title: 'Shop', path: '/shop' },
         { title: 'Cart', path: '/cart', count: true },
         { title: 'My Tickets', path: '/tickets' },
-        { title: 'Profile', path: '/profile' },
     ];
 
     const isAdmin = user && (user.is_staff || user.is_superuser);
