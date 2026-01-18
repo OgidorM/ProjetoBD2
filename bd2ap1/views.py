@@ -15,7 +15,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Funcionarios, Lugares, Salas, Cinemas, Produtos, Avaliacoes
+from .models import (
+    Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, 
+    Bilhetes, Clientes, Funcionarios, Lugares, Salas, 
+    Cinemas, Produtos, Avaliacoes, Categorias, ClassificacoesEtarias
+)
 from .serializers import FilmesSerializer, SessoesSerializer, LugaresSessaoSerializer, SessaoCreateSerializer, SalasSerializer, CinemasSerializer, ProdutosSerializer
 from .mongo_logger import log_action
 
@@ -543,6 +547,159 @@ def admin_avaliacoes_api(request):
         })
     return Response(data)
 
+@api_view(['GET', 'POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_funcionarios_api(request):
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+    
+    if request.method == 'GET':
+        funcionarios = Funcionarios.objects.all().select_related('cinemaid')
+        data = [{
+            "id": f.funcionarioid,
+            "nome": f.nomefuncionario,
+            "email": f.emailfuncionario,
+            "cargo": f.cargo,
+            "salario": f.salario,
+            "cinema": f.cinemaid.nomecinema if f.cinemaid else 'N/A',
+            "cinema_id": f.cinemaid_id
+        } for f in funcionarios]
+        return Response(data)
+    
+    if request.method == 'POST':
+        try:
+            cinema = Cinemas.objects.get(pk=request.data.get('cinemaid')) if request.data.get('cinemaid') else None
+            f = Funcionarios.objects.create(
+                nomefuncionario=request.data.get('nome'),
+                emailfuncionario=request.data.get('email'),
+                telefonefuncionario=request.data.get('telefone', ''),
+                cargo=request.data.get('cargo'),
+                admissao=timezone.now().date(),
+                salario=request.data.get('salario', 0),
+                cinemaid=cinema
+            )
+            return Response({"message": "Funcionário criado", "id": f.funcionarioid}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_create_produto_api(request):
+    """
+    API to create a new product (Admin only)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        p = Produtos.objects.create(
+            nomeproduto=request.data.get('nome'),
+            precoproduto=request.data.get('preco'),
+            stock=request.data.get('stock', 0),
+            ativo=True
+        )
+        return Response({"id": p.produtoid}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST', 'DELETE'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_funcionario_detail_api(request, pk):
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        funcionario = Funcionarios.objects.get(pk=pk)
+        if request.method == 'DELETE':
+            funcionario.delete()
+            return Response({"message": "Eliminado"})
+        
+        # Update
+        funcionario.nomefuncionario = request.data.get('nome', funcionario.nomefuncionario)
+        funcionario.cargo = request.data.get('cargo', funcionario.cargo)
+        funcionario.salario = request.data.get('salario', funcionario.salario)
+        funcionario.save()
+        return Response({"message": "Atualizado"})
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_clientes_api(request):
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+    
+    if request.method == 'GET':
+        clientes = Clientes.objects.all()
+        data = [{
+            "id": c.clienteid,
+            "nome": c.nomecliente,
+            "email": c.emailcliente,
+            "telefone": c.telefonecliente,
+            "nif": c.nif
+        } for c in clientes]
+        return Response(data)
+    
+    if request.method == 'POST':
+        c = Clientes.objects.create(
+            nomecliente=request.data.get('nome'),
+            emailcliente=request.data.get('email'),
+            nif=request.data.get('nif', '')
+        )
+        return Response({"id": c.clienteid})
+
+@api_view(['POST', 'DELETE'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_cliente_detail_api(request, pk):
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        cliente = Clientes.objects.get(pk=pk)
+        if request.method == 'DELETE':
+            cliente.delete()
+            return Response({"message": "Eliminado"})
+        cliente.nomecliente = request.data.get('nome', cliente.nomecliente)
+        cliente.emailcliente = request.data.get('email', cliente.emailcliente)
+        cliente.save()
+        return Response({"message": "Atualizado"})
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST', 'DELETE'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_produto_detail_api(request, pk):
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        produto = Produtos.objects.get(pk=pk)
+        if request.method == 'DELETE':
+            produto.ativo = False # Soft delete
+            produto.save()
+            return Response({"message": "Desativado"})
+        
+        # New: support relative stock update if 'stock_change' is provided
+        stock_change = request.data.get('stock_change')
+        if stock_change is not None:
+            new_stock = produto.stock + int(stock_change)
+            if new_stock < 0:
+                return Response({"error": "Stock cannot be negative"}, status=status.HTTP_400_BAD_REQUEST)
+            produto.stock = new_stock
+        else:
+            # Traditional full update
+            produto.nomeproduto = request.data.get('nome', produto.nomeproduto)
+            produto.precoproduto = request.data.get('preco', produto.precoproduto)
+            produto.stock = request.data.get('stock', produto.stock)
+        
+        produto.save()
+        return Response({"message": "Atualizado", "new_stock": produto.stock})
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['POST'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
@@ -578,6 +735,128 @@ def admin_create_movie_api(request):
         log_action(request.user, 'create_movie', 'Filmes', movie.filmeid, {"titulo": movie.titulo})
         
         return Response({"message": "Movie created successfully", "id": movie.filmeid}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_vendas_api(request):
+    """
+    API to list every sale in the system (Admin only)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        
+    try:
+        vendas = Vendas.objects.all().select_related('clienteid').order_by('-data', '-vendaid')
+        data = []
+        for v in vendas:
+            # Reusing the same detailed logic from minhas_vendas but for all sales
+            linhas = v.linhas.all().select_related('bilheteid__sessaoid__filmeid', 'bilheteid__sessaoid__salaid', 'bilheteid__lugarid', 'produtoid')
+            items = []
+            for l in linhas:
+                if l.bilheteid:
+                    items.append({
+                        "tipo": "ticket",
+                        "filme": l.bilheteid.sessaoid.filmeid.titulo,
+                        "sala": l.bilheteid.sessaoid.salaid.nomesala,
+                        "data": l.bilheteid.sessaoid.inicio,
+                        "lugar": f"{l.bilheteid.lugarid.fila}{l.bilheteid.lugarid.numero}",
+                        "quantidade": l.quantidade,
+                        "preco": l.precolinha
+                    })
+                elif l.produtoid:
+                    items.append({
+                        "tipo": "produto",
+                        "nome": l.produtoid.nomeproduto,
+                        "quantidade": l.quantidade,
+                        "preco": l.precolinha
+                    })
+            
+            # Calculate total from lines if totalvenda is 0 or None
+            calc_total = v.totalvenda
+            if not calc_total or calc_total == 0:
+                calc_total = sum(l.precolinha for l in v.linhas.all())
+
+            data.append({
+                "id": v.vendaid,
+                "cliente": v.clienteid.nomecliente if v.clienteid else "Unknown",
+                "data": v.data,
+                "total": calc_total,
+                "items": items
+            })
+            
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_create_cinema_api(request):
+    """
+    API to create a new cinema (Admin only)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        
+    try:
+        cinema = Cinemas.objects.create(
+            nomecinema=request.data.get('nome'),
+            localidadecinema=request.data.get('localidade'),
+            emailcinema=request.data.get('email', ''),
+            telefonecinema=request.data.get('telefone', ''),
+            moradacinema=request.data.get('morada', ''),
+            codigopostalcinema=request.data.get('codigo_postal', ''),
+            ranking=0.0
+        )
+        log_action(request.user, 'create_cinema', 'Cinemas', cinema.cinemaid, {"nome": cinema.nomecinema})
+        return Response({"message": "Cinema created successfully", "id": cinema.cinemaid}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_create_room_api(request, cinema_id):
+    """
+    API to add a room to a cinema (Admin only)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        
+    try:
+        cinema = Cinemas.objects.get(pk=cinema_id)
+        room = Salas.objects.create(
+            cinemaid=cinema,
+            nomesala=request.data.get('nome'),
+            capacidade=request.data.get('capacidade', 0),
+            filas=request.data.get('filas', 0),
+            colunas=request.data.get('colunas', 0),
+            tiposala=request.data.get('tipo', 'Normal')
+        )
+        
+        # Automatically generate seats (Lugares) for the room
+        filas_count = int(request.data.get('filas', 0))
+        colunas_count = int(request.data.get('colunas', 0))
+        
+        if filas_count > 0 and colunas_count > 0:
+            alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            lugares = []
+            for f in range(filas_count):
+                fila_label = alphabet[f] if f < len(alphabet) else f"R{f}"
+                for c in range(1, colunas_count + 1):
+                    lugares.append(Lugares(
+                        salaid=room,
+                        fila=fila_label,
+                        numero=c,
+                        tipolugar='Normal'
+                    ))
+            Lugares.objects.bulk_create(lugares)
+            
+        log_action(request.user, 'create_room', 'Salas', room.salaid, {"cinema": cinema.nomecinema, "nome": room.nomesala})
+        return Response({"message": "Room and seats created successfully", "id": room.salaid}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -736,10 +1015,15 @@ def minhas_vendas_api(request):
             # Check if this sale has a review
             has_review = hasattr(v, 'avaliacao')
             
+            # Calculate total from lines if totalvenda is 0 or None
+            calc_total = v.totalvenda
+            if not calc_total or calc_total == 0:
+                calc_total = sum(l.precolinha for l in v.linhas.all())
+
             data.append({
                 "id": v.vendaid,
                 "data": v.data,
-                "total": v.totalvenda,
+                "total": calc_total,
                 "items": items,
                 "rated": has_review
             })

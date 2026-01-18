@@ -13,6 +13,7 @@ const CheckoutPage = () => {
     const { createBooking, loading, error: bookingError } = useBooking();
     const [success, setSuccess] = useState(false);
     const [apiError, setApiError] = useState(null);
+    const [showLoginModal, setShowLoginModal] = useState(false);
     
     const [availableProducts, setAvailableProducts] = useState([]);
     const [showSnacks, setShowSnacks] = useState(false);
@@ -46,6 +47,13 @@ const CheckoutPage = () => {
     };
 
     const handleConfirm = async () => {
+        // Check if user is logged in
+        const user = localStorage.getItem('user');
+        if (!user) {
+            setShowLoginModal(true);
+            return;
+        }
+
         try {
             setApiError(null);
             const client = new ApiClient();
@@ -203,6 +211,37 @@ const CheckoutPage = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Login Required Modal */}
+            {showLoginModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                    <div className="bg-stone-900 border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
+                        <div className="w-20 h-20 bg-yellow/10 rounded-full flex items-center justify-center mx-auto mb-6 text-yellow">
+                            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0h-2m-3-4l1.293-1.293a1 1 0 011.414 0L12 10.586l3.293-3.293a1 1 0 111.414 1.414L13.414 12l3.293 3.293a1 1 0 01-1.414 1.414L12 13.414l-3.293 3.293a1 1 0 01-1.414-1.414L10.586 12 7.293 8.707a1 1 0 010-1.414z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                            </svg>
+                        </div>
+                        <h2 className="text-3xl font-modern-negra text-white mb-4">Autenticação Necessária</h2>
+                        <p className="text-white/60 mb-8">Precisa de estar ligado à sua conta para concluir a compra. Se não tem conta, pode criar uma em segundos.</p>
+                        
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => navigate('/login')}
+                                className="w-full py-4 bg-yellow text-black font-bold rounded-xl hover:bg-white transition-all"
+                            >
+                                Ir para Login
+                            </button>
+                            <button
+                                onClick={() => setShowLoginModal(false)}
+                                className="w-full py-4 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all"
+                            >
+                                Continuar a ver Carrinho
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 };

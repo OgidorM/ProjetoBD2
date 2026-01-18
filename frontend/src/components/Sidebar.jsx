@@ -48,7 +48,8 @@ const Sidebar = () => {
         { title: 'Cinemas', path: '/cinemas' },
         { title: 'Shop', path: '/shop' },
         { title: 'Cart', path: '/cart', count: true },
-        { title: 'My Tickets', path: '/profile' },
+        { title: 'My Tickets', path: '/tickets' },
+        { title: 'Profile', path: '/profile' },
     ];
 
     const isAdmin = user && (user.is_staff || user.is_superuser);
@@ -76,17 +77,6 @@ const Sidebar = () => {
                                 )}
                             </Link>
                         ))}
-                        
-                        {isAdmin && (
-                            <a 
-                                href="http://localhost:8000/admin/" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-2xl font-modern-negra text-red-400 hover:text-yellow transition-colors"
-                            >
-                                Admin Panel
-                            </a>
-                        )}
                     </div>
 
                     <div className="h-px w-full bg-white/20" />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useBooking } from '../hooks/useBooking';
 import { ApiClient, API_CONFIG } from '../../data/api/ApiClient';
+import { CartService } from '../../services/CartService';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -52,18 +53,18 @@ const UserPage = () => {
     }, [user, fetchUserTickets]);
 
     const handleLogout = async () => {
+        // 1. Clear local data immediately for instant response
+        localStorage.removeItem('user');
+        CartService.clearCart();
+        window.dispatchEvent(new Event("storage"));
+        navigate('/login');
+
+        // 2. Notify backend in the background
         try {
             const client = new ApiClient();
             await client.post(API_CONFIG.ENDPOINTS.LOGOUT, {});
         } catch (e) {
-            console.error("Logout failed on backend", e);
-        } finally {
-            localStorage.removeItem('user');
-            // Clear cart on logout
-            CartService.clearCart();
-            // Trigger storage event so Navbar updates
-            window.dispatchEvent(new Event("storage"));
-            navigate('/login');
+            console.error("Logout notification failed", e);
         }
     };
 
@@ -299,31 +300,43 @@ const UserPage = () => {
                     <div className="md:col-span-8 space-y-8">
                         {isAdmin ? (
                             // Admin View
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <AdminCard 
-                                    title="Gestão de Filmes" 
-                                    desc="Adicionar novos títulos ou remover filmes sem sessões ativas."
-                                    link="/admin/filmes" 
-                                    isInternal={true}
-                                />
-                                <AdminCard 
-                                    title="Avaliações de Clientes" 
-                                    desc="Monitorizar o feedback e as notas deixadas pelos utilizadores."
-                                    link="/admin/reviews"
-                                    isInternal={true}
-                                />
-                                <AdminCard 
-                                    title="Gestão de Sessões" 
-                                    desc="Agendar e gerir horários de exibição para os filmes."
-                                    link="/admin/sessions/create"
-                                    isInternal={true}
-                                />
-                                <AdminCard 
-                                    title="Vendas & Relatórios" 
-                                    desc="Consultar o histórico global de vendas (v2 em breve)."
-                                    link="/profile" 
-                                    isInternal={true}
-                                />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <Link to="/admin/filmes" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Gestão de Filmes</h3>
+                                    <p className="text-sm text-white/60">Adicionar novos títulos ou remover filmes sem sessões ativas.</p>
+                                </Link>
+                                <Link to="/admin/cinemas" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Gestão de Cinemas</h3>
+                                    <p className="text-sm text-white/60">Registar novos cinemas e criar as respetivas salas e lugares.</p>
+                                </Link>
+                                <Link to="/admin/sessions/create" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Gestão de Sessões</h3>
+                                    <p className="text-sm text-white/60">Agendar e gerir horários de exibição para os filmes.</p>
+                                </Link>
+                                <Link to="/admin/staff" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Recursos Humanos</h3>
+                                    <p className="text-sm text-white/60">Gerir funcionários, cargos e salários da empresa.</p>
+                                </Link>
+                                <Link to="/admin/inventory" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Gestão de Inventário</h3>
+                                    <p className="text-sm text-white/60">Gerir stock e preços dos produtos do bar.</p>
+                                </Link>
+                                <Link to="/admin/sales" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Relatórios de Vendas</h3>
+                                    <p className="text-sm text-white/60">Consultar o histórico global de vendas e receita total.</p>
+                                </Link>
+                                <Link to="/admin/reviews" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Avaliações de Clientes</h3>
+                                    <p className="text-sm text-white/60">Monitorizar o feedback e as notas deixadas pelos utilizadores.</p>
+                                </Link>
+                                <Link to="/admin/clients" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Gestão de Clientes</h3>
+                                    <p className="text-sm text-white/60">Consultar a base de dados de utilizadores registados.</p>
+                                </Link>
+                                <a href="http://localhost:8000/admin/" target="_blank" rel="noopener noreferrer" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Base de Dados</h3>
+                                    <p className="text-sm text-white/60">Acesso direto ao sistema de gestão de base de dados (Django Admin).</p>
+                                </a>
                             </div>
                         ) : (
                             // Regular User View
@@ -335,13 +348,17 @@ const UserPage = () => {
                                         <p className="text-white/60">Loading history...</p>
                                     ) : userTickets.length > 0 ? (
                                         <div className="space-y-4">
-                                            {userTickets.map((sale) => (
-                                                <div key={sale.id} className="bg-white/5 p-4 rounded-xl border border-white/10">
-                                                    <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm text-white/60">Order #{sale.id}</span>
-                                                            <span className="text-yellow font-bold">€ {sale.total}</span>
-                                                        </div>
+                                            {userTickets.map((sale) => {
+                                                // Ensure we have a total even if DB field is empty
+                                                const displayTotal = sale.total || sale.items.reduce((sum, item) => sum + parseFloat(item.preco || 0), 0).toFixed(2);
+                                                
+                                                return (
+                                                    <div key={sale.id} className="bg-white/5 p-4 rounded-xl border border-white/10">
+                                                        <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm text-white/60">Order #{sale.id}</span>
+                                                                <span className="text-yellow font-bold">€ {displayTotal}</span>
+                                                            </div>
                                                         <div className="flex gap-2">
                                                             {!sale.rated && (
                                                                 <button 
@@ -381,9 +398,10 @@ const UserPage = () => {
                                                         ))}
                                                     </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
                                         <>
                                             <p className="text-white/60">You haven't purchased anything yet.</p>
                                             <button 
@@ -460,30 +478,6 @@ const UserPage = () => {
                 </div>
             )}
         </div>
-    );
-};
-
-const AdminCard = ({ title, desc, link, isInternal }) => {
-    const className = "block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full";
-    const content = (
-        <>
-            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">{title}</h3>
-            <p className="text-sm text-white/60">{desc}</p>
-        </>
-    );
-
-    if (isInternal) {
-        return (
-            <Link to={link} className={className}>
-                {content}
-            </Link>
-        );
-    }
-
-    return (
-        <a href={link} target="_blank" rel="noopener noreferrer" className={className}>
-            {content}
-        </a>
     );
 };
 
