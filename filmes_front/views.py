@@ -33,13 +33,18 @@ def adicionar_filme(request):
 
 @login_required
 def importar_sinopses(request):
+    is_json = 'application/json' in request.headers.get('Accept', '')
+    
     if request.method == 'POST':
         csv_file = request.FILES.get('csv_file')
         overwrite = bool(request.POST.get('overwrite'))
         encoding = 'utf-8'
 
         if not csv_file:
-            messages.error(request, 'Selecione um ficheiro CSV para importar.')
+            msg = 'Selecione um ficheiro CSV para importar.'
+            if is_json:
+                return JsonResponse({'error': msg}, status=400)
+            messages.error(request, msg)
             return redirect('importar_sinopses')
 
         import tempfile
@@ -53,27 +58,50 @@ def importar_sinopses(request):
                 service = FilmeImportService()
                 result = service.import_sinopses_from_csv(tmp.name, overwrite=overwrite, encoding=encoding)
 
-            messages.success(
-                request,
+            msg_success = (
                 f"Import concluído. Processadas={result.processed}, Atualizadas={result.updated}, "
                 f"Ignoradas(existentes)={result.skipped_existing}, Falhas={result.not_found}."
             )
-
-            # Relatório de falhas
+            
+            warnings = []
             if result.missing_required:
-                messages.warning(request, 'Linhas inválidas (faltou título ou sinopse): ' + ', '.join(result.missing_required))
+                warnings.append('Linhas inválidas (faltou título ou sinopse): ' + ', '.join(result.missing_required))
             if result.ambiguous_titles:
-                messages.warning(request, 'Títulos duplicados (ambíguos): ' + ', '.join(result.ambiguous_titles))
+                warnings.append('Títulos duplicados (ambíguos): ' + ', '.join(result.ambiguous_titles))
             if result.titles_not_found:
-                messages.warning(request, 'Títulos não encontrados na BD: ' + ', '.join(result.titles_not_found))
+                warnings.append('Títulos não encontrados na BD: ' + ', '.join(result.titles_not_found))
+
+            if is_json:
+                return JsonResponse({
+                    'message': msg_success,
+                    'warnings': warnings,
+                    'stats': {
+                        'processed': result.processed,
+                        'updated': result.updated,
+                        'skipped': result.skipped_existing,
+                        'not_found': result.not_found
+                    }
+                })
+
+            messages.success(request, msg_success)
+            for w in warnings:
+                messages.warning(request, w)
 
             return redirect('lista_filmes')
         except ValueError as e:
+            if is_json:
+                return JsonResponse({'error': str(e)}, status=400)
             messages.error(request, str(e))
         except UnicodeDecodeError:
-            messages.error(request, 'Erro ao ler o CSV (UTF-8). Confirme o encoding do ficheiro.')
+            msg = 'Erro ao ler o CSV (UTF-8). Confirme o encoding do ficheiro.'
+            if is_json:
+                return JsonResponse({'error': msg}, status=400)
+            messages.error(request, msg)
         except Exception as e:
-            messages.error(request, f'Erro ao importar: {e}')
+            msg = f'Erro ao importar: {e}'
+            if is_json:
+                return JsonResponse({'error': msg}, status=500)
+            messages.error(request, msg)
 
     return render(request, 'filmes_front/importar_sinopses.html')
 

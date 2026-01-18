@@ -8,6 +8,8 @@ const AdminMoviesPage = () => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = React.useRef(null);
     
     const [newMovie, setNewMovie] = useState({
         titulo: '',
@@ -84,6 +86,45 @@ const AdminMoviesPage = () => {
         }
     };
 
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!window.confirm(`Importar ficheiro "${file.name}"? Isso atualizará as sinopses.`)) {
+            e.target.value = ''; // Reset
+            return;
+        }
+
+        setIsImporting(true);
+        try {
+            const formData = new FormData();
+            formData.append('csv_file', file);
+            // Defaulting overwrite to true for convenience, or we could add a checkbox in UI
+            formData.append('overwrite', 'true'); 
+
+            const client = new ApiClient();
+            const response = await client.post(API_CONFIG.ENDPOINTS.IMPORT_MOVIES_CSV, formData);
+
+            alert(response.message || "Importação concluída!");
+            
+            if (response.warnings && response.warnings.length > 0) {
+                alert("Avisos:\n" + response.warnings.join("\n"));
+            }
+            
+            // Refresh list
+            fetchData();
+        } catch (err) {
+            alert("Erro na importação: " + err.message);
+        } finally {
+            setIsImporting(false);
+            e.target.value = ''; // Reset input
+        }
+    };
+
     if (loading) return <div className="min-h-screen bg-black text-white p-20">Loading...</div>;
 
     return (
@@ -92,6 +133,20 @@ const AdminMoviesPage = () => {
                 <div className="flex justify-between items-center mb-12">
                     <h1 className="text-5xl font-modern-negra text-yellow">Gestão de Filmes</h1>
                     <div className="flex gap-4">
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handleFileChange} 
+                            accept=".csv" 
+                            className="hidden" 
+                        />
+                        <button 
+                            onClick={handleImportClick}
+                            disabled={isImporting}
+                            className="bg-white/10 text-white px-6 py-2 rounded-full font-bold hover:bg-white/20 transition-all disabled:opacity-50"
+                        >
+                            {isImporting ? 'A Importar...' : 'Importar CSV'}
+                        </button>
                         <button 
                             onClick={() => setShowAddForm(!showAddForm)}
                             className="bg-yellow text-black px-6 py-2 rounded-full font-bold hover:bg-white transition-all"
