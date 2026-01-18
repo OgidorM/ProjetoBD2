@@ -39,6 +39,8 @@ urlpatterns = [
     path('api/login/', api_views.login_api, name='login_api'),
     path('api/logout/', api_views.logout_api, name='logout_api'),
     path('api/signup/', api_views.signup_api, name='signup_api'),
+    path('api/produtos/', api_views.produtos_api, name='produtos_api'),
+    path('api/produtos/comprar/', api_views.comprar_produtos_api, name='comprar_produtos_api'),
 
     path('accounts/', include('django.contrib.auth.urls')),
 

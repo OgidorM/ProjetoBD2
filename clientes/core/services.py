@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import transaction, IntegrityError
+from bd2ap1.models import Vendas
 from clientes.models import ClienteProfile
 from clientes.data.repositories import ClienteRepository
 from .dtos import NovoClienteDTO
@@ -69,5 +70,24 @@ class ClienteService:
     def atualizar_cliente(self, cliente_id: int, data: dict):
         return self.repository.update_dados(cliente_id, **data)
 
+    @transaction.atomic
     def deletar_cliente(self, cliente_id: int):
+        """
+        Regra:
+          - Vendas nunca são apagadas; ficam com clienteid=NULL.
+          - Se existir login Django associado (ClienteProfile), ele é removido.
+        """
+        # 1) Desvincula vendas (mantém histórico financeiro)
+        Vendas.objects.filter(clienteid_id=cliente_id).update(clienteid=None)
+
+        # 2) Remove vínculo auth (ClienteProfile -> Clientes é PROTECT)
+        profile = ClienteProfile.objects.select_related('user').filter(cliente_dados_id=cliente_id).first()
+        if profile:
+            user = profile.user
+            profile.delete()
+            # apaga também o user do Django
+            if user:
+                user.delete()
+
+        # 3) Apaga o registro da tabela Clientes
         self.repository.delete(cliente_id)

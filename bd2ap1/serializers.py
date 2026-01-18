@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Filmes, Categorias, ClassificacoesEtarias, Cinemas, Sessoes, Salas, Lugares, LugaresSessao
+from .models import Filmes, Categorias, ClassificacoesEtarias, Cinemas, Sessoes, Salas, Lugares, LugaresSessao, Produtos
 
 
 class CategoriasSerializer(serializers.ModelSerializer):
@@ -71,3 +71,7 @@ class LugaresSessaoSerializer(serializers.ModelSerializer):
         model = LugaresSessao
         fields = ['lugarsessaoid', 'lugar', 'estado']
 
+class ProdutosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Produtos
+        fields = ['produtoid', 'nomeproduto', 'precoproduto', 'stock', 'ativo']

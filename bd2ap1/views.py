@@ -11,8 +11,15 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import FilmesSerializer, SessoesSerializer, LugaresSessaoSerializer, SessaoCreateSerializer, SalasSerializer, CinemasSerializer
-from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Lugares, Salas, Cinemas
+
+from bd2ap1.mongo_logger import log_action
+from .serializers import (
+    FilmesSerializer, SessoesSerializer, LugaresSessaoSerializer, SessaoCreateSerializer,
+    SalasSerializer, CinemasSerializer, ProdutosSerializer,
+)
+from .models import (
+    Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Lugares, Salas, Cinemas, Produtos,
+)
 from clientes.models import ClienteProfile
 from clientes.auth_forms import ClienteSignupForm
 from clientes.core.dtos import NovoClienteDTO
@@ -453,5 +460,76 @@ def minhas_vendas_api(request):
             })
             
         return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def produtos_api(request):
+    """API endpoint to get all active products."""
+    produtos = Produtos.objects.filter(ativo=True, stock__gt=0)
+    serializer = ProdutosSerializer(produtos, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def comprar_produtos_api(request):
+    """API to process a purchase of concession items."""
+    try:
+        user = request.user
+        items = request.data.get('items', [])  # List of {produtoid, quantidade}
+
+        if not items:
+            return Response({"error": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            # 1. Get/Create Client
+            cliente, created = Clientes.objects.get_or_create(
+                nomecliente=user.username,
+                defaults={'emailcliente': user.email}
+            )
+
+            # 2. Create Venda
+            venda = Vendas.objects.create(
+                clienteid=cliente,
+                data=timezone.now().date(),
+                estadovenda='Concluída',
+                totalvenda=0
+            )
+
+            total = 0
+            for item in items:
+                produto = Produtos.objects.select_for_update().get(pk=item['produtoid'])
+                qty = int(item['quantidade'])
+
+                if produto.stock < qty:
+                    raise Exception(f"Insufficient stock for {produto.nomeproduto}")
+
+                # Update stock
+                produto.stock -= qty
+                produto.save()
+
+                line_total = produto.precoproduto * qty
+
+                # Create VendaLinha
+                VendaLinhas.objects.create(
+                    vendaid=venda,
+                    produtoid=produto,
+                    quantidade=qty,
+                    precolinha=produto.precoproduto,
+                    total_linha=line_total
+                )
+                total += line_total
+
+            venda.totalvenda = total
+            venda.save()
+
+            # Log purchase
+            log_action(user, 'buy_concessions', 'Vendas', venda.vendaid, {"total": float(total)})
+
+            return Response({"message": "Purchase successful", "venda_id": venda.vendaid}, status=status.HTTP_201_CREATED)
+
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
