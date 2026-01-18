@@ -7,7 +7,9 @@
     <div class="container mt-4">
         <h2 class="mb-3">Funcionários</h2>
         <div class="mb-3">
+            {% if user.is_staff or user.is_superuser %}
             <a href="{% url 'funcionarios:create' %}" class="btn btn-primary me-2">+ Novo Funcionário</a>
+            {% endif %}
             <a href="{% url 'funcionarios:list' %}?format=json" class="btn btn-info me-2">Ver JSON</a>
         </div>
         <form method="get" action="{% url 'funcionarios:search' %}" class="mb-4">
@@ -45,8 +47,12 @@
                     <td>{{ e.salario|default:'N/A' }}€</td>
                     <td>{{ e.ranking|default:'N/A' }}</td>
                     <td>
+                        {% if user.is_staff or user.is_superuser %}
                         <a href="{% url 'funcionarios:update' e.funcionarioid %}" class="btn btn-warning btn-sm">Editar</a>
                         <a href="{% url 'funcionarios:delete' e.funcionarioid %}" class="btn btn-danger btn-sm">Apagar</a>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -59,7 +65,9 @@
             Nenhum funcionário registado ainda.
         </div>
         <div class="text-center">
+            {% if user.is_staff or user.is_superuser %}
             <a href="{% url 'funcionarios:create' %}" class="btn btn-primary">+ Adicionar Primeiro Funcionário</a>
+            {% endif %}
         </div>
     </div>
     {% endif %}

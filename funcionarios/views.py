@@ -1,7 +1,8 @@
 from __future__ import annotations
 from typing import Any, List, Dict
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.models import User
 from django.http import HttpRequest, JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -13,6 +14,12 @@ from bd2ap1.mongo_logger import log_action
 from . import services
 from .forms import FuncionarioForm
 from .models import Funcionario
+from .models_auth import FuncionarioProfile
+
+
+def eh_admin(user):
+    """Verifica se o usuário é funcionário (staff) ou superusuário."""
+    return user.is_staff or user.is_superuser
 
 
 def _get_or_404(employee_id: int) -> Funcionario:
@@ -22,7 +29,7 @@ def _get_or_404(employee_id: int) -> Funcionario:
         raise Http404("Employee not found") from exc
 
 
-@login_required
+@user_passes_test(eh_admin)
 def employee_list(request: HttpRequest) -> HttpResponse:
     employees = services.list_all()
     if request.GET.get('format') == 'json':
@@ -40,7 +47,7 @@ def employee_list(request: HttpRequest) -> HttpResponse:
     return render(request, 'funcionarios/list.html', {'employees': employees})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def employee_detail(request: HttpRequest, employee_id: int) -> HttpResponse:
     employee = _get_or_404(employee_id)
     if request.GET.get('format') == 'json':
@@ -59,28 +66,43 @@ def employee_detail(request: HttpRequest, employee_id: int) -> HttpResponse:
     return render(request, 'funcionarios/detail.html', {'employee': employee})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def employee_create(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
         form = FuncionarioForm(request.POST)
         if form.is_valid():
-            employee = services.create(**form.cleaned_data)
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            if not username or not password:
+                form.add_error('username', 'Username é obrigatório.')
+                form.add_error('password', 'Password é obrigatória.')
+            else:
+                # cria funcionário
+                employee_data = {k: v for k, v in form.cleaned_data.items() if k not in ('username', 'password')}
+                employee = services.create(**employee_data)
 
-            log_action(
-                user=request.user,
-                action='CREATE',
-                target_model='Funcionario',
-                target_id=employee.funcionarioid,
-                details={'nome': employee.nomefuncionario, 'cargo': employee.cargo}
-            )
+                # cria user staff para login do funcionário
+                user = User.objects.create_user(username=username, email=employee.emailfuncionario or '', password=password)
+                user.is_staff = True
+                user.save()
 
-            return redirect(reverse('funcionarios:detail', args=[employee.funcionarioid]))
+                FuncionarioProfile.objects.create(user=user, funcionario_dados=employee)
+
+                log_action(
+                    user=request.user,
+                    action='CREATE',
+                    target_model='Funcionario',
+                    target_id=employee.funcionarioid,
+                    details={'nome': employee.nomefuncionario, 'cargo': employee.cargo, 'username': username}
+                )
+
+                return redirect(reverse('funcionarios:detail', args=[employee.funcionarioid]))
     else:
         form = FuncionarioForm()
     return render(request, 'funcionarios/form.html', {'form': form, 'mode': 'create'})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def employee_update(request: HttpRequest, employee_id: int) -> HttpResponse:
     employee = _get_or_404(employee_id)
     if request.method == 'POST':
@@ -112,7 +134,7 @@ def employee_update(request: HttpRequest, employee_id: int) -> HttpResponse:
     return render(request, 'funcionarios/form.html', {'form': form, 'mode': 'update', 'employee': employee})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def employee_delete(request: HttpRequest, employee_id: int) -> HttpResponse:
     """
     Remove o funcionário mas MANTÉM as vendas (campo 'funcionarioid' fica NULL).
@@ -156,7 +178,7 @@ def employee_delete(request: HttpRequest, employee_id: int) -> HttpResponse:
     })
 
 
-@login_required
+@user_passes_test(eh_admin)
 def employee_search(request: HttpRequest) -> HttpResponse:
     term = request.GET.get('q', '').strip()
     limit_raw = request.GET.get('limit')

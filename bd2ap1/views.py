@@ -1,11 +1,7 @@
-from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth import authenticate, login, logout
-from django.views.decorators.csrf import csrf_exempt
-import json
-from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
@@ -15,8 +11,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Funcionarios, Lugares, Salas, Cinemas
 from .serializers import FilmesSerializer, SessoesSerializer, LugaresSessaoSerializer, SessaoCreateSerializer, SalasSerializer, CinemasSerializer
+from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Lugares, Salas, Cinemas
+from clientes.models import ClienteProfile
+from clientes.auth_forms import ClienteSignupForm
+from clientes.core.dtos import NovoClienteDTO
+from clientes.core.services import ClienteService
 
 def index(request):
     return render(request, 'core/index.html')
@@ -24,10 +24,25 @@ def index(request):
 def home(request):
     return render(request, 'core/index.html')
 
-class SignUpView(generic.CreateView):
-    form_class = UserCreationForm
+class SignUpView(generic.FormView):
+    form_class = ClienteSignupForm
     success_url = reverse_lazy('login')
     template_name = 'registration/signup.html'
+
+    def form_valid(self, form):
+        # Registra sempre como CLIENTE (não-admin)
+        dto = NovoClienteDTO(
+            username=form.cleaned_data['username'],
+            password=form.cleaned_data['password1'],
+            email=form.cleaned_data['email'],
+            nome_completo=form.cleaned_data['username'],
+        )
+
+        service = ClienteService()
+        profile = service.registrar_novo_cliente(dto)
+
+        # Após registar, redireciona para login (mantém comportamento atual)
+        return super().form_valid(form)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -53,16 +68,33 @@ def signup_api(request):
     username = request.data.get('username')
     password = request.data.get('password')
     email = request.data.get('email', '')
-    
+
     if User.objects.filter(username=username).exists():
         return Response({"error": "Username already exists"}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     try:
-        user = User.objects.create_user(username=username, email=email, password=password)
-        user.save()
+        with transaction.atomic():
+            user = User.objects.create_user(username=username, email=email, password=password)
+            user.save()
+
+            # cria também um Cliente (dados mínimos) + vínculo
+            if not ClienteProfile.objects.filter(user=user).exists():
+                cliente = Clientes.objects.create(
+                    nomecliente=username,
+                    emailcliente=email or '',
+                )
+                ClienteProfile.objects.create(user=user, cliente_dados=cliente)
+
         # Optional: Auto-login after signup
         login(request, user)
-        return Response({"message": "User created successfully", "username": user.username}, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "message": "User created successfully",
+                "username": user.username,
+                "cliente_id": user.cliente_profile.cliente_dados_id if hasattr(user, 'cliente_profile') else None,
+            },
+            status=status.HTTP_201_CREATED,
+        )
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -423,5 +455,3 @@ def minhas_vendas_api(request):
         return Response(data)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-

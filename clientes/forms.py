@@ -1,6 +1,7 @@
+# /home/driblades/Documents/BD2/b2da1/clientes/forms.py
 from django import forms
-from .models import Cliente
-
+# CORREÇÃO: Importar da tabela legada
+from bd2ap1.models import Clientes as Cliente 
 
 class ClienteForm(forms.ModelForm):
     class Meta:

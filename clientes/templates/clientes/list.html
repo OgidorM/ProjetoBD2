@@ -7,7 +7,9 @@
     <div class="container mt-4">
         <h2 class="mb-3">Clientes</h2>
         <div class="mb-3">
+            {% if user.is_staff or user.is_superuser %}
             <a href="{% url 'clientes:create' %}" class="btn btn-primary me-2">+ Novo Cliente</a>
+            {% endif %}
             <a href="{% url 'clientes:list' %}?format=json" class="btn btn-info me-2">Ver JSON</a>
         </div>
         <form method="get" action="{% url 'clientes:search' %}" class="mb-4">
@@ -43,8 +45,12 @@
                     <td>{{ c.telefonecliente|default:'N/A' }}</td>
                     <td>{{ c.localidadecliente|default:'N/A' }}</td>
                     <td>
+                        {% if user.is_staff or user.is_superuser %}
                         <a href="{% url 'clientes:update' c.clienteid %}" class="btn btn-warning btn-sm">Editar</a>
                         <a href="{% url 'clientes:delete' c.clienteid %}" class="btn btn-danger btn-sm">Apagar</a>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -57,7 +63,9 @@
             Nenhum cliente registado ainda.
         </div>
         <div class="text-center">
+            {% if user.is_staff or user.is_superuser %}
             <a href="{% url 'clientes:create' %}" class="btn btn-primary">+ Adicionar Primeiro Cliente</a>
+            {% endif %}
         </div>
     </div>
     {% endif %}
