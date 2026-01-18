@@ -6,6 +6,7 @@ import { usePaginatedMovies } from "../presentation/hooks/useMovies";
 
 const ClassicMovies = () => {
     const sectionRef = useRef(null);
+    const bgRef = useRef(null);
     const titleRef = useRef(null);
     const cardsRef = useRef([]);
     const { movies, loading, error } = usePaginatedMovies(1, 4); // Only get 4 movies
@@ -20,6 +21,17 @@ const ClassicMovies = () => {
 
     useGSAP(() => {
         if (loading || movies.length === 0) return;
+
+        // Fade in background image
+        gsap.to(bgRef.current, {
+            scrollTrigger: {
+                trigger: sectionRef.current,
+                start: "top bottom",
+                end: "top top",
+                scrub: true,
+            },
+            opacity: 1
+        });
 
         // Set initial states to ensure visibility
         gsap.set(titleRef.current, { opacity: 1, y: 0 });
@@ -85,8 +97,19 @@ const ClassicMovies = () => {
     }, [loading, movies]);
 
     return (
-        <section ref={sectionRef} id="classic-movies" className="noisy">
-            <div className="absolute inset-0 opacity-50"></div>
+        <section ref={sectionRef} id="classic-movies" className="relative">
+            <div
+                ref={bgRef}
+                className="absolute inset-0"
+                style={{
+                    backgroundImage: 'url(/images/popcorn.png)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    opacity: 0
+                }}
+            />
+            <div className="absolute inset-0 noisy opacity-100 pointer-events-none"></div>
 
             <div className="container mx-auto relative z-10">
                 <h2 ref={titleRef} className="text-6xl md:text-8xl lg:text-9xl font-modern-negra text-center text-yellow mb-20">
@@ -116,12 +139,11 @@ const ClassicMovies = () => {
                                     style={{ opacity: 1 }}
                                     className={`card bg-gradient-to-br from-stone-900/40 to-neutral-900/20 block no-underline`}
                                 >
-                                    <div className="flex justify-between items-start mb-6">
-                                        <span>{movie.year}</span>
-                                        <span className="text-yellow text-2xl font-modern-negra">
-                                            {String(i + 1).padStart(2, "0")}
-                                        </span>
-                                    </div>
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className="text-yellow/80 text-sm font-medium">
+                                        {movie.year}
+                                    </span>
+                                </div>
 
                                     <h3>{movie.title}</h3>
 

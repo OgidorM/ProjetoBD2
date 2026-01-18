@@ -17,7 +17,23 @@ export const API_CONFIG = {
         SESSION_TICKETS: (id) => `/api/sessoes/${id}/bilhetes/`,
         CANCEL_TICKET: (id) => `/api/bilhetes/${id}/cancelar/`,
         ROOMS: '/api/salas/',
+        PRODUCTS: '/api/produtos/',
+        BUY_PRODUCTS: '/api/produtos/comprar/',
         LOGOUT: '/api/logout/',
+        UPDATE_PROFILE: '/api/user/update/',
+        ADMIN_REVIEWS: '/api/admin/avaliacoes/',
+        ADMIN_SALES: '/api/admin/vendas/',
+        ADMIN_STAFF: '/api/admin/funcionarios/',
+        ADMIN_STAFF_DETAIL: (id) => `/api/admin/funcionarios/${id}/`,
+        ADMIN_CLIENTS: '/api/admin/clientes/',
+        ADMIN_CLIENTS_DETAIL: (id) => `/api/admin/clientes/${id}/`,
+        CREATE_PRODUCT: '/api/admin/produtos/criar/',
+        ADMIN_PRODUCT_DETAIL: (id) => `/api/admin/produtos/${id}/`,
+        CREATE_CINEMA: '/api/admin/cinemas/criar/',
+        CREATE_ROOM: (id) => `/api/admin/cinemas/${id}/salas/criar/`,
+        CREATE_MOVIE: '/api/admin/filmes/criar/',
+        IMPORT_MOVIES_CSV: '/filmes/importar-sinopses/',
+        DELETE_MOVIE: (id) => `/api/admin/filmes/${id}/deletar/`,
     },
     TIMEOUT: 10000,
 };
@@ -96,7 +112,7 @@ export class ApiClient {
     /**
      * Make a POST request
      * @param {string} endpoint - API endpoint
-     * @param {object} data - Request body
+     * @param {object|FormData} data - Request body
      * @returns {Promise<any>}
      */
     async post(endpoint, data) {
@@ -104,9 +120,16 @@ export class ApiClient {
             // Get CSRF token from cookie if available
             const csrfToken = this._getCookie('csrftoken');
             
-            const headers = {
-                'Content-Type': 'application/json',
-            };
+            const headers = {};
+            let body;
+
+            if (data instanceof FormData) {
+                headers['Accept'] = 'application/json';
+                body = data;
+            } else {
+                headers['Content-Type'] = 'application/json';
+                body = JSON.stringify(data);
+            }
             
             if (csrfToken) {
                 headers['X-CSRFToken'] = csrfToken;
@@ -115,7 +138,7 @@ export class ApiClient {
             const response = await fetch(`${this.baseUrl}${endpoint}`, {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify(data),
+                body: body,
                 credentials: 'include', // Send cookies
             });
 
