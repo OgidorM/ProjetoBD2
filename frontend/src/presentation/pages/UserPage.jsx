@@ -13,6 +13,10 @@ const UserPage = () => {
     const [formData, setFormData] = useState({ username: '', email: '' });
     const [updateStatus, setUpdateStatus] = useState({ loading: false, error: null, success: false });
     
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 3;
+
     // Review states
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [selectedSale, setSelectedSale] = useState(null);
@@ -347,61 +351,96 @@ const UserPage = () => {
                                     {loading ? (
                                         <p className="text-white/60">Loading history...</p>
                                     ) : userTickets.length > 0 ? (
-                                        <div className="space-y-4">
-                                            {userTickets.map((sale) => {
-                                                // Ensure we have a total even if DB field is empty
-                                                const displayTotal = sale.total || sale.items.reduce((sum, item) => sum + parseFloat(item.preco || 0), 0).toFixed(2);
-                                                
-                                                return (
-                                                    <div key={sale.id} className="bg-white/5 p-4 rounded-xl border border-white/10">
-                                                        <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-sm text-white/60">Order #{sale.id}</span>
-                                                                <span className="text-yellow font-bold">€ {displayTotal}</span>
-                                                            </div>
-                                                        <div className="flex gap-2">
-                                                            {!sale.rated && (
+                                        <>
+                                            <div className="space-y-4">
+                                                {userTickets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((sale) => {
+                                                    // Ensure we have a total even if DB field is empty
+                                                    const displayTotal = sale.total || sale.items.reduce((sum, item) => sum + parseFloat(item.preco || 0), 0).toFixed(2);
+                                                    
+                                                    return (
+                                                        <div key={sale.id} className="bg-white/5 p-4 rounded-xl border border-white/10">
+                                                            <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-sm text-white/60">Order #{sale.id}</span>
+                                                                    <span className="text-yellow font-bold">€ {displayTotal}</span>
+                                                                </div>
+                                                            <div className="flex gap-2">
+                                                                {!sale.rated && (
+                                                                    <button 
+                                                                        onClick={() => handleOpenReview(sale)}
+                                                                        className="px-4 py-2 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white hover:text-black transition-all"
+                                                                    >
+                                                                        Avaliar Experiência
+                                                                    </button>
+                                                                )}
                                                                 <button 
-                                                                    onClick={() => handleOpenReview(sale)}
-                                                                    className="px-4 py-2 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white hover:text-black transition-all"
+                                                                    onClick={() => exportToPDF(sale)}
+                                                                    className="px-4 py-2 bg-yellow/10 border border-yellow/20 text-yellow text-xs font-bold rounded-lg hover:bg-yellow hover:text-black transition-all"
                                                                 >
-                                                                    Avaliar Experiência
+                                                                    Export PDF
                                                                 </button>
-                                                            )}
-                                                            <button 
-                                                                onClick={() => exportToPDF(sale)}
-                                                                className="px-4 py-2 bg-yellow/10 border border-yellow/20 text-yellow text-xs font-bold rounded-lg hover:bg-yellow hover:text-black transition-all"
-                                                            >
-                                                                Export PDF
-                                                            </button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-3">
+                                                            {sale.items.map((item, idx) => (
+                                                                <div key={idx} className="flex flex-col sm:flex-row justify-between text-sm">
+                                                                    {item.tipo === 'ticket' ? (
+                                                                        <>
+                                                                            <span className="text-white font-bold flex items-center gap-2">
+                                                                                <svg className="w-4 h-4 text-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                                                                                </svg>
+                                                                                {item.filme}
+                                                                            </span>
+                                                                            <span className="text-white/70">
+                                                                                {new Date(item.data).toLocaleString()} • {item.sala} • Seat {item.lugar}
+                                                                            </span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <span className="text-white font-bold flex items-center gap-2">
+                                                                                <svg className="w-4 h-4 text-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                                                </svg>
+                                                                                {item.nome} x {item.quantidade}
+                                                                            </span>
+                                                                            <span className="text-white/70">
+                                                                                Concession • € {item.preco}
+                                                                            </span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
-                                                    <div className="space-y-3">
-                                                        {sale.items.map((item, idx) => (
-                                                            <div key={idx} className="flex flex-col sm:flex-row justify-between text-sm">
-                                                                {item.tipo === 'ticket' ? (
-                                                                    <>
-                                                                        <span className="text-white font-bold">🎫 {item.filme}</span>
-                                                                        <span className="text-white/70">
-                                                                            {new Date(item.data).toLocaleString()} • {item.sala} • Seat {item.lugar}
-                                                                        </span>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <span className="text-white font-bold">🍿 {item.nome} x {item.quantidade}</span>
-                                                                        <span className="text-white/70">
-                                                                            Concession • € {item.preco}
-                                                                        </span>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                                );
+                                            })}
+                                            </div>
+
+                                            {/* Pagination Controls */}
+                                            {userTickets.length > itemsPerPage && (
+                                                <div className="flex justify-between items-center mt-6 pt-4 border-t border-white/10">
+                                                    <button 
+                                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                                        disabled={currentPage === 1}
+                                                        className="px-4 py-2 border border-white/10 text-white rounded-lg hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                                    >
+                                                        Previous
+                                                    </button>
+                                                    <span className="text-white/60 text-sm">
+                                                        Page {currentPage} of {Math.ceil(userTickets.length / itemsPerPage)}
+                                                    </span>
+                                                    <button 
+                                                        onClick={() => setCurrentPage(p => Math.min(Math.ceil(userTickets.length / itemsPerPage), p + 1))}
+                                                        disabled={currentPage === Math.ceil(userTickets.length / itemsPerPage)}
+                                                        className="px-4 py-2 border border-white/10 text-white rounded-lg hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                                    >
+                                                        Next
+                                                    </button>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
+                                            )}
+                                        </>
+                                    ) : (
                                         <>
                                             <p className="text-white/60">You haven't purchased anything yet.</p>
                                             <button 
@@ -441,7 +480,9 @@ const UserPage = () => {
                                                     reviewForm[`nota_${type}`] >= star ? 'text-yellow' : 'text-white/20'
                                                 }`}
                                             >
-                                                ★
+                                                <svg className="w-6 h-6 fill-current" viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                </svg>
                                             </button>
                                         ))}
                                     </div>

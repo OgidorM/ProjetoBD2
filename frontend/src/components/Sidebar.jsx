@@ -54,12 +54,26 @@ const Sidebar = () => {
     const isAdmin = user && (user.is_staff || user.is_superuser);
 
     return (
-        <div className="fixed left-0 top-0 z-[60] flex h-screen w-4 hover:w-64 transition-all duration-500 group">
-            {/* Sidebar Content */}
-            <div className="h-full flex-1 bg-black/80 backdrop-blur-md border-r border-white/10 overflow-hidden flex flex-col justify-center radial-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
-                <div className="p-8 flex flex-col gap-8">
-                    {/* Navigation Links */}
-                    <div className="flex flex-col gap-6">
+        <div className="fixed left-0 top-0 z-[60] flex h-screen w-12 hover:w-64 transition-all duration-500 group bg-black/40 backdrop-blur-sm border-r border-white/10">
+            
+            {/* Collapsed View (Visible when NOT hovered) */}
+            <div className="absolute inset-0 flex flex-col items-center pb-8 justify-end opacity-100 group-hover:opacity-0 transition-opacity duration-300 pointer-events-none">
+                <div className="w-8 h-8 rounded-full bg-yellow flex items-center justify-center text-black text-xs font-bold shadow-[0_0_10px_rgba(231,211,147,0.3)]">
+                    {user && user.username ? (
+                        user.username.charAt(0).toUpperCase()
+                    ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    )}
+                </div>
+            </div>
+
+            {/* Expanded Content */}
+            <div className="h-full flex-1 bg-black/95 backdrop-blur-xl overflow-hidden flex flex-col radial-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
+                <div className="p-8 flex flex-col h-full min-w-[16rem]">
+                    {/* Navigation Links - Centered vertically in the remaining space */}
+                    <div className="flex flex-col gap-6 my-auto">
                         {links.map((link) => (
                             <Link 
                                 key={link.path}
@@ -78,10 +92,10 @@ const Sidebar = () => {
                         ))}
                     </div>
 
-                    <div className="h-px w-full bg-white/20" />
+                    <div className="h-px w-full bg-white/20 my-8" />
 
-                    {/* User Section */}
-                    <div>
+                    {/* User Section - Pushed to bottom */}
+                    <div className="pb-4">
                         {user && user.username ? (
                             <div className="flex flex-col gap-4">
                                 <div className="flex items-center gap-3">
@@ -111,8 +125,8 @@ const Sidebar = () => {
                 </div>
             </div>
 
-            {/* Visual Indicator strip (optional, helps user know something is there) */}
-            <div className="h-full w-2 bg-yellow/50 group-hover:bg-yellow shadow-[0_0_15px_rgba(231,211,147,0.5)] transition-colors" />
+            {/* Visual Indicator strip */}
+            <div className="absolute right-0 top-0 h-full w-1 bg-yellow shadow-[0_0_15px_rgba(231,211,147,0.5)] opacity-50 group-hover:opacity-100 transition-opacity" />
         </div>
     );
 };
