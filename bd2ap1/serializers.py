@@ -23,7 +23,10 @@ class ClassificacoesEtariasSerializer(serializers.ModelSerializer):
 class CinemasSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cinemas
-        fields = ['cinemaid', 'nomecinema', 'localidadecinema']
+        fields = [
+            'cinemaid', 'nomecinema', 'emailcinema', 'telefonecinema', 
+            'moradacinema', 'codigopostalcinema', 'localidadecinema', 'ranking'
+        ]
 
 
 class FilmesSerializer(serializers.ModelSerializer):

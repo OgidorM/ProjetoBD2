@@ -77,9 +77,6 @@ const MoviesPage = () => {
                                         <span className="text-yellow/80 text-sm font-medium">
                                             {movie.year}
                                         </span>
-                                        <span className="text-yellow text-xl font-bold">
-                                            {String(index + 1).padStart(2, '0')}
-                                        </span>
                                     </div>
 
                                     {/* Title */}

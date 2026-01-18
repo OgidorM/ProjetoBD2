@@ -63,8 +63,9 @@ class Filmes(models.Model):
     )
     cinemaid = models.ForeignKey(
         Cinemas,
-        on_delete=models.CASCADE,  # SQL: NO ACTION
+        on_delete=models.SET_NULL,
         db_column='cinemaid',
+        blank=True, null=True,
         related_name='filmes'
     )
     titulo = models.CharField(max_length=120)

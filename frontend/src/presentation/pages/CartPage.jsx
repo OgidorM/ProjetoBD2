@@ -28,7 +28,21 @@ const CartPage = () => {
     return (
         <section className="min-h-screen bg-black py-32 px-4">
             <div className="container mx-auto max-w-4xl">
-                <h1 className="text-5xl md:text-7xl font-modern-negra text-yellow mb-12">Your Cart</h1>
+                <div className="flex justify-between items-end mb-12">
+                    <h1 className="text-5xl md:text-7xl font-modern-negra text-yellow">Your Cart</h1>
+                    {cartItems.length > 0 && (
+                        <button 
+                            onClick={() => {
+                                if(window.confirm("Tem a certeza que deseja limpar todo o carrinho?")) {
+                                    CartService.clearCart();
+                                }
+                            }}
+                            className="text-red-500/60 hover:text-red-500 text-sm font-bold uppercase tracking-widest transition-colors mb-2"
+                        >
+                            Limpar Carrinho
+                        </button>
+                    )}
+                </div>
 
                 {cartItems.length === 0 ? (
                     <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10">

@@ -16,6 +16,8 @@ import UserPage from './presentation/pages/UserPage.jsx';
 import Sidebar from './components/Sidebar.jsx';
 
 import AdminSessionPage from './presentation/pages/AdminSessionPage.jsx';
+import AdminMoviesPage from './presentation/pages/AdminMoviesPage.jsx';
+import AdminReviewsPage from './presentation/pages/AdminReviewsPage.jsx';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -38,6 +40,8 @@ const App = () => {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/profile" element={<UserPage />} />
                     <Route path="/admin/sessions/create" element={<AdminSessionPage />} />
+                    <Route path="/admin/filmes" element={<AdminMoviesPage />} />
+                    <Route path="/admin/reviews" element={<AdminReviewsPage />} />
                 </Routes>
             </main>
         </Router>
@@ -45,3 +49,4 @@ const App = () => {
 }
 
 export default App
+

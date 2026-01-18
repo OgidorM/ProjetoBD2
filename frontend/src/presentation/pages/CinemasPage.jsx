@@ -72,17 +72,14 @@ const CinemasPage = () => {
                                 className="group bg-gradient-to-br from-stone-900/40 to-neutral-900/20 backdrop-blur-sm rounded-lg overflow-hidden border border-white/10 hover:border-yellow/50 transition-all duration-300 hover:scale-105"
                             >
                                 <div className="p-8 h-full flex flex-col">
-                                    {/* Index */}
-                                    <div className="flex justify-between items-start mb-6">
+                                    {/* Icon */}
+                                    <div className="flex justify-start items-start mb-6">
                                         <div className="p-2 bg-yellow/10 rounded-lg">
                                             <svg className="w-6 h-6 text-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
                                         </div>
-                                        <span className="text-yellow text-4xl font-bold opacity-50">
-                                            {String(index + 1).padStart(2, '0')}
-                                        </span>
                                     </div>
 
                                     {/* Name */}
@@ -90,12 +87,40 @@ const CinemasPage = () => {
                                         {cinema.name}
                                     </h3>
 
-                                    {/* Location */}
-                                    <div className="mt-auto pt-6 border-t border-white/10">
-                                        <p className="text-white/70 text-lg flex items-center">
-                                            <span className="mr-2">📍</span>
-                                            {cinema.location}
+                                    {/* Detailed Info */}
+                                    <div className="space-y-3 mb-6 flex-grow">
+                                        <p className="text-white/70 text-sm flex items-center gap-2">
+                                            <span className="text-yellow opacity-70">📍</span>
+                                            {cinema.address ? `${cinema.address}, ${cinema.zipCode}` : cinema.location}
                                         </p>
+                                        
+                                        {cinema.phone && (
+                                            <p className="text-white/50 text-xs flex items-center gap-2">
+                                                <span className="text-yellow opacity-50">📞</span>
+                                                {cinema.phone}
+                                            </p>
+                                        )}
+
+                                        {cinema.email && (
+                                            <p className="text-white/50 text-xs flex items-center gap-2">
+                                                <span className="text-yellow opacity-50">✉️</span>
+                                                {cinema.email}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Footer Info */}
+                                    <div className="mt-auto pt-6 border-t border-white/10 flex justify-between items-center">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-white/30 uppercase tracking-widest">Localidade</span>
+                                            <span className="text-white font-medium">{cinema.location}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-[10px] text-white/30 uppercase tracking-widest block">Ranking</span>
+                                            <span className="text-yellow font-bold text-lg">
+                                                {'★'.repeat(Math.round(cinema.rating || 0)).padEnd(5, '☆')}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </Link>

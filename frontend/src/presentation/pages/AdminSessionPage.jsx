@@ -114,15 +114,21 @@ const AdminSessionPage = () => {
         setMessage({ type: '', text: '' });
 
         try {
-            // Combine date and time
-            const inicio = `${formData.date}T${formData.startTime}:00`;
-            const fim = `${formData.date}T${formData.endTime}:00`;
+            const movie = movies.find(m => m.id === parseInt(formData.filmeid));
+            if (!movie) throw new Error("Please select a movie first");
 
+            // Combine date and time
+            const startDateTime = new Date(`${formData.date}T${formData.startTime}:00`);
+            
+            // Calculate end time (duration is in minutes)
+            const endDateTime = new Date(startDateTime.getTime() + movie.duration * 60000);
+
+            // Format to ISO string for backend (Django expects YYYY-MM-DDTHH:MM:SS)
             const payload = {
                 filmeid: parseInt(formData.filmeid),
                 salaid: parseInt(formData.salaid),
-                inicio: inicio,
-                fim: fim,
+                inicio: startDateTime.toISOString(),
+                fim: endDateTime.toISOString(),
                 versao: formData.versao,
                 precosessao: parseFloat(formData.precosessao),
                 estadosessao: formData.estadosessao
@@ -136,11 +142,11 @@ const AdminSessionPage = () => {
             // Reset form
             setFormData({
                 ...formData,
-                startTime: '',
-                endTime: ''
+                startTime: ''
             });
             setTimeout(() => setView('view'), 1500); // Redirect to list after success
         } catch (error) {
+            console.error(error);
             setMessage({ type: 'error', text: error.message || 'Failed to create session' });
         } finally {
             setLoading(false);
@@ -164,6 +170,19 @@ const AdminSessionPage = () => {
         const seatLabel = `${seat.lugar.fila}${seat.lugar.numero}`;
         return tickets.find(t => t.lugar === seatLabel);
     };
+
+    const getFilteredRooms = () => {
+        const selectedMovie = movies.find(m => m.id === parseInt(formData.filmeid));
+        // If movie has a cinema, only show rooms for that cinema
+        // In the movie data from useMovies, cinema info is usually in movie.cinema
+        if (selectedMovie && selectedMovie.cinema && selectedMovie.cinema !== 'N/A') {
+            return rooms.filter(room => room.cinema?.nomecinema === selectedMovie.cinema);
+        }
+        // Otherwise show all
+        return rooms;
+    };
+
+    const filteredRooms = getFilteredRooms();
 
     return (
         <section className="min-h-screen bg-black py-20 px-4">
@@ -239,7 +258,7 @@ const AdminSessionPage = () => {
 
                                 {/* Room */}
                                 <div>
-                                    <label className="block text-white/60 text-sm mb-2">Room ({rooms.length} available)</label>
+                                    <label className="block text-white/60 text-sm mb-2">Room ({filteredRooms.length} available)</label>
                                     <select 
                                         name="salaid" 
                                         value={formData.salaid} 
@@ -248,9 +267,9 @@ const AdminSessionPage = () => {
                                         className="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white focus:border-yellow outline-none"
                                     >
                                         <option value="">Select Room</option>
-                                        {rooms.map(room => (
+                                        {filteredRooms.map(room => (
                                             <option key={room.salaid} value={room.salaid}>
-                                                {room.nomesala} ({room.tiposala || 'Standard'})
+                                                {room.cinema?.nomecinema || 'Cinema'} - {room.nomesala} ({room.tiposala || 'Standard'})
                                             </option>
                                         ))}
                                     </select>
@@ -291,19 +310,6 @@ const AdminSessionPage = () => {
                                         type="time" 
                                         name="startTime" 
                                         value={formData.startTime} 
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white focus:border-yellow outline-none"
-                                    />
-                                </div>
-
-                                {/* End Time */}
-                                <div>
-                                    <label className="block text-white/60 text-sm mb-2">End Time</label>
-                                    <input 
-                                        type="time" 
-                                        name="endTime" 
-                                        value={formData.endTime} 
                                         onChange={handleChange}
                                         required
                                         className="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white focus:border-yellow outline-none"

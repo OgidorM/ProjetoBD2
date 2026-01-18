@@ -32,6 +32,7 @@ urlpatterns = [
     path('api/sessoes/<int:sessaoid>/lugares/', api_views.lugares_sessao_api, name='lugares_sessao_api'),
     path('api/vendas/criar/', api_views.criar_venda_api, name='criar_venda_api'),
     path('api/vendas/minhas/', api_views.minhas_vendas_api, name='minhas_vendas_api'),
+    path('api/avaliacoes/criar/', api_views.criar_avaliacao_api, name='criar_avaliacao_api'),
     path('api/sessoes/', api_views.lista_sessoes_api, name='lista_sessoes_api'),
     path('api/sessoes/<int:sessaoid>/deletar/', api_views.deletar_sessao_api, name='deletar_sessao_api'),
     path('api/sessoes/<int:sessaoid>/bilhetes/', api_views.bilhetes_sessao_api, name='bilhetes_sessao_api'),
@@ -41,6 +42,10 @@ urlpatterns = [
     path('api/login/', api_views.login_api, name='login_api'),
     path('api/logout/', api_views.logout_api, name='logout_api'),
     path('api/signup/', api_views.signup_api, name='signup_api'),
+    path('api/user/update/', api_views.update_profile_api, name='update_profile_api'),
+    path('api/admin/avaliacoes/', api_views.admin_avaliacoes_api, name='admin_avaliacoes_api'),
+    path('api/admin/filmes/criar/', api_views.admin_create_movie_api, name='admin_create_movie_api'),
+    path('api/admin/filmes/<int:movie_id>/deletar/', api_views.admin_delete_movie_api, name='admin_delete_movie_api'),
 
     path('accounts/', include('django.contrib.auth.urls')),
 

@@ -15,7 +15,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Funcionarios, Lugares, Salas, Cinemas, Produtos
+from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Funcionarios, Lugares, Salas, Cinemas, Produtos, Avaliacoes
 from .serializers import FilmesSerializer, SessoesSerializer, LugaresSessaoSerializer, SessaoCreateSerializer, SalasSerializer, CinemasSerializer, ProdutosSerializer
 from .mongo_logger import log_action
 
@@ -244,6 +244,13 @@ def criar_sessao_api(request):
     if serializer.is_valid():
         sessao = serializer.save()
         
+        # Logic: If the movie was "global" (no cinema), assign it to this session's cinema
+        movie = sessao.filmeid
+        room = sessao.salaid
+        if movie and room and not movie.cinemaid:
+            movie.cinemaid = room.cinemaid
+            movie.save()
+            
         # Initialize seats for the session
         try:
             sala = sessao.salaid
@@ -514,6 +521,184 @@ def criar_venda_api(request):
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
+def admin_avaliacoes_api(request):
+    """
+    API to list all reviews for the backoffice
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        
+    avaliacoes = Avaliacoes.objects.all().select_related('venda__clienteid').order_by('-avaliacaoid')
+    data = []
+    for a in avaliacoes:
+        data.append({
+            "id": a.avaliacaoid,
+            "venda_id": a.venda.vendaid,
+            "cliente": a.venda.clienteid.nomecliente if a.venda.clienteid else "Unknown",
+            "titulo": a.tituloavaliacao,
+            "nota_cinema": a.avaliacaocinema,
+            "nota_filme": a.avaliacaofilme,
+            "nota_funcionario": a.avaliacaofuncionario,
+            "comentario": a.comentario
+        })
+    return Response(data)
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_create_movie_api(request):
+    """
+    API to create a new movie (Admin only)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        
+    try:
+        # Get category and classification
+        categoria = Categorias.objects.get(pk=request.data.get('categoriaid'))
+        classificacao = ClassificacoesEtarias.objects.get(pk=request.data.get('classificacaoid', 1))
+        
+        # Optional Cinema
+        cinema_id = request.data.get('cinemaid')
+        cinema = Cinemas.objects.get(pk=cinema_id) if cinema_id else None
+
+        movie = Filmes.objects.create(
+            titulo=request.data.get('titulo'),
+            categoriaid=categoria,
+            cinemaid=cinema,
+            datalancamento=request.data.get('datalancamento'),
+            duracao=request.data.get('duracao'),
+            produtora=request.data.get('produtora'),
+            idioma=request.data.get('idioma', 'PT'),
+            sinopse=request.data.get('sinopse', ''),
+            classificacaoetaria=classificacao,
+            ranking=0.0
+        )
+        
+        log_action(request.user, 'create_movie', 'Filmes', movie.filmeid, {"titulo": movie.titulo})
+        
+        return Response({"message": "Movie created successfully", "id": movie.filmeid}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_delete_movie_api(request, movie_id):
+    """
+    API to delete a movie (Admin only)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        
+    try:
+        movie = Filmes.objects.get(pk=movie_id)
+        # Check for sessions
+        if movie.sessoes.count() > 0:
+            return Response({"error": "Cannot delete movie with active sessions"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        movie.delete()
+        log_action(request.user, 'delete_movie', 'Filmes', movie_id, {})
+        return Response({"message": "Movie deleted successfully"})
+    except Filmes.DoesNotExist:
+        return Response({"error": "Movie not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def update_profile_api(request):
+    """
+    API to update user profile data
+    """
+    try:
+        user = request.user
+        username = request.data.get('username')
+        email = request.data.get('email')
+        
+        if not username:
+            return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Check if username is already taken by another user
+        if User.objects.filter(username=username).exclude(pk=user.id).exists():
+            return Response({"error": "Username already exists"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        with transaction.atomic():
+            old_username = user.username
+            
+            # Update User model
+            user.username = username
+            user.email = email
+            user.save()
+            
+            # Update corresponding Cliente record
+            cliente = Clientes.objects.filter(nomecliente=old_username).first()
+            if cliente:
+                cliente.nomecliente = username
+                cliente.emailcliente = email
+                cliente.save()
+            else:
+                # If for some reason it doesn't exist, create it
+                Clientes.objects.create(nomecliente=username, emailcliente=email)
+            
+            # Log action
+            log_action(user, 'update_profile', 'User', user.id, {"old_username": old_username, "new_username": username})
+            
+            return Response({
+                "message": "Profile updated successfully",
+                "username": user.username,
+                "email": user.email
+            })
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def criar_avaliacao_api(request):
+    """
+    API to create a review for a purchase
+    """
+    try:
+        user = request.user
+        venda_id = request.data.get('venda_id')
+        titulo = request.data.get('titulo', 'Avaliação de Compra')
+        nota_cinema = request.data.get('nota_cinema')
+        nota_filme = request.data.get('nota_filme')
+        nota_funcionario = request.data.get('nota_funcionario')
+        comentario = request.data.get('comentario', '')
+        
+        venda = Vendas.objects.get(pk=venda_id)
+        
+        # Verify ownership
+        if venda.clienteid.nomecliente != user.username:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+            
+        # Check if already rated
+        if hasattr(venda, 'avaliacao'):
+            return Response({"error": "Sale already rated"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        avaliacao = Avaliacoes.objects.create(
+            venda=venda,
+            tituloavaliacao=titulo,
+            avaliacaocinema=nota_cinema,
+            avaliacaofilme=nota_filme,
+            avaliacaofuncionario=nota_funcionario,
+            comentario=comentario
+        )
+        
+        log_action(user, 'create_review', 'Avaliacoes', avaliacao.avaliacaoid, {"venda_id": venda_id})
+        
+        return Response({"message": "Review submitted successfully"}, status=status.HTTP_201_CREATED)
+
+    except Vendas.DoesNotExist:
+        return Response({"error": "Sale not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def minhas_vendas_api(request):
     user = request.user
     # Find client by username
@@ -547,11 +732,16 @@ def minhas_vendas_api(request):
                         "quantidade": l.quantidade,
                         "preco": l.precolinha
                     })
+            
+            # Check if this sale has a review
+            has_review = hasattr(v, 'avaliacao')
+            
             data.append({
                 "id": v.vendaid,
                 "data": v.data,
                 "total": v.totalvenda,
-                "items": items
+                "items": items,
+                "rated": has_review
             })
             
         return Response(data)

@@ -20,6 +20,10 @@ export const API_CONFIG = {
         PRODUCTS: '/api/produtos/',
         BUY_PRODUCTS: '/api/produtos/comprar/',
         LOGOUT: '/api/logout/',
+        UPDATE_PROFILE: '/api/user/update/',
+        ADMIN_REVIEWS: '/api/admin/avaliacoes/',
+        CREATE_MOVIE: '/api/admin/filmes/criar/',
+        DELETE_MOVIE: (id) => `/api/admin/filmes/${id}/deletar/`,
     },
     TIMEOUT: 10000,
 };

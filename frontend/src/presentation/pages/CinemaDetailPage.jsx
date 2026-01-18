@@ -90,10 +90,36 @@ const CinemaDetailPage = () => {
                     <h1 className="text-5xl md:text-7xl font-modern-negra text-yellow mb-2">
                         {cinema.name}
                     </h1>
-                    <p className="text-white/60 text-xl flex items-center">
-                        <span className="mr-2">📍</span>
-                        {cinema.location}
-                    </p>
+                    
+                    <div className="flex flex-col md:flex-row gap-8 mt-8 mb-12 bg-white/5 p-8 rounded-3xl border border-white/10">
+                        <div className="flex-1 space-y-4">
+                            <p className="text-white/80 text-xl flex items-center">
+                                <span className="mr-3 text-yellow text-2xl">📍</span>
+                                {cinema.address ? `${cinema.address}, ${cinema.zipCode} ${cinema.location}` : cinema.location}
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                                {cinema.phone && (
+                                    <p className="text-white/60 flex items-center gap-2">
+                                        <span className="text-yellow opacity-70">📞</span>
+                                        {cinema.phone}
+                                    </p>
+                                )}
+                                {cinema.email && (
+                                    <p className="text-white/60 flex items-center gap-2">
+                                        <span className="text-yellow opacity-70">✉️</span>
+                                        {cinema.email}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="md:border-l md:border-white/10 md:pl-12 flex flex-col justify-center items-center md:items-end">
+                            <span className="text-white/40 uppercase tracking-widest text-xs mb-2">Rating Global</span>
+                            <div className="text-yellow text-4xl mb-1">
+                                {'★'.repeat(Math.round(cinema.rating || 0)).padEnd(5, '☆')}
+                            </div>
+                            <span className="text-white/60 font-bold text-lg">{cinema.rating} / 5.0</span>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Movies Grid */}

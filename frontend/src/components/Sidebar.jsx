@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { CartService } from '../services/CartService';
 
 const Sidebar = () => {
     const [user, setUser] = useState(null);
+    const [cartCount, setCartCount] = useState(0);
     const location = useLocation();
 
-    // Check user login status
+    // Check user login status and cart count
     useEffect(() => {
         const checkUser = () => {
             const storedUser = localStorage.getItem('user');
@@ -22,9 +24,22 @@ const Sidebar = () => {
             }
         };
 
+        const updateCartCount = () => {
+            const cart = CartService.getCart();
+            const count = cart.reduce((total, item) => total + (item.quantity || 1), 0);
+            setCartCount(count);
+        };
+
         checkUser();
+        updateCartCount();
+
         window.addEventListener('storage', checkUser);
-        return () => window.removeEventListener('storage', checkUser);
+        window.addEventListener('cart-updated', updateCartCount);
+
+        return () => {
+            window.removeEventListener('storage', checkUser);
+            window.removeEventListener('cart-updated', updateCartCount);
+        };
     }, []);
 
     const links = [
@@ -32,9 +47,11 @@ const Sidebar = () => {
         { title: 'Movies', path: '/filmes' },
         { title: 'Cinemas', path: '/cinemas' },
         { title: 'Shop', path: '/shop' },
-        { title: 'Cart', path: '/cart' },
+        { title: 'Cart', path: '/cart', count: true },
         { title: 'My Tickets', path: '/profile' },
     ];
+
+    const isAdmin = user && (user.is_staff || user.is_superuser);
 
     return (
         <div className="fixed left-0 top-0 z-[60] flex h-screen w-4 hover:w-64 transition-all duration-500 group">
@@ -47,13 +64,29 @@ const Sidebar = () => {
                             <Link 
                                 key={link.path}
                                 to={link.path}
-                                className={`text-2xl font-modern-negra hover:text-yellow transition-colors ${
+                                className={`text-2xl font-modern-negra hover:text-yellow transition-colors flex items-center justify-between ${
                                     location.pathname === link.path ? 'text-yellow' : 'text-white'
                                 }`}
                             >
-                                {link.title}
+                                <span>{link.title}</span>
+                                {link.count && cartCount > 0 && (
+                                    <span className="bg-yellow text-black text-xs font-bold px-2 py-0.5 rounded-full font-sans">
+                                        {cartCount}
+                                    </span>
+                                )}
                             </Link>
                         ))}
+                        
+                        {isAdmin && (
+                            <a 
+                                href="http://localhost:8000/admin/" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-2xl font-modern-negra text-red-400 hover:text-yellow transition-colors"
+                            >
+                                Admin Panel
+                            </a>
+                        )}
                     </div>
 
                     <div className="h-px w-full bg-white/20" />

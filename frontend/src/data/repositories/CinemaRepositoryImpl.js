@@ -22,7 +22,12 @@ export class CinemaRepositoryImpl extends CinemaRepository {
         return new Cinema({
             id: apiCinema.cinemaid,
             name: apiCinema.nomecinema,
-            location: apiCinema.localidadecinema
+            location: apiCinema.localidadecinema,
+            email: apiCinema.emailcinema,
+            phone: apiCinema.telefonecinema,
+            address: apiCinema.moradacinema,
+            zipCode: apiCinema.codigopostalcinema,
+            rating: parseFloat(apiCinema.ranking) || 0
         });
     }
 

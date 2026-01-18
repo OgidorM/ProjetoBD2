@@ -8,6 +8,20 @@ import autoTable from 'jspdf-autotable';
 const UserPage = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({ username: '', email: '' });
+    const [updateStatus, setUpdateStatus] = useState({ loading: false, error: null, success: false });
+    
+    // Review states
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [selectedSale, setSelectedSale] = useState(null);
+    const [reviewForm, setReviewForm] = useState({
+        nota_cinema: 5,
+        nota_filme: 5,
+        nota_funcionario: 5,
+        comentario: ''
+    });
+
     const { userTickets, fetchUserTickets, loading } = useBooking();
 
     useEffect(() => {
@@ -18,7 +32,12 @@ const UserPage = () => {
             return;
         }
         try {
-            setUser(JSON.parse(storedUser));
+            const userData = JSON.parse(storedUser);
+            setUser(userData);
+            setFormData({ 
+                username: userData.username || '', 
+                email: userData.email || '' 
+            });
         } catch (e) {
             console.error("Invalid user data", e);
             localStorage.removeItem('user');
@@ -40,9 +59,58 @@ const UserPage = () => {
             console.error("Logout failed on backend", e);
         } finally {
             localStorage.removeItem('user');
+            // Clear cart on logout
+            CartService.clearCart();
             // Trigger storage event so Navbar updates
             window.dispatchEvent(new Event("storage"));
             navigate('/login');
+        }
+    };
+
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault();
+        setUpdateStatus({ loading: true, error: null, success: false });
+        
+        try {
+            const client = new ApiClient();
+            const response = await client.post(API_CONFIG.ENDPOINTS.UPDATE_PROFILE, formData);
+            
+            // Update local storage and state
+            const updatedUser = { ...user, ...response };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
+            
+            setUpdateStatus({ loading: false, error: null, success: true });
+            setIsEditing(false);
+            
+            // Trigger storage event for other components
+            window.dispatchEvent(new Event("storage"));
+            
+            setTimeout(() => setUpdateStatus(s => ({ ...s, success: false })), 3000);
+        } catch (err) {
+            setUpdateStatus({ loading: false, error: err.message, success: false });
+        }
+    };
+
+    const handleOpenReview = (sale) => {
+        setSelectedSale(sale);
+        setShowReviewModal(true);
+    };
+
+    const handleSubmitReview = async (e) => {
+        e.preventDefault();
+        try {
+            const client = new ApiClient();
+            await client.post(API_CONFIG.ENDPOINTS.CREATE_REVIEW, {
+                venda_id: selectedSale.id,
+                ...reviewForm
+            });
+            setShowReviewModal(false);
+            setReviewForm({ nota_cinema: 5, nota_filme: 5, nota_funcionario: 5, comentario: '' });
+            fetchUserTickets(); // Refresh to update "rated" status
+            alert("Obrigado pela sua avaliação!");
+        } catch (err) {
+            alert("Erro ao enviar avaliação: " + err.message);
         }
     };
 
@@ -155,10 +223,76 @@ const UserPage = () => {
                                 <span className="text-white">{isAdmin ? 'Staff Access' : 'Active'}</span>
                             </p>
                             <p className="flex justify-between border-b border-white/10 pb-2">
+                                <span>Email</span>
+                                <span className="text-white truncate max-w-[150px]">{user.email || 'N/A'}</span>
+                            </p>
+                            <p className="flex justify-between border-b border-white/10 pb-2">
                                 <span>Member Since</span>
                                 <span className="text-white">2024</span>
                             </p>
                         </div>
+
+                        {!isEditing ? (
+                            <button 
+                                onClick={() => setIsEditing(true)}
+                                className="w-full mt-8 py-3 border border-yellow/50 text-yellow rounded-xl hover:bg-yellow hover:text-black transition-all font-bold"
+                            >
+                                Edit Profile
+                            </button>
+                        ) : (
+                            <form onSubmit={handleUpdateProfile} className="mt-8 space-y-4">
+                                <div>
+                                    <label className="block text-xs uppercase tracking-widest text-white/40 mb-1">Username</label>
+                                    <input 
+                                        type="text"
+                                        value={formData.username}
+                                        onChange={(e) => setFormData({...formData, username: e.target.value})}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-yellow outline-none transition-colors"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs uppercase tracking-widest text-white/40 mb-1">Email</label>
+                                    <input 
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-yellow outline-none transition-colors"
+                                    />
+                                </div>
+                                
+                                {updateStatus.error && (
+                                    <p className="text-red-500 text-xs">{updateStatus.error}</p>
+                                )}
+                                
+                                <div className="flex gap-2">
+                                    <button 
+                                        type="submit"
+                                        disabled={updateStatus.loading}
+                                        className="flex-1 py-2 bg-yellow text-black font-bold rounded-lg hover:bg-white disabled:opacity-50 transition-all"
+                                    >
+                                        {updateStatus.loading ? 'Saving...' : 'Save'}
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => {
+                                            setIsEditing(false);
+                                            setFormData({ 
+                                                username: user.username || '', 
+                                                email: user.email || '' 
+                                            });
+                                        }}
+                                        className="px-4 py-2 border border-white/10 text-white rounded-lg hover:bg-white/10 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+                        
+                        {updateStatus.success && (
+                            <p className="mt-4 text-green-500 text-sm text-center font-bold">Profile updated successfully!</p>
+                        )}
                     </div>
 
                     {/* Content Area */}
@@ -167,30 +301,28 @@ const UserPage = () => {
                             // Admin View
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <AdminCard 
-                                    title="Manage Movies" 
-                                    desc="Add, edit, or remove movies from the catalog."
+                                    title="Gestão de Filmes" 
+                                    desc="Adicionar novos títulos ou remover filmes sem sessões ativas."
                                     link="/admin/filmes" 
+                                    isInternal={true}
                                 />
                                 <AdminCard 
-                                    title="Manage Sessions" 
-                                    desc="Schedule new movie sessions."
+                                    title="Avaliações de Clientes" 
+                                    desc="Monitorizar o feedback e as notas deixadas pelos utilizadores."
+                                    link="/admin/reviews"
+                                    isInternal={true}
+                                />
+                                <AdminCard 
+                                    title="Gestão de Sessões" 
+                                    desc="Agendar e gerir horários de exibição para os filmes."
                                     link="/admin/sessions/create"
                                     isInternal={true}
                                 />
                                 <AdminCard 
-                                    title="Manage Cinemas" 
-                                    desc="Update cinema locations and details."
-                                    link="/admin/cinemas" 
-                                />
-                                <AdminCard 
-                                    title="Sales Reports" 
-                                    desc="View detailed breakdown of ticket sales."
-                                    link="/admin/sales" 
-                                />
-                                <AdminCard 
-                                    title="User Management" 
-                                    desc="Control user access and permissions."
-                                    link="/admin/users" 
+                                    title="Vendas & Relatórios" 
+                                    desc="Consultar o histórico global de vendas (v2 em breve)."
+                                    link="/profile" 
+                                    isInternal={true}
                                 />
                             </div>
                         ) : (
@@ -210,12 +342,22 @@ const UserPage = () => {
                                                             <span className="text-sm text-white/60">Order #{sale.id}</span>
                                                             <span className="text-yellow font-bold">€ {sale.total}</span>
                                                         </div>
-                                                        <button 
-                                                            onClick={() => exportToPDF(sale)}
-                                                            className="px-4 py-2 bg-yellow/10 border border-yellow/20 text-yellow text-xs font-bold rounded-lg hover:bg-yellow hover:text-black transition-all"
-                                                        >
-                                                            Export PDF
-                                                        </button>
+                                                        <div className="flex gap-2">
+                                                            {!sale.rated && (
+                                                                <button 
+                                                                    onClick={() => handleOpenReview(sale)}
+                                                                    className="px-4 py-2 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white hover:text-black transition-all"
+                                                                >
+                                                                    Avaliar Experiência
+                                                                </button>
+                                                            )}
+                                                            <button 
+                                                                onClick={() => exportToPDF(sale)}
+                                                                className="px-4 py-2 bg-yellow/10 border border-yellow/20 text-yellow text-xs font-bold rounded-lg hover:bg-yellow hover:text-black transition-all"
+                                                            >
+                                                                Export PDF
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                     <div className="space-y-3">
                                                         {sale.items.map((item, idx) => (
@@ -253,16 +395,70 @@ const UserPage = () => {
                                         </>
                                     )}
                                 </div>
-
-                                <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-                                    <h3 className="text-3xl font-modern-negra text-yellow mb-4">Watchlist</h3>
-                                    <p className="text-white/60">Save movies here to watch later.</p>
-                                </div>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* Review Modal */}
+            {showReviewModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                    <div className="bg-stone-900 border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl">
+                        <h2 className="text-3xl font-modern-negra text-yellow mb-6">Avaliar Experiência</h2>
+                        
+                        <form onSubmit={handleSubmitReview} className="space-y-6">
+                            {['filme', 'cinema', 'funcionario'].map((type) => (
+                                <div key={type} className="space-y-2">
+                                    <label className="block text-sm uppercase tracking-widest text-white/60">
+                                        Nota do {type === 'filme' ? 'Filme' : type === 'cinema' ? 'Cinema' : 'Atendimento'}
+                                    </label>
+                                    <div className="flex gap-2">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <button
+                                                key={star}
+                                                type="button"
+                                                onClick={() => setReviewForm({ ...reviewForm, [`nota_${type}`]: star })}
+                                                className={`text-2xl transition-colors ${
+                                                    reviewForm[`nota_${type}`] >= star ? 'text-yellow' : 'text-white/20'
+                                                }`}
+                                            >
+                                                ★
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+
+                            <div className="space-y-2">
+                                <label className="block text-sm uppercase tracking-widest text-white/60">Comentário (opcional)</label>
+                                <textarea
+                                    value={reviewForm.comentario}
+                                    onChange={(e) => setReviewForm({ ...reviewForm, comentario: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-yellow outline-none transition-colors h-24 resize-none"
+                                    placeholder="Partilhe a sua experiência..."
+                                />
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
+                                <button
+                                    type="submit"
+                                    className="flex-1 py-4 bg-yellow text-black font-bold rounded-xl hover:bg-white transition-all"
+                                >
+                                    Enviar Avaliação
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowReviewModal(false)}
+                                    className="px-6 py-4 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
