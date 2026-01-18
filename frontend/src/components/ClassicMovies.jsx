@@ -116,12 +116,14 @@ const ClassicMovies = () => {
                                     style={{ opacity: 1 }}
                                     className={`card bg-gradient-to-br from-stone-900/40 to-neutral-900/20 block no-underline`}
                                 >
-                                    <div className="flex justify-between items-start mb-6">
-                                        <span>{movie.year}</span>
-                                        <span className="text-yellow text-2xl font-modern-negra">
-                                            {String(i + 1).padStart(2, "0")}
-                                        </span>
-                                    </div>
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className="text-yellow/80 text-sm font-medium">
+                                        {movie.year}
+                                    </span>
+                                    <span className="text-yellow text-2xl font-bold">
+                                        {String(i + 1).padStart(2, '0')}
+                                    </span>
+                                </div>
 
                                     <h3>{movie.title}</h3>
 

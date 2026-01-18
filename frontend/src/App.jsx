@@ -8,6 +8,8 @@ import BookingPage from './presentation/pages/BookingPage.jsx';
 import CheckoutPage from './presentation/pages/CheckoutPage.jsx';
 import CinemasPage from './presentation/pages/CinemasPage.jsx';
 import CinemaDetailPage from './presentation/pages/CinemaDetailPage.jsx';
+import ConcessionsPage from './presentation/pages/ConcessionsPage.jsx';
+import CartPage from './presentation/pages/CartPage.jsx';
 import LoginPage from './presentation/pages/LoginPage.jsx';
 import RegisterPage from './presentation/pages/RegisterPage.jsx';
 import UserPage from './presentation/pages/UserPage.jsx';
@@ -27,6 +29,8 @@ const App = () => {
                     <Route path="/filmes" element={<MoviesPage />} />
                     <Route path="/cinemas" element={<CinemasPage />} />
                     <Route path="/cinemas/:id" element={<CinemaDetailPage />} />
+                    <Route path="/shop" element={<ConcessionsPage />} />
+                    <Route path="/cart" element={<CartPage />} />
                     <Route path="/filmes/:id" element={<MovieDetailPage />} />
                     <Route path="/booking/:sessionId" element={<BookingPage />} />
                     <Route path="/checkout" element={<CheckoutPage />} />

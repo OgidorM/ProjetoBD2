@@ -31,6 +31,8 @@ const Sidebar = () => {
         { title: 'Home', path: '/' },
         { title: 'Movies', path: '/filmes' },
         { title: 'Cinemas', path: '/cinemas' },
+        { title: 'Shop', path: '/shop' },
+        { title: 'Cart', path: '/cart' },
         { title: 'My Tickets', path: '/profile' },
     ];
 

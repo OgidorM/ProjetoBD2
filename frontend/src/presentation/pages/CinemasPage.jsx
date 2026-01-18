@@ -80,7 +80,7 @@ const CinemasPage = () => {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
                                         </div>
-                                        <span className="text-yellow text-4xl font-modern-negra opacity-50">
+                                        <span className="text-yellow text-4xl font-bold opacity-50">
                                             {String(index + 1).padStart(2, '0')}
                                         </span>
                                     </div>

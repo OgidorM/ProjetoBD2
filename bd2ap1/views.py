@@ -15,8 +15,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Funcionarios, Lugares, Salas, Cinemas
-from .serializers import FilmesSerializer, SessoesSerializer, LugaresSessaoSerializer, SessaoCreateSerializer, SalasSerializer, CinemasSerializer
+from .models import Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas, Bilhetes, Clientes, Funcionarios, Lugares, Salas, Cinemas, Produtos
+from .serializers import FilmesSerializer, SessoesSerializer, LugaresSessaoSerializer, SessaoCreateSerializer, SalasSerializer, CinemasSerializer, ProdutosSerializer
 from .mongo_logger import log_action
 
 def index(request):
@@ -24,6 +24,79 @@ def index(request):
 
 def home(request):
     return render(request, 'core/index.html')
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def produtos_api(request):
+    """
+    API endpoint to get all active products
+    """
+    produtos = Produtos.objects.filter(ativo=True, stock__gt=0)
+    serializer = ProdutosSerializer(produtos, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def comprar_produtos_api(request):
+    """
+    API to process a purchase of concession items
+    """
+    try:
+        user = request.user
+        items = request.data.get('items', []) # List of {produtoid, quantidade}
+        
+        if not items:
+            return Response({"error": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        with transaction.atomic():
+            # 1. Get/Create Client
+            cliente, created = Clientes.objects.get_or_create(
+                nomecliente=user.username,
+                defaults={'emailcliente': user.email}
+            )
+            
+            # 2. Create Venda
+            venda = Vendas.objects.create(
+                clienteid=cliente,
+                data=timezone.now().date(),
+                estadovenda='Concluída',
+                totalvenda=0
+            )
+            
+            total = 0
+            for item in items:
+                produto = Produtos.objects.select_for_update().get(pk=item['produtoid'])
+                qty = int(item['quantidade'])
+                
+                if produto.stock < qty:
+                    raise Exception(f"Insufficient stock for {produto.nomeproduto}")
+                
+                # Update stock
+                produto.stock -= qty
+                produto.save()
+                
+                line_total = produto.precoproduto * qty
+                # Create VendaLinha
+                VendaLinhas.objects.create(
+                    vendaid=venda,
+                    produtoid=produto,
+                    quantidade=qty,
+                    precolinha=produto.precoproduto,
+                    total_linha=line_total
+                )
+                total += line_total
+                
+            venda.totalvenda = total
+            venda.save()
+            
+            # Log purchase
+            log_action(user, 'buy_concessions', 'Vendas', venda.vendaid, {"total": float(total)})
+            
+            return Response({"message": "Purchase successful", "venda_id": venda.vendaid}, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class SignUpView(generic.CreateView):
     form_class = UserCreationForm
@@ -101,13 +174,19 @@ def whoami_api(request):
 @api_view(['GET'])
 def filmes_api(request):
     """
-    API endpoint to get all movies in JSON format, optionally filtered by cinema
+    API endpoint to get all movies in JSON format, optionally filtered by cinema.
+    Only returns movies with upcoming sessions when filtering by cinema.
     """
     cinema_id = request.query_params.get('cinema')
     queryset = Filmes.objects.select_related('categoriaid', 'classificacaoetaria', 'cinemaid')
     
     if cinema_id:
-        queryset = queryset.filter(cinemaid=cinema_id)
+        now = timezone.now()
+        # Filter movies for this cinema that have at least one session starting in the future
+        queryset = queryset.filter(
+            cinemaid=cinema_id,
+            sessoes__inicio__gte=now
+        ).distinct()
         
     filmes = queryset.all()
     serializer = FilmesSerializer(filmes, many=True)
@@ -339,20 +418,20 @@ def lugares_sessao_api(request, sessaoid):
 @permission_classes([IsAuthenticated])
 def criar_venda_api(request):
     """
-    API to process a ticket sale
+    API to process a unified purchase (tickets and/or concessions)
     """
     try:
         user = request.user
         data = request.data
         sessaoid = data.get('sessaoid')
-        lugares_ids = data.get('lugares_ids') # List of lugarid or lugarsessaoid
+        lugares_ids = data.get('lugares_ids', []) # List of lugarsessaoid
+        products = data.get('products', []) # List of {produtoid, quantidade}
         
-        if not sessaoid or not lugares_ids:
-            return Response({"error": "Missing session or seats data"}, status=status.HTTP_400_BAD_REQUEST)
+        if not lugares_ids and not products:
+            return Response({"error": "Empty cart"}, status=status.HTTP_400_BAD_REQUEST)
             
         with transaction.atomic():
-            # 1. Get/Create Client using Username as unique identifier
-            # This prevents users with empty emails from sharing the same 'anonymous' client record
+            # 1. Get/Create Client
             cliente, created = Clientes.objects.get_or_create(
                 nomecliente=user.username,
                 defaults={'emailcliente': user.email}
@@ -363,45 +442,69 @@ def criar_venda_api(request):
                 clienteid=cliente,
                 data=timezone.now().date(),
                 estadovenda='Concluída',
-                totalvenda=0 # Will update later
+                totalvenda=0
             )
             
-            sessao = Sessoes.objects.get(pk=sessaoid)
             total = 0
             
-            for ls_id in lugares_ids:
-                # Assuming ls_id is lugarsessaoid
-                ls = LugaresSessao.objects.select_related('lugarid').get(pk=ls_id)
+            # 3. Process Tickets
+            if sessaoid and lugares_ids:
+                sessao = Sessoes.objects.get(pk=sessaoid)
+                price = sessao.precosessao or 10.00
                 
-                if ls.estado != 'Livre':
-                    raise Exception(f"Lugar {ls.lugarid.fila}{ls.lugarid.numero} is not available")
+                for ls_id in lugares_ids:
+                    # Fix: Locked the row first without select_related to avoid outer join error
+                    ls = LugaresSessao.objects.select_for_update().get(pk=ls_id)
+                    # Then fetch related data if needed or rely on the instance
+                    if ls.estado != 'Livre':
+                        lugar_info = f"{ls.lugarid.fila}{ls.lugarid.numero}" if ls.lugarid else "Unknown"
+                        raise Exception(f"Lugar {lugar_info} is no longer available")
+                    
+                    ls.estado = 'Ocupado'
+                    ls.save()
+                    
+                    bilhete = Bilhetes.objects.create(
+                        lugarid=ls.lugarid,
+                        sessaoid=sessao,
+                        precobilhete=price,
+                        emissao=timezone.now()
+                    )
+                    
+                    VendaLinhas.objects.create(
+                        vendaid=venda,
+                        bilheteid=bilhete,
+                        quantidade=1,
+                        precolinha=price,
+                        total_linha=price
+                    )
+                    total += price
+
+            # 4. Process Concessions
+            for item in products:
+                produto = Produtos.objects.select_for_update().get(pk=item['produtoid'])
+                qty = int(item['quantidade'])
                 
-                # Update status
-                ls.estado = 'Ocupado'
-                ls.save()
+                if produto.stock < qty:
+                    raise Exception(f"Insufficient stock for {produto.nomeproduto}")
                 
-                # Create Bilhete
-                price = sessao.precosessao or 10.00 # Fallback price
-                bilhete = Bilhetes.objects.create(
-                    lugarid=ls.lugarid,
-                    sessaoid=sessao,
-                    precobilhete=price,
-                    emissao=timezone.now()
-                )
+                produto.stock -= qty
+                produto.save()
                 
-                # Create VendaLinha
+                line_total = produto.precoproduto * qty
                 VendaLinhas.objects.create(
                     vendaid=venda,
-                    bilheteid=bilhete,
-                    quantidade=1,
-                    precolinha=price,
-                    total_linha=price
+                    produtoid=produto,
+                    quantidade=qty,
+                    precolinha=produto.precoproduto,
+                    total_linha=line_total
                 )
-                
-                total += price
+                total += line_total
                 
             venda.totalvenda = total
             venda.save()
+            
+            # Log action
+            log_action(user, 'unified_purchase', 'Vendas', venda.vendaid, {"total": float(total)})
             
             return Response({"message": "Purchase successful", "venda_id": venda.vendaid}, status=status.HTTP_201_CREATED)
 
@@ -421,24 +524,34 @@ def minhas_vendas_api(request):
 
         vendas = Vendas.objects.filter(clienteid=cliente).order_by('-data', '-vendaid')
         
-        # Construct simple response data
+        # Construct detailed response data
         data = []
         for v in vendas:
-            linhas = v.linhas.all()
-            tickets = []
+            linhas = v.linhas.all().select_related('bilheteid__sessaoid__filmeid', 'bilheteid__sessaoid__salaid', 'bilheteid__lugarid', 'produtoid')
+            items = []
             for l in linhas:
                 if l.bilheteid:
-                    tickets.append({
+                    items.append({
+                        "tipo": "ticket",
                         "filme": l.bilheteid.sessaoid.filmeid.titulo,
                         "sala": l.bilheteid.sessaoid.salaid.nomesala,
                         "data": l.bilheteid.sessaoid.inicio,
-                        "lugar": f"{l.bilheteid.lugarid.fila}{l.bilheteid.lugarid.numero}"
+                        "lugar": f"{l.bilheteid.lugarid.fila}{l.bilheteid.lugarid.numero}",
+                        "quantidade": l.quantidade,
+                        "preco": l.precolinha
+                    })
+                elif l.produtoid:
+                    items.append({
+                        "tipo": "produto",
+                        "nome": l.produtoid.nomeproduto,
+                        "quantidade": l.quantidade,
+                        "preco": l.precolinha
                     })
             data.append({
                 "id": v.vendaid,
                 "data": v.data,
                 "total": v.totalvenda,
-                "tickets": tickets
+                "items": items
             })
             
         return Response(data)

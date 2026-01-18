@@ -17,6 +17,8 @@ export const API_CONFIG = {
         SESSION_TICKETS: (id) => `/api/sessoes/${id}/bilhetes/`,
         CANCEL_TICKET: (id) => `/api/bilhetes/${id}/cancelar/`,
         ROOMS: '/api/salas/',
+        PRODUCTS: '/api/produtos/',
+        BUY_PRODUCTS: '/api/produtos/comprar/',
         LOGOUT: '/api/logout/',
     },
     TIMEOUT: 10000,

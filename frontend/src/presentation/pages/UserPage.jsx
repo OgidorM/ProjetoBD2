@@ -66,17 +66,25 @@ const UserPage = () => {
             doc.text(`Total Paid: EUR ${sale.total}`, 20, 64);
 
             // Table Header
-            const tableColumn = ["Movie", "Date/Time", "Room", "Seat"];
+            const tableColumn = ["Item", "Details", "Qty", "Price"];
             const tableRows = [];
 
-            sale.tickets.forEach(ticket => {
-                const ticketData = [
-                    ticket.filme,
-                    new Date(ticket.data).toLocaleString(),
-                    ticket.sala,
-                    ticket.lugar
-                ];
-                tableRows.push(ticketData);
+            sale.items.forEach(item => {
+                if (item.tipo === 'ticket') {
+                    tableRows.push([
+                        item.filme,
+                        `${new Date(item.data).toLocaleString()} - ${item.sala} (Seat ${item.lugar})`,
+                        item.quantidade,
+                        `EUR ${item.preco}`
+                    ]);
+                } else {
+                    tableRows.push([
+                        item.nome,
+                        "Concession Item",
+                        item.quantidade,
+                        `EUR ${item.preco}`
+                    ]);
+                }
             });
 
             console.log("Generating table with rows:", tableRows);
@@ -99,7 +107,7 @@ const UserPage = () => {
 
             console.log("Saving PDF...");
             // Save PDF
-            doc.save(`cinema_ticket_${sale.id}.pdf`);
+            doc.save(`cinema_receipt_${sale.id}.pdf`);
             console.log("PDF saved successfully");
         } catch (error) {
             console.error("Error generating PDF:", error);
@@ -130,7 +138,7 @@ const UserPage = () => {
                     {/* User Info Card */}
                     <div className="md:col-span-4 h-fit rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
                         <div className="flex items-center gap-4 mb-6">
-                            <div className="w-16 h-16 rounded-full bg-yellow flex items-center justify-center text-black text-2xl font-bold font-modern-negra">
+                            <div className="w-16 h-16 rounded-full bg-yellow flex items-center justify-center text-black text-2xl font-bold">
                                 {user.username.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -189,10 +197,10 @@ const UserPage = () => {
                             // Regular User View
                             <div className="space-y-6">
                                 <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-                                    <h3 className="text-3xl font-modern-negra text-yellow mb-4">My Tickets</h3>
+                                    <h3 className="text-3xl font-modern-negra text-yellow mb-4">My Purchases</h3>
                                     
                                     {loading ? (
-                                        <p className="text-white/60">Loading tickets...</p>
+                                        <p className="text-white/60">Loading history...</p>
                                     ) : userTickets.length > 0 ? (
                                         <div className="space-y-4">
                                             {userTickets.map((sale) => (
@@ -209,13 +217,24 @@ const UserPage = () => {
                                                             Export PDF
                                                         </button>
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        {sale.tickets.map((ticket, idx) => (
+                                                    <div className="space-y-3">
+                                                        {sale.items.map((item, idx) => (
                                                             <div key={idx} className="flex flex-col sm:flex-row justify-between text-sm">
-                                                                <span className="text-white font-bold">{ticket.filme}</span>
-                                                                <span className="text-white/70">
-                                                                    {new Date(ticket.data).toLocaleString()} • {ticket.sala} • Seat {ticket.lugar}
-                                                                </span>
+                                                                {item.tipo === 'ticket' ? (
+                                                                    <>
+                                                                        <span className="text-white font-bold">🎫 {item.filme}</span>
+                                                                        <span className="text-white/70">
+                                                                            {new Date(item.data).toLocaleString()} • {item.sala} • Seat {item.lugar}
+                                                                        </span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <span className="text-white font-bold">🍿 {item.nome} x {item.quantidade}</span>
+                                                                        <span className="text-white/70">
+                                                                            Concession • € {item.preco}
+                                                                        </span>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         ))}
                                                     </div>
@@ -224,12 +243,12 @@ const UserPage = () => {
                                         </div>
                                     ) : (
                                         <>
-                                            <p className="text-white/60">You haven't purchased any tickets yet. Why not check out what's playing?</p>
+                                            <p className="text-white/60">You haven't purchased anything yet.</p>
                                             <button 
                                                 onClick={() => navigate('/filmes')}
                                                 className="mt-6 px-6 py-2 bg-white text-black font-bold rounded-full hover:bg-yellow transition-colors"
                                             >
-                                                Browse Movies
+                                                Start Browsing
                                             </button>
                                         </>
                                     )}
