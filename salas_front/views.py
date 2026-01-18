@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
@@ -13,7 +13,10 @@ def lista_salas(request):
     salas = Salas.objects.select_related('cinemaid').order_by('salaid')
     return render(request, 'salas_front/lista_salas.html', {'salas': salas})
 
-@login_required
+def eh_admin(user):
+    return user.is_staff or user.is_superuser
+
+@user_passes_test(eh_admin)
 def adicionar_sala(request):
     if request.method == 'POST':
         form = SalaForm(request.POST)
@@ -24,7 +27,7 @@ def adicionar_sala(request):
         form = SalaForm()
     return render(request, 'salas_front/adicionar_sala.html', {'form': form})
 
-@login_required
+@user_passes_test(eh_admin)
 def editar_sala(request, salaid):
     salas = Salas.objects.get(pk=salaid)
     if request.method == 'POST':
@@ -36,7 +39,7 @@ def editar_sala(request, salaid):
         form = SalaForm(instance=salas)
     return render(request, 'salas_front/editar_sala.html', {'form': form, 'salas': salas})
 
-@login_required
+@user_passes_test(eh_admin)
 def remover_sala(request, salaid):
     salas = Salas.objects.get(salaid=salaid)
 

@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
@@ -8,18 +8,21 @@ from bd2ap1.mongo_logger import log_action
 from .forms import BilheteForm
 
 
-@login_required
+def eh_admin(user):
+    return user.is_staff or user.is_superuser
+
+
+@user_passes_test(eh_admin)
 def index(request):
     return redirect('lista_bilhetes')
 
 
-@login_required
 def lista_bilhetes(request):
     bilhetes = Bilhetes.objects.select_related('sessaoid', 'lugarid').order_by('bilheteid')
     return render(request, 'bilhetes_front/lista_bilhetes.html', {'bilhetes': bilhetes})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def adicionar_bilhete(request):
     if request.method == 'POST':
         form = BilheteForm(request.POST)
@@ -40,7 +43,7 @@ def adicionar_bilhete(request):
     return render(request, 'bilhetes_front/adicionar_bilhete.html', {'form': form})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def editar_bilhete(request, bilheteid):
     bilhete = get_object_or_404(Bilhetes, bilheteid=bilheteid)
     if request.method == 'POST':
@@ -62,7 +65,7 @@ def editar_bilhete(request, bilheteid):
     return render(request, 'bilhetes_front/editar_bilhete.html', {'form': form, 'bilhete': bilhete})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def remover_bilhete(request, bilheteid):
     bilhete = get_object_or_404(Bilhetes, bilheteid=bilheteid)
 
@@ -97,4 +100,3 @@ def remover_bilhete(request, bilheteid):
     }
 
     return render(request, 'bilhetes_front/confirmar_delete_bilhete.html', context)
-

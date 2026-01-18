@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
@@ -11,16 +11,19 @@ from .forms import VendaForm
 from .reports.mv_vendas_diarias import fetch_mv_vendas_diarias, build_mv_vendas_diarias_csv_response
 
 
-@login_required
+def eh_admin(user):
+    return user.is_staff or user.is_superuser
+
+@user_passes_test(eh_admin)
 def index(request):
     return redirect('lista_vendas')
 
-@login_required
+@user_passes_test(eh_admin)
 def lista_vendas(request):
     vendas = Vendas.objects.select_related('clienteid', 'funcionarioid').order_by('vendaid')
     return render(request, 'vendas_front/lista_vendas.html', {'vendas': vendas})
 
-@login_required
+@user_passes_test(eh_admin)
 def adicionar_venda(request):
     if request.method == 'POST':
         form = VendaForm(request.POST)
@@ -31,6 +34,7 @@ def adicionar_venda(request):
         form = VendaForm()
     return render(request, 'vendas_front/adicionar_venda.html', {'form': form})
 
+@user_passes_test(eh_admin)
 def editar_venda(request, vendaid):
     venda = Vendas.objects.get(vendaid=vendaid)
     if request.method == 'POST':
@@ -42,6 +46,7 @@ def editar_venda(request, vendaid):
         form = VendaForm(instance=venda)
     return render(request, 'vendas_front/editar_venda.html', {'form': form, 'venda': venda})
 
+@user_passes_test(eh_admin)
 def remover_venda(request, vendaid):
     venda = Vendas.objects.get(vendaid=vendaid)
 
@@ -89,7 +94,7 @@ def remover_venda(request, vendaid):
 
     return render(request, 'vendas_front/confirmar_delete_venda.html', context)
 
-@login_required
+@user_passes_test(eh_admin)
 def export_mv_vendas_diarias_csv(request):
     """Exporta a materialized view `mv_vendas_diarias` como CSV.
 

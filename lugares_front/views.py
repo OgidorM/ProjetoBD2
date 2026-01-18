@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
@@ -8,18 +8,22 @@ from bd2ap1.mongo_logger import log_action
 from .forms import LugarForm
 
 
-@login_required
+def eh_admin(user):
+    return user.is_staff or user.is_superuser
+
+
+@user_passes_test(eh_admin)
 def index(request):
     return redirect('lista_lugares')
 
 
-@login_required
+@user_passes_test(eh_admin)
 def lista_lugares(request):
     lugares = Lugares.objects.select_related('salaid').order_by('lugarid')
     return render(request, 'lugares_front/lista_lugares.html', {'lugares': lugares})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def adicionar_lugar(request):
     if request.method == 'POST':
         form = LugarForm(request.POST)
@@ -39,7 +43,7 @@ def adicionar_lugar(request):
     return render(request, 'lugares_front/adicionar_lugar.html', {'form': form})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def editar_lugar(request, lugarid):
     lugar = get_object_or_404(Lugares, lugarid=lugarid)
     if request.method == 'POST':
@@ -60,7 +64,7 @@ def editar_lugar(request, lugarid):
     return render(request, 'lugares_front/editar_lugares.html', {'form': form, 'lugar': lugar})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def remover_lugar(request, lugarid):
     lugar = get_object_or_404(Lugares, lugarid=lugarid)
 
