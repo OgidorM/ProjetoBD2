@@ -45,6 +45,5 @@ def log_action(user, action, target_model, target_id, details=None):
 
     try:
         collection.insert_one(log_entry)
-        # print(f"Log enviado para Atlas: {action}") # Descomenta se quiseres ver no terminal
     except Exception as e:
         print(f"❌ Erro ao enviar log para Atlas: {e}")

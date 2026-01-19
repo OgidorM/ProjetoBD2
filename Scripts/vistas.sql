@@ -1,0 +1,214 @@
+-- ==============================================================
+-- Vista simples: Mostra lugares livres e totais por sessão para cada filme
+-- ==============================================================
+CREATE OR REPLACE VIEW v_sessoes_lugares_livres_por_filme AS
+SELECT
+    f.filmeid,
+    f.titulo AS filme,
+    s.sessaoid,
+    s.inicio,
+    s.fim,
+    sa.nomesala,
+    c.nomecinema,
+    COUNT(ls.lugarsessaoid) FILTER (WHERE ls.estado = 'LIVRE') AS lugares_livres,
+    COUNT(ls.lugarsessaoid) AS lugares_totais
+FROM filmes f
+JOIN sessoes s ON s.filmeid = f.filmeid
+JOIN salas sa ON sa.salaid = s.salaid
+JOIN cinemas c ON c.cinemaid = sa.cinemaid
+JOIN lugares l ON l.salaid = sa.salaid
+JOIN lugaresSessao ls ON ls.lugarid = l.lugarid AND ls.sessaoid = s.sessaoid
+GROUP BY f.filmeid, f.titulo, s.sessaoid, s.inicio, s.fim, sa.nomesala, c.nomecinema
+ORDER BY f.titulo, s.inicio;
+
+-- ==============================================================
+-- Vista simples: Filmes por categoria com sessões futuras associadas
+-- ==============================================================
+CREATE OR REPLACE VIEW v_filmes_por_categoria_com_sessao AS
+SELECT
+    cat.categoriaid,
+    cat.nomecategoria AS categoria,
+    f.filmeid,
+    COALESCE(f.titulo, 'N/A') AS titulo,
+    COALESCE(f.duracao::TEXT, 'N/A') AS duracao,
+    COALESCE(f.idioma, 'N/A') AS idioma,
+    COALESCE(TO_CHAR(f.datalancamento, 'YYYY-MM-DD'), 'N/A') AS datalancamento,
+    COALESCE(TO_CHAR(f.fimexebicao, 'YYYY-MM-DD'), 'N/A') AS fimexebicao,
+    COALESCE(f.ranking::TEXT, 'N/A') AS ranking,
+    s.sessaoid,
+    TO_CHAR(s.inicio, 'YYYY-MM-DD HH24:MI') AS inicio_sessao,
+    TO_CHAR(s.fim, 'YYYY-MM-DD HH24:MI') AS fim_sessao,
+    s.precosessao
+FROM categorias cat
+LEFT JOIN filmes f ON f.categoriaid = cat.categoriaid
+LEFT JOIN sessoes s 
+       ON s.filmeid = f.filmeid
+      AND s.inicio > NOW()
+      AND s.estadosessao = 'Ativa'
+ORDER BY cat.nomecategoria, f.titulo, s.inicio;
+
+-- ==============================================================
+-- Vista simples: Mostra médias de avaliação e total de avaliações por filme
+-- ==============================================================
+CREATE OR REPLACE VIEW v_avaliacoes_por_filme AS
+SELECT
+    f.filmeid,
+    f.titulo,
+    COUNT(a.avaliacaoid) AS total_avaliacoes,
+    ROUND(AVG(a.avaliacaofilme)::NUMERIC, 2) AS media_avaliacao_filme,
+    ROUND(AVG(a.avaliacaocinema)::NUMERIC, 2) AS media_avaliacao_cinema,
+    ROUND(AVG(a.avaliacaofuncionario)::NUMERIC, 2) AS media_avaliacao_funcionario
+FROM filmes f
+LEFT JOIN sessoes s ON s.filmeid = f.filmeid
+LEFT JOIN bilhetes b ON b.sessaoid = s.sessaoid
+LEFT JOIN vendalinhas vl ON vl.bilheteid = b.bilheteid
+LEFT JOIN vendas v ON v.vendaid = vl.vendaid
+LEFT JOIN avaliacoes a ON a.vendaid = v.vendaid
+GROUP BY f.filmeid, f.titulo
+ORDER BY f.titulo;
+
+-- ==============================================================
+-- Vista simples: Quantidade vendida e faturação total por produto
+-- ==============================================================
+CREATE OR REPLACE VIEW v_produtos_vendidos AS
+SELECT
+    p.produtoid,
+    p.nomeproduto,
+    SUM(vl.quantidade) AS total_quantidade_vendida,
+    COALESCE(SUM(vl.total_linha_), 0) AS total_faturado
+FROM produtos p
+LEFT JOIN vendalinhas vl ON vl.produtoid = p.produtoid
+GROUP BY p.produtoid, p.nomeproduto
+ORDER BY total_faturado DESC;
+
+-- ==============================================================
+-- Vista simples: Resumo por cinema – salas, filmes, vendas e faturação
+-- ==============================================================
+CREATE OR REPLACE VIEW v_cinemas_resumo AS
+SELECT
+    c.cinemaid,
+    c.nomecinema,
+    COUNT(DISTINCT sa.salaid) AS total_salas,
+    COUNT(DISTINCT f.filmeid) AS total_filmes,
+    COUNT(DISTINCT v.vendaid) AS total_vendas,
+    COUNT(DISTINCT b.bilheteid) AS total_bilhetes,
+    COALESCE(SUM(v.totalvenda), 0) AS total_faturado
+FROM cinemas c
+LEFT JOIN salas sa ON sa.cinemaid = c.cinemaid
+LEFT JOIN filmes f ON f.cinemaid = c.cinemaid
+LEFT JOIN funcionarios fu ON fu.cinemaid = c.cinemaid
+LEFT JOIN vendas v ON v.funcionarioid = fu.funcionarioid
+LEFT JOIN vendalinhas vl ON vl.vendaid = v.vendaid AND vl.bilheteid IS NOT NULL
+LEFT JOIN bilhetes b ON b.bilheteid = vl.bilheteid
+GROUP BY c.cinemaid, c.nomecinema
+ORDER BY total_faturado DESC;
+
+-- ==============================================================
+-- Vista simples: Mostra todos os lugares livres por sessão
+-- ==============================================================
+CREATE OR REPLACE VIEW v_sessoes_lugares_livres AS
+SELECT
+    s.sessaoid,
+    f.titulo AS filme,
+    sa.nomesala,
+    c.nomecinema,
+    l.fila,
+    l.numero
+FROM sessoes s
+JOIN filmes f ON f.filmeid = s.filmeid
+JOIN salas sa ON sa.salaid = s.salaid
+JOIN cinemas c ON c.cinemaid = sa.cinemaid
+JOIN lugares l ON l.salaid = sa.salaid
+JOIN lugaresSessao ls ON ls.lugarid = l.lugarid AND ls.sessaoid = s.sessaoid
+WHERE ls.estado = 'LIVRE'
+ORDER BY s.sessaoid, l.fila, l.numero;
+
+-- ==============================================================
+-- Vista materializada: Ranking de funcionários com vendas e avaliações
+-- ==============================================================
+CREATE MATERIALIZED VIEW mv_funcionarios_top AS
+SELECT
+    f.funcionarioid,
+    f.nomefuncionario,
+    f.cargo,
+    c.nomecinema,
+    ROUND(AVG(a.avaliacaofuncionario)::NUMERIC, 2) AS media_avaliacao,
+    COUNT(v.vendaid) AS total_vendas,
+    COALESCE(SUM(v.totalvenda), 0) AS total_faturado
+FROM funcionarios f
+JOIN cinemas c ON c.cinemaid = f.cinemaid
+LEFT JOIN vendas v ON v.funcionarioid = f.funcionarioid
+LEFT JOIN avaliacoes a ON a.vendaid = v.vendaid
+GROUP BY f.funcionarioid, f.nomefuncionario, f.cargo, c.nomecinema
+ORDER BY media_avaliacao DESC, total_faturado DESC;
+
+-- ==============================================================
+-- Vista materializada: Ocupação total das salas por sessão
+-- ==============================================================
+CREATE MATERIALIZED VIEW mv_ocupacao_salas AS
+SELECT
+    s.salaid,
+    sa.nomesala,
+    s.sessaoid,
+    COUNT(ls.lugarSessaoid) AS total_lugares,
+    COUNT(ls.lugarSessaoid) FILTER (WHERE ls.estado = 'OCUPADO') AS lugares_ocupados,
+    COUNT(ls.lugarSessaoid) FILTER (WHERE ls.estado = 'LIVRE') AS lugares_livres
+FROM sessoes s
+JOIN salas sa ON sa.salaid = s.salaid
+JOIN lugares l ON l.salaid = sa.salaid
+JOIN lugaresSessao ls ON ls.lugarid = l.lugarid AND ls.sessaoid = s.sessaoid
+GROUP BY s.sessaoid, s.salaid, sa.nomesala
+ORDER BY sa.nomesala, s.sessaoid;
+
+-- ==============================================================
+-- Vista simples: Filmes em exibição atualmente
+-- ==============================================================
+CREATE OR REPLACE VIEW v_filmes_em_exibicao AS
+SELECT
+    f.filmeid,
+    f.titulo,
+    f.fimexebicao,
+    f.datalancamento,
+    c.nomecinema
+FROM filmes f
+JOIN cinemas c ON c.cinemaid = f.cinemaid
+WHERE f.fimexebicao >= CURRENT_DATE
+ORDER BY f.titulo;
+
+-- ==============================================================
+-- Vista materializada: Total de vendas por dia
+-- ==============================================================
+CREATE MATERIALIZED VIEW mv_vendas_diarias AS
+SELECT
+    data,
+    COUNT(vendaid) AS total_transacoes,
+    SUM(totalvenda) AS total_faturado
+FROM vendas
+GROUP BY data
+ORDER BY data;
+
+-- ==============================================================
+-- Vista Materializada: Histórico de compras por cliente
+-- Mostra total gasto, num de compras e datas da primeira/ultima compra
+-- ==============================================================
+CREATE MATERIALIZED VIEW mv_historico_clientes AS
+SELECT
+    c.clienteid,
+    c.nomecliente,
+    c.emailcliente,
+    c.localidadecliente,
+    c.codigopostalcliente,
+    COUNT(v.vendaid) AS total_compras,
+    COALESCE(SUM(v.totalvenda), 0) AS total_gasto,
+    COALESCE(ROUND(AVG(v.totalvenda)::NUMERIC, 2), 0) AS media_por_compra,
+    MIN(v.data) AS primeira_compra,
+    MAX(v.data) AS ultima_compra
+FROM clientes c
+LEFT JOIN vendas v ON v.clienteid = c.clienteid
+GROUP BY
+    c.clienteid,
+    c.nomecliente,
+    c.emailcliente,
+    c.localidadecliente,
+    c.codigopostalcliente
+ORDER BY total_gasto DESC;

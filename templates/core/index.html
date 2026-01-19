@@ -68,6 +68,7 @@
     </div>
   </div>
 
+  {% if user.is_staff or user.is_superuser %}
   <!-- People Management Section -->
   <div class="mb-5">
     <div class="d-flex align-items-center mb-4">
@@ -240,6 +241,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
 
 <style>

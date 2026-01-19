@@ -1,0 +1,39 @@
+{% extends 'filmes_front/base.html' %}
+
+{% block title %}Importar Sinopses{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">Importar sinopses (CSV)</h2>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <p>
+    O CSV deve ter as colunas <strong>titulo</strong> e <strong>sinopse</strong> (UTF-8).
+    Se houver mais do que um filme com o mesmo título, a linha é ignorada para evitar atualizar o filme errado.
+  </p>
+
+  <form method="post" enctype="multipart/form-data" class="card card-body">
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label class="form-label" for="csv_file">Ficheiro CSV</label>
+      <input class="form-control" id="csv_file" type="file" name="csv_file" accept=".csv,text/csv" required>
+    </div>
+
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" name="overwrite" id="overwrite">
+      <label class="form-check-label" for="overwrite">Sobrescrever sinopses já existentes</label>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" type="submit">Importar</button>
+      <a class="btn btn-secondary" href="{% url 'lista_filmes' %}">Voltar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

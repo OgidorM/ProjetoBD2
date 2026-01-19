@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -17,8 +17,11 @@ def lista_sessoes(request):
     return render(request, 'sessoes_front/lista_sessoes.html', {'sessoes': sessoes})
 
 
+def eh_admin(user):
+    return user.is_staff or user.is_superuser
 
-@login_required
+
+@user_passes_test(eh_admin)
 def adicionar_sessao(request):
     if request.method == 'POST':
         form = SessaoForm(request.POST)
@@ -48,7 +51,7 @@ def adicionar_sessao(request):
     return render(request, 'sessoes_front/adicionar_sessao.html', {'form': form})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def editar_sessao(request, sessaoid):
     sessao = Sessoes.objects.get(sessaoid=sessaoid)
     if request.method == 'POST':
@@ -88,7 +91,7 @@ def editar_sessao(request, sessaoid):
     return render(request, 'sessoes_front/editar_sessao.html', {'form': form, 'sessao': sessao})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def remover_sessao(request, sessaoid):
     sessao = Sessoes.objects.get(sessaoid=sessaoid)
 

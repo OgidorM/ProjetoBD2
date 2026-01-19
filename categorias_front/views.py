@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -7,7 +7,10 @@ from django.db import connection
 from bd2ap1.models import Categorias
 from .forms import CategoriaForm
 
-@login_required
+def eh_admin(user):
+    return user.is_staff or user.is_superuser
+
+@user_passes_test(eh_admin)
 def index(request):
     return redirect('lista_categorias')
 
@@ -15,7 +18,7 @@ def lista_categorias(request):
     categorias = Categorias.objects.order_by('categoriaid')
     return render(request, 'categorias_front/lista_categorias.html', {'categorias': categorias})
 
-@login_required
+@user_passes_test(eh_admin)
 def adicionar_categoria(request):
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
@@ -26,6 +29,7 @@ def adicionar_categoria(request):
         form = CategoriaForm()
     return render(request, 'categorias_front/adicionar_categoria.html', {'form': form})
 
+@user_passes_test(eh_admin)
 def editar_categoria(request, categoriaid):
     categoria = Categorias.objects.get(categoriaid=categoriaid)
     if request.method == 'POST':
@@ -37,6 +41,7 @@ def editar_categoria(request, categoriaid):
         form = CategoriaForm(instance=categoria)
     return render(request, 'categorias_front/editar_categoria.html', {'form': form, 'categoria': categoria})
 
+@user_passes_test(eh_admin)
 def remover_categoria(request, categoriaid):
     categoria = Categorias.objects.get(categoriaid=categoriaid)
 

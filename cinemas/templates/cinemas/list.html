@@ -7,7 +7,9 @@
     <div class="container mt-4">
         <h2 class="mb-3">Cinemas</h2>
         <div class="mb-3">
+            {% if user.is_staff or user.is_superuser %}
             <a href="{% url 'cinemas:create' %}" class="btn btn-primary me-2">+ Novo Cinema</a>
+            {% endif %}
             <a href="{% url 'cinemas:list' %}?format=json" class="btn btn-info me-2">Ver JSON</a>
         </div>
         <form method="get" action="{% url 'cinemas:search' %}" class="mb-4">
@@ -41,8 +43,12 @@
                     <td>{{ c.ranking }}</td>
                     <td>{{ c.localidadecinema }}</td>
                     <td>
+                        {% if user.is_staff or user.is_superuser %}
                         <a href="{% url 'cinemas:update' c.cinemaid %}" class="btn btn-warning btn-sm">Editar</a>
                         <a href="{% url 'cinemas:delete' c.cinemaid %}" class="btn btn-danger btn-sm">Apagar</a>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -54,9 +60,11 @@
         <div class="alert alert-warning text-center">
             Nenhum cinema registado ainda.
         </div>
+        {% if user.is_staff or user.is_superuser %}
         <div class="text-center">
             <a href="{% url 'cinemas:create' %}" class="btn btn-primary">+ Adicionar Primeiro Cinema</a>
         </div>
+        {% endif %}
     </div>
     {% endif %}
 {% endblock %}

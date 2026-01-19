@@ -63,8 +63,9 @@ class Filmes(models.Model):
     )
     cinemaid = models.ForeignKey(
         Cinemas,
-        on_delete=models.CASCADE,  # SQL: NO ACTION
+        on_delete=models.SET_NULL,
         db_column='cinemaid',
+        blank=True, null=True,
         related_name='filmes'
     )
     titulo = models.CharField(max_length=120)
@@ -74,6 +75,7 @@ class Filmes(models.Model):
     fimexebicao = models.DateField(blank=True, null=True)
     idioma = models.CharField(max_length=4, blank=True, null=True)
     sinopse = models.TextField(blank=True, null=True)
+    cartaz_url = models.URLField(max_length=500, blank=True, null=True)
     classificacaoetaria = models.ForeignKey(
         ClassificacoesEtarias,
         on_delete=models.CASCADE,  # SQL: NO ACTION

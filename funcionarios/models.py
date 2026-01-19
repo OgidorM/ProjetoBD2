@@ -10,3 +10,6 @@ class Funcionario(_Funcionarios):
     def nome_display(self):
         return self.nomefuncionario
 
+
+# Modelo de vínculo Auth <-> Funcionários
+from .models_auth import FuncionarioProfile

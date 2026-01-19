@@ -1,6 +1,16 @@
+asgiref==3.9.2
+certifi==2026.1.4
+charset-normalizer==3.4.4
 Django==5.2.6
-psycopg2-binary==2.9.9
-# Optional helpers (uncomment if you add env var loading or REST APIs)
-# django-environ==0.11.2
-# djangorestframework==3.15.2
-
+django-cors-headers==4.9.0
+djangorestframework==3.16.1
+dnspython==2.8.0
+idna==3.11
+psycopg==3.2.10
+psycopg2-binary==2.9.11
+pymongo==4.16.0
+python-dotenv==1.2.1
+requests==2.32.5
+sqlparse==0.5.3
+urllib3==2.6.3
+v==1
