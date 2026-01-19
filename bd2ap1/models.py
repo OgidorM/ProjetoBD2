@@ -75,6 +75,7 @@ class Filmes(models.Model):
     fimexebicao = models.DateField(blank=True, null=True)
     idioma = models.CharField(max_length=4, blank=True, null=True)
     sinopse = models.TextField(blank=True, null=True)
+    cartaz_url = models.URLField(max_length=500, blank=True, null=True)
     classificacaoetaria = models.ForeignKey(
         ClassificacoesEtarias,
         on_delete=models.CASCADE,  # SQL: NO ACTION

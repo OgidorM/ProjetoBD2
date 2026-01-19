@@ -52,6 +52,7 @@ export class CinemaRepositoryImpl extends CinemaRepository {
             language: apiMovie.idioma,
             cinema: apiMovie.cinema?.nomecinema || 'N/A',
             ageRating: apiMovie.classificacao?.nomeclassificacao || 'N/A',
+            cartazUrl: apiMovie.cartaz_url || null
         });
     }
 

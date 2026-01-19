@@ -196,7 +196,7 @@ const UserPage = () => {
         <div className="min-h-screen w-full bg-black radial-gradient pt-32 px-5 pb-20">
             <div className="container mx-auto">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-12">
-                    <h1 className="text-5xl md:text-7xl font-modern-negra text-white">
+                    <h1 className="text-5xl md:text-7xl font-serif text-white">
                         {isAdmin ? 'Painel de Administração' : 'Perfil'}
                     </h1>
                     <button 

@@ -72,6 +72,7 @@ def build_mv_vendas_diarias_csv_response(
     writer.writerow(["data", "total_transacoes", "total_faturado"])
 
     for r in rows:
-        writer.writerow([r.data.isoformat(), r.total_transacoes, f"{r.total_faturado:.2f}"])
+        date_str = r.data.isoformat() if r.data else "N/A"
+        writer.writerow([date_str, r.total_transacoes, f"{r.total_faturado:.2f}"])
 
     return response

@@ -37,10 +37,23 @@ const MovieDetailPage = () => {
                     &larr; Voltar aos Filmes
                 </Link>
                 
-                <div className="grid md:grid-cols-2 gap-12">
+                <div className="grid md:grid-cols-12 gap-12">
+                    {/* Poster Sidebar */}
+                    {movie.cartazUrl && (
+                        <div className="md:col-span-4 lg:col-span-3">
+                            <div className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl sticky top-32 group">
+                                <img 
+                                    src={movie.cartazUrl} 
+                                    alt={movie.title} 
+                                    className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" 
+                                />
+                            </div>
+                        </div>
+                    )}
+
                     {/* Movie Info */}
-                    <div>
-                        <h1 className="text-5xl md:text-7xl font-modern-negra text-yellow mb-4">{movie.title}</h1>
+                    <div className={`${movie.cartazUrl ? 'md:col-span-8 lg:col-span-5' : 'md:col-span-6'}`}>
+                        <h1 className="text-5xl md:text-7xl font-serif text-yellow mb-4">{movie.title}</h1>
                         <div className="flex flex-wrap gap-4 text-white/60 mb-8">
                             <span>{movie.year}</span>
                             <span>•</span>
@@ -63,7 +76,7 @@ const MovieDetailPage = () => {
                     </div>
 
                     {/* Sessions */}
-                    <div className="bg-white/5 p-8 rounded-2xl border border-white/10">
+                    <div className={`${movie.cartazUrl ? 'md:col-span-12 lg:col-span-4' : 'md:col-span-6'} bg-white/5 p-8 rounded-2xl border border-white/10 h-fit`}>
                         <h2 className="text-3xl font-modern-negra text-white mb-6">Sessões</h2>
                         
                         {sessionsLoading ? (

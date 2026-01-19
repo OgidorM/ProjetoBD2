@@ -36,6 +36,7 @@ urlpatterns = [
     path('api/sessoes/', api_views.lista_sessoes_api, name='lista_sessoes_api'),
     path('api/sessoes/<int:sessaoid>/deletar/', api_views.deletar_sessao_api, name='deletar_sessao_api'),
     path('api/sessoes/<int:sessaoid>/bilhetes/', api_views.bilhetes_sessao_api, name='bilhetes_sessao_api'),
+    path('api/bilhetes/<int:bilheteid>/digital/', api_views.bilhete_digital_api, name='bilhete_digital_api'),
     path('api/bilhetes/<int:bilheteid>/cancelar/', api_views.cancelar_bilhete_api, name='cancelar_bilhete_api'),
     path('api/sessoes/criar/', api_views.criar_sessao_api, name='criar_sessao_api'),
     path('api/salas/', api_views.salas_api, name='salas_api'),
@@ -57,6 +58,7 @@ urlpatterns = [
     path('api/admin/cinemas/criar/', api_views.admin_create_cinema_api, name='admin_create_cinema_api'),
     path('api/admin/cinemas/<int:cinema_id>/salas/criar/', api_views.admin_create_room_api, name='admin_create_room_api'),
     path('api/admin/filmes/criar/', api_views.admin_create_movie_api, name='admin_create_movie_api'),
+    path('api/admin/filmes/fetch-metadata/', api_views.fetch_movie_metadata_api, name='fetch_movie_metadata_api'),
     path('api/admin/filmes/<int:movie_id>/deletar/', api_views.admin_delete_movie_api, name='admin_delete_movie_api'),
 
     path('accounts/', include('django.contrib.auth.urls')),

@@ -8,7 +8,7 @@ from django.utils.dateparse import parse_date
 
 from bd2ap1.models import Vendas
 from .forms import VendaForm
-from .reports.mv_vendas_diarias import fetch_mv_vendas_diarias, build_mv_vendas_diarias_csv_response
+from .reports.detailed_sales_report import build_detailed_sales_csv_response
 
 
 def eh_admin(user):
@@ -96,11 +96,9 @@ def remover_venda(request, vendaid):
 
 @user_passes_test(eh_admin)
 def export_mv_vendas_diarias_csv(request):
-    """Exporta a materialized view `mv_vendas_diarias` como CSV.
-
-    Query params opcionais:
-      - start=YYYY-MM-DD
-      - end=YYYY-MM-DD
+    """
+    Exporta relatótio detalhado de vendas.
+    Substitui a antiga exportação da MV para fornecer dados granulares.
     """
 
     start_raw = request.GET.get('start')
@@ -109,22 +107,14 @@ def export_mv_vendas_diarias_csv(request):
     start = parse_date(start_raw) if start_raw else None
     end = parse_date(end_raw) if end_raw else None
 
-    # Se o usuário passou valor inválido, falha de forma explícita (evita export incorreto)
+    # Se o usuário passou valor inválido, falha de forma explícita
     if start_raw and start is None:
         raise Http404("Parâmetro 'start' inválido. Use YYYY-MM-DD.")
     if end_raw and end is None:
         raise Http404("Parâmetro 'end' inválido. Use YYYY-MM-DD.")
 
     try:
-        rows = fetch_mv_vendas_diarias(start=start, end=end)
+        return build_detailed_sales_csv_response(start=start, end=end)
     except Exception as exc:
-        raise Http404("Relatório mv_vendas_diarias indisponível.") from exc
-
-    suffix_parts = []
-    if start:
-        suffix_parts.append(f"from-{start.isoformat()}")
-    if end:
-        suffix_parts.append(f"to-{end.isoformat()}")
-    suffix = ("_" + "_".join(suffix_parts)) if suffix_parts else ""
-
-    return build_mv_vendas_diarias_csv_response(rows=rows, filename=f"mv_vendas_diarias{suffix}.csv")
+        # Em caso de erro na query SQL
+        raise Http404("Erro ao gerar relatório detalhado.") from exc

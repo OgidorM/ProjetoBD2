@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { usePaginatedMovies } from "../presentation/hooks/useMovies";
+import MovieCard from "./MovieCard";
 
 const ClassicMovies = () => {
     const sectionRef = useRef(null);
@@ -132,37 +133,15 @@ const ClassicMovies = () => {
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
                             {movies.map((movie, i) => (
-                                <Link
+                                <MovieCard
                                     key={movie.id}
-                                    to={`/filmes/${movie.id}`}
+                                    movie={movie}
                                     ref={(el) => (cardsRef.current[i] = el)}
-                                    style={{ opacity: 1 }}
-                                    className={`card bg-gradient-to-br from-stone-900/40 to-neutral-900/20 block no-underline`}
-                                >
-                                <div className="flex justify-between items-start mb-4">
-                                    <span className="text-yellow/80 text-sm font-medium">
-                                        {movie.year}
-                                    </span>
-                                </div>
-
-                                    <h3>{movie.title}</h3>
-
-                                    <p>{movie.description}</p>
-
-                                    <div className="pt-4 border-t border-white/10 mt-auto">
-                                        <p className="text-yellow/80 text-xs md:text-sm">
-                                            {movie.director && movie.director.includes('Desconhecido') ? 'Produtora' : 'Dirigido/Produzido por'}
-                                        </p>
-                                        <p className="text-white font-medium mt-1">{movie.director || 'N/A'}</p>
-                                        {movie.duration && (
-                                            <p className="text-white/60 text-sm mt-2">
-                                                Duração: {typeof movie.getFormattedDuration === 'function'
-                                                    ? movie.getFormattedDuration()
-                                                    : `${movie.duration} min`}
-                                            </p>
-                                        )}
-                                    </div>
-                                </Link>
+                                    // Pass opacity 1 to override initial GSAP state if needed, though GSAP sets it.
+                                    // The className logic in ClassicMovies was complex, but MovieCard encapsulates styles.
+                                    // However, ClassicMovies relies on GSAP for visibility.
+                                    // MovieCard handles its own layout styles.
+                                />
                             ))}
                         </div>
 

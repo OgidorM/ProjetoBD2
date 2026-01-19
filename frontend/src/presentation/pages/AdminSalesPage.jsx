@@ -22,7 +22,18 @@ const AdminSalesPage = () => {
         fetchSales();
     }, []);
 
-    const totalRevenue = sales.reduce((acc, sale) => acc + parseFloat(sale.total), 0).toFixed(2);
+    const filteredSales = sales.filter(sale => {
+        if (!dateFilter.start && !dateFilter.end) return true;
+        const saleDate = new Date(sale.data);
+        const start = dateFilter.start ? new Date(dateFilter.start) : null;
+        const end = dateFilter.end ? new Date(dateFilter.end) : null;
+
+        if (start && saleDate < start) return false;
+        if (end && saleDate > end) return false;
+        return true;
+    });
+
+    const totalRevenue = filteredSales.reduce((acc, sale) => acc + parseFloat(sale.total), 0).toFixed(2);
 
     const handleExportCsv = () => {
         let url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.EXPORT_SALES_CSV}`;
@@ -42,7 +53,7 @@ const AdminSalesPage = () => {
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = downloadUrl;
-                a.download = `vendas_diarias_${new Date().toISOString().split('T')[0]}.csv`;
+                a.download = `relatorio_vendas_${dateFilter.start || 'inicio'}_${dateFilter.end || 'fim'}.csv`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -98,10 +109,10 @@ const AdminSalesPage = () => {
                 </div>
 
                 <div className="grid gap-6">
-                    {sales.length === 0 ? (
+                    {filteredSales.length === 0 ? (
                         <p className="text-white/40 text-center py-20">Nenhuma venda encontrada.</p>
                     ) : (
-                        sales.map(sale => (
+                        filteredSales.map(sale => (
                             <div key={sale.id} className="bg-white/5 border border-white/10 rounded-3xl p-8 hover:border-white/20 transition-all">
                                 <div className="flex flex-col md:flex-row justify-between mb-6 border-b border-white/5 pb-6 gap-4">
                                     <div className="flex items-center gap-6">

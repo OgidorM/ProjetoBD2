@@ -42,6 +42,7 @@ class FilmesSerializer(serializers.ModelSerializer):
             'produtora',
             'idioma',
             'sinopse',
+            'cartaz_url',
             'ranking',
             'categoria',
             'classificacao',

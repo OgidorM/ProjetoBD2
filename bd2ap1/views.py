@@ -25,6 +25,7 @@ from .serializers import (
     SessaoCreateSerializer, SalasSerializer, CinemasSerializer, ProdutosSerializer
 )
 from .mongo_logger import log_action
+from .omdb_service import fetch_movie_data
 
 # --- ARQUITETURA NOVA (Imports) ---
 from clientes.models import ClienteProfile
@@ -304,11 +305,16 @@ def comprar_produtos_api(request):
 @api_view(['GET'])
 def filmes_api(request):
     cinema_id = request.query_params.get('cinema')
-    queryset = Filmes.objects.select_related('categoriaid', 'classificacaoetaria', 'cinemaid')
+    
+    # If admin/staff, return all movies. Otherwise, only movies with future sessions.
+    if request.user.is_staff:
+        queryset = Filmes.objects.select_related('categoriaid', 'classificacaoetaria', 'cinemaid')
+    else:
+        now = timezone.now()
+        queryset = Filmes.objects.filter(sessoes__inicio__gte=now).select_related('categoriaid', 'classificacaoetaria', 'cinemaid').distinct()
 
     if cinema_id:
-        now = timezone.now()
-        queryset = queryset.filter(cinemaid=cinema_id, sessoes__inicio__gte=now).distinct()
+        queryset = queryset.filter(cinemaid=cinema_id)
 
     filmes = queryset.all()
     serializer = FilmesSerializer(filmes, many=True)
@@ -491,8 +497,11 @@ def minhas_vendas_api(request):
             for l in linhas:
                 if l.bilheteid:
                     items.append({
+                        "id": l.bilheteid.bilheteid,
                         "tipo": "ticket",
                         "filme": l.bilheteid.sessaoid.filmeid.titulo,
+                        "sala": l.bilheteid.sessaoid.salaid.nomesala if l.bilheteid.sessaoid.salaid else "Sala N/A",
+                        "data": l.bilheteid.sessaoid.inicio.isoformat() if l.bilheteid.sessaoid.inicio else None,
                         "lugar": f"{l.bilheteid.lugarid.fila}{l.bilheteid.lugarid.numero}",
                         "preco": l.precolinha
                     })
@@ -775,8 +784,9 @@ def admin_create_movie_api(request):
             produtora=request.data.get('produtora'),
             idioma=request.data.get('idioma', 'PT'),
             sinopse=request.data.get('sinopse', ''),
+            cartaz_url=request.data.get('cartaz_url'),
             classificacaoetaria=classificacao,
-            ranking=0.0
+            ranking=request.data.get('ranking', 0.0)
         )
 
         log_action(request.user, 'create_movie', 'Filmes', movie.filmeid, {"titulo": movie.titulo})
@@ -1077,7 +1087,85 @@ def cancelar_bilhete_api(request, bilheteid):
             bilhete.delete()
 
             return Response({"message": "Ticket cancelled successfully"})
-    except Bilhetes.DoesNotExist:
-        return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def fetch_movie_metadata_api(request):
+    """
+    API to fetch movie metadata from external source (OMDb)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+    title = request.query_params.get('title')
+    if not title:
+        return Response({"error": "Title parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    data = fetch_movie_data(title)
+    if "error" in data:
+        return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+    return Response(data)
+
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def bilhete_digital_api(request, bilheteid):
+    """
+    API to generate digital ticket info using a DATABASE FUNCTION (PostgreSQL)
+    to ensure data integrity as per project requirements.
+    """
+    from django.db import connection
+    
+    try:
+        with connection.cursor() as cursor:
+            # Call the PostgreSQL function
+            cursor.execute("SELECT * FROM fn_gerar_detalhes_bilhete(%s)", [bilheteid])
+            row = cursor.fetchone()
+            
+            if not row:
+                return Response({"error": "Bilhete não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Map columns from the RETURNS TABLE definition:
+            # (bilhete_id, titulo_filme, nome_cinema, nome_sala, lugar_fila, lugar_numero, data_hora_inicio, preco_pago, emissao)
+            ticket_data = {
+                "bilhete_id": row[0],
+                "titulo": row[1],
+                "cinema": row[2],
+                "sala": row[3],
+                "fila": row[4],
+                "lugar": row[5],
+                "inicio": row[6],
+                "preco": float(row[7]) if row[7] is not None else 0.0,
+                "emissao": row[8]
+            }
+            
+            # Security check: Only the owner (or staff) can view the digital ticket
+            try:
+                ticket_obj = Bilhetes.objects.get(pk=bilheteid)
+                venda_linha = VendaLinhas.objects.filter(bilheteid=ticket_obj).select_related('vendaid').first()
+                
+                if venda_linha:
+                    venda = venda_linha.vendaid
+                    client_user = None
+                    try:
+                        profile = ClienteProfile.objects.get(cliente_dados=venda.clienteid)
+                        client_user = profile.user
+                    except:
+                        pass
+                    
+                    if not request.user.is_staff and client_user != request.user:
+                        return Response({"error": "Não tem permissão para aceder a este bilhete"}, 
+                                        status=status.HTTP_403_FORBIDDEN)
+            except Bilhetes.DoesNotExist:
+                pass # Already handled by SQL row check but for safety
+
+            return Response(ticket_data)
+            
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

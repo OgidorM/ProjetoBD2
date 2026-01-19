@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useBooking } from '../hooks/useBooking';
 import { ApiClient, API_CONFIG } from '../../data/api/ApiClient';
 import { CartService } from '../../services/CartService';
@@ -10,8 +10,9 @@ const CheckoutPage = () => {
     
     // Get cart data from CartService instead of location state
     const [cartItems, setCartItems] = useState(CartService.getCart());
-    const { createBooking, loading, error: bookingError } = useBooking();
-    const [success, setSuccess] = useState(false);
+    const { createBooking, loading: bookingLoading, error: bookingError } = useBooking();
+    const [loading, setLoading] = useState(false);
+    const [isSuccess, setSuccess] = useState(false);
     const [apiError, setApiError] = useState(null);
     const [showLoginModal, setShowLoginModal] = useState(false);
     
@@ -57,6 +58,7 @@ const CheckoutPage = () => {
         }
 
         try {
+            setLoading(true); // Add loading state feedback
             setApiError(null);
             const client = new ApiClient();
             
@@ -64,31 +66,38 @@ const CheckoutPage = () => {
             const tickets = cartItems.filter(i => i.tipo === 'ticket');
             const products = cartItems.filter(i => i.tipo === 'produto');
 
-            // If we have multiple sessions, we might need multiple API calls or a bulk API
-            // For now, let's process the first session found if any, and combine with products
+            // Process the first session found (limitation: one session per order)
             const firstTicketGroup = tickets[0]; 
+            const sessaoid = firstTicketGroup ? parseInt(firstTicketGroup.sessionId) : null;
             
-            await client.post(API_CONFIG.ENDPOINTS.CREATE_SALE, {
-                sessaoid: firstTicketGroup?.sessionId || null,
-                lugares_ids: firstTicketGroup?.seats.map(s => s.lugarsessaoid) || [],
-                products: products.map(p => ({
-                    produtoid: p.produtoid,
-                    quantidade: p.quantity
-                }))
-            });
+            // Extract seat IDs safely
+            let lugares_ids = [];
+            if (firstTicketGroup && Array.isArray(firstTicketGroup.seats)) {
+                lugares_ids = firstTicketGroup.seats.map(s => parseInt(s.lugarsessaoid));
+            }
 
-            // Note: If user has tickets for DIFFERENT sessions, 
-            // a production app would loop or use a bulk endpoint.
-            // For this project, we assume one session at a time in cart for simplicity.
+            // Prepare payload
+            const payload = {
+                sessaoid: sessaoid,
+                lugares_ids: lugares_ids,
+                products: products.map(p => ({
+                    produtoid: parseInt(p.produtoid),
+                    quantidade: parseInt(p.quantity)
+                }))
+            };
+
+            console.log("Sending order:", payload);
+
+            await client.post(API_CONFIG.ENDPOINTS.CREATE_SALE, payload);
 
             CartService.clearCart();
             setSuccess(true);
-            setTimeout(() => {
-                navigate('/profile');
-            }, 2000);
+            // Navigation handled in render via isSuccess check or effect
         } catch (e) {
-            console.error(e);
-            setApiError(e.message);
+            console.error("Checkout error:", e);
+            setApiError(e.message || "Erro ao processar compra.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -108,7 +117,7 @@ const CheckoutPage = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h2 className="text-4xl font-modern-negra text-white mb-4">Compra Confirmada!</h2>
+                    <h2 className="text-4xl font-modern-negra text-white mb-4">Compra Confirmada</h2>
                     <p className="text-white/60 max-w-md mx-auto">
                         Os bilhetes já estão disponíveis no perfil. Prepare-se para uma experiência inesquecível.
                     </p>
@@ -124,7 +133,7 @@ const CheckoutPage = () => {
     return (
         <section className="min-h-screen bg-black py-20 px-4 flex items-center justify-center">
             <div className="bg-white/5 p-8 rounded-2xl border border-white/10 max-w-xl w-full">
-                <h1 className="text-3xl font-modern-negra text-yellow mb-8 border-b border-white/10 pb-4">Finalizar Compra</h1>                         │
+                <h1 className="text-3xl font-modern-negra text-yellow mb-8 border-b border-white/10 pb-4">Finalizar Compra</h1>                         
                 <div className="space-y-6 mb-8">
                         {/* Tickets Section */}
                         {tickets.length > 0 && (

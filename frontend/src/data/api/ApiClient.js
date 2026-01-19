@@ -33,6 +33,7 @@ export const API_CONFIG = {
         CREATE_CINEMA: '/api/admin/cinemas/criar/',
         CREATE_ROOM: (id) => `/api/admin/cinemas/${id}/salas/criar/`,
         CREATE_MOVIE: '/api/admin/filmes/criar/',
+        FETCH_MOVIE_METADATA: (title) => `/api/admin/filmes/fetch-metadata/?title=${encodeURIComponent(title)}`,
         IMPORT_MOVIES_CSV: '/filmes/importar-sinopses/',
         DELETE_MOVIE: (id) => `/api/admin/filmes/${id}/deletar/`,
     },

@@ -16,6 +16,7 @@ export class Movie {
         language,
         cinema,
         ageRating,
+        cartazUrl,
     }) {
         this.id = id;
         this.title = title;
@@ -29,6 +30,7 @@ export class Movie {
         this.language = language;
         this.cinema = cinema;
         this.ageRating = ageRating;
+        this.cartazUrl = cartazUrl;
     }
 
     /**

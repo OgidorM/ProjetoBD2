@@ -33,6 +33,7 @@ export class MovieRepositoryImpl extends MovieRepository {
             language: apiMovie.idioma,
             cinema: apiMovie.cinema?.nomecinema || 'N/A',
             ageRating: apiMovie.classificacao?.nomeclassificacao || 'N/A',
+            cartazUrl: apiMovie.cartaz_url,
         });
     }
 

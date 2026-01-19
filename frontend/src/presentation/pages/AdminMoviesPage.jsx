@@ -18,6 +18,8 @@ const AdminMoviesPage = () => {
         produtora: '',
         idioma: 'PT',
         sinopse: '',
+        cartaz_url: '',
+        ranking: 0.0,
         classificacaoid: 1
     });
 
@@ -54,6 +56,47 @@ const AdminMoviesPage = () => {
         fetchData();
     }, []);
 
+    const handleFetchMetadata = async () => {
+        if (!newMovie.titulo) {
+            alert("Por favor insira um título primeiro.");
+            return;
+        }
+        
+        try {
+            const client = new ApiClient();
+            const response = await client.get(API_CONFIG.ENDPOINTS.FETCH_MOVIE_METADATA(newMovie.titulo));
+            
+            if (response.error) {
+                alert("Erro: " + response.error);
+                return;
+            }
+
+            // OMDb date format: "18 Dec 2009"
+            const parseDate = (dateStr) => {
+                if (!dateStr || dateStr === 'N/A') return '';
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return '';
+                return date.toISOString().split('T')[0];
+            };
+
+            // Populate form
+            setNewMovie(prev => ({
+                ...prev,
+                datalancamento: parseDate(response.datalancamento),
+                duracao: response.duracao || prev.duracao,
+                produtora: response.realizador || response.produtora || prev.produtora,
+                sinopse: response.sinopse || prev.sinopse,
+                cartaz_url: response.poster || prev.cartaz_url,
+                ranking: response.rating ? (parseFloat(response.rating) / 2).toFixed(1) : prev.ranking,
+            }));
+            
+            alert("Dados preenchidos com sucesso!");
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao buscar dados: " + e.message);
+        }
+    };
+
     const handleCreateMovie = async (e) => {
         e.preventDefault();
         try {
@@ -62,7 +105,8 @@ const AdminMoviesPage = () => {
             setShowAddForm(false);
             setNewMovie({
                 titulo: '', categoriaid: '', cinemaid: '', datalancamento: '',
-                duracao: '', produtora: '', idioma: 'PT', sinopse: '', classificacaoid: 1
+                duracao: '', produtora: '', idioma: 'PT', sinopse: '', 
+                cartaz_url: '', ranking: 0.0, classificacaoid: 1
             });
             fetchData();
             alert("Filme criado com sucesso!");
@@ -107,10 +151,19 @@ const AdminMoviesPage = () => {
                         <form onSubmit={handleCreateMovie} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-xs uppercase text-white/40">Título</label>
-                                <input required value={newMovie.titulo} onChange={e => setNewMovie({...newMovie, titulo: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl p-3 text-white focus:border-yellow outline-none" />
+                                <div className="flex gap-2">
+                                    <input required value={newMovie.titulo} onChange={e => setNewMovie({...newMovie, titulo: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl p-3 text-white focus:border-yellow outline-none" />
+                                    <button 
+                                        type="button" 
+                                        onClick={handleFetchMetadata}
+                                        className="bg-white/10 hover:bg-white/20 text-white px-4 rounded-xl font-bold whitespace-nowrap transition-colors"
+                                    >
+                                        Preencher via API
+                                    </button>
+                                </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs uppercase text-white/40">Produtora</label>
+                                <label className="text-xs uppercase text-white/40">Realizador</label>
                                 <input value={newMovie.produtora} onChange={e => setNewMovie({...newMovie, produtora: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl p-3 text-white focus:border-yellow outline-none" />
                             </div>
                             <div className="space-y-2">
@@ -135,6 +188,19 @@ const AdminMoviesPage = () => {
                                 <label className="text-xs uppercase text-white/40">Duração (minutos)</label>
                                 <input type="number" required value={newMovie.duracao} onChange={e => setNewMovie({...newMovie, duracao: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl p-3 text-white focus:border-yellow outline-none" />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-xs uppercase text-white/40">URL do Cartaz</label>
+                                <input value={newMovie.cartaz_url} onChange={e => setNewMovie({...newMovie, cartaz_url: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl p-3 text-white focus:border-yellow outline-none" placeholder="http://..." />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs uppercase text-white/40">Rating (0-5)</label>
+                                <input type="number" step="0.1" min="0" max="5" value={newMovie.ranking} onChange={e => setNewMovie({...newMovie, ranking: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl p-3 text-white focus:border-yellow outline-none" />
+                            </div>
+                            {newMovie.cartaz_url && (
+                                <div className="md:col-span-2 flex justify-center">
+                                    <img src={newMovie.cartaz_url} alt="Preview" className="h-48 rounded-xl border border-white/10" />
+                                </div>
+                            )}
                             <div className="md:col-span-2 space-y-2">
                                 <label className="text-xs uppercase text-white/40">Sinopse</label>
                                 <textarea value={newMovie.sinopse} onChange={e => setNewMovie({...newMovie, sinopse: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl p-3 text-white focus:border-yellow outline-none h-32 resize-none" />
@@ -148,9 +214,13 @@ const AdminMoviesPage = () => {
                     {movies.map(movie => (
                         <div key={movie.filmeid} className="bg-white/5 border border-white/10 rounded-2xl p-6 flex justify-between items-center group hover:border-white/30 transition-all">
                             <div className="flex gap-6 items-center">
-                                <div className="w-12 h-12 rounded-full bg-yellow/10 flex items-center justify-center text-yellow font-bold">
-                                    {movie.titulo.charAt(0)}
-                                </div>
+                                {movie.cartaz_url ? (
+                                    <img src={movie.cartaz_url} alt={movie.titulo} className="w-12 h-12 rounded-lg object-cover border border-white/10" />
+                                ) : (
+                                    <div className="w-12 h-12 rounded-full bg-yellow/10 flex items-center justify-center text-yellow font-bold">
+                                        {movie.titulo.charAt(0)}
+                                    </div>
+                                )}
                                 <div>
                                     <h3 className="text-xl font-bold text-white group-hover:text-yellow transition-colors">{movie.titulo}</h3>
                                     <p className="text-white/40 text-sm">

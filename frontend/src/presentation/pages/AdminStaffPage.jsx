@@ -8,7 +8,7 @@ const AdminStaffPage = () => {
     const [loading, setLoading] = useState(true);
     const [showAdd, setShowAdd] = useState(false);
     
-    const [newStaff, setNewStaff] = useState({ nome: '', email: '', cargo: '', salario: 0, cinemaid: '' });
+    const [newStaff, setNewStaff] = useState({ nome: '', email: '', cargo: '', salario: '', cinemaid: '' });
 
     const fetchData = async () => {
         try {
@@ -36,7 +36,7 @@ const AdminStaffPage = () => {
             const client = new ApiClient();
             await client.post(API_CONFIG.ENDPOINTS.ADMIN_STAFF, newStaff);
             setShowAdd(false);
-            setNewStaff({ nome: '', email: '', cargo: '', salario: 0, cinemaid: '' });
+            setNewStaff({ nome: '', email: '', cargo: '', salario: '', cinemaid: '' });
             fetchData();
         } catch (e) {
             alert("Erro ao criar funcionário");
