@@ -1169,3 +1169,62 @@ def bilhete_digital_api(request, bilheteid):
             
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def categorias_api(request):
+    """
+    API to list all categories
+    """
+    categorias = Categorias.objects.all().order_by('categoriaid')
+    data = [{"id": c.categoriaid, "name": c.nomecategoria} for c in categorias]
+    return Response(data)
+
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_create_categoria_api(request):
+    """
+    API to create a category (Admin only)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        nome = request.data.get('nome')
+        if not nome:
+            return Response({"error": "Name is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cat = Categorias.objects.create(nomecategoria=nome)
+        log_action(request.user, 'create_category', 'Categorias', cat.categoriaid, {"nome": nome})
+        return Response({"message": "Category created", "id": cat.categoriaid}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_delete_categoria_api(request, pk):
+    """
+    API to delete a category (Admin only)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        cat = Categorias.objects.get(pk=pk)
+        # Check constraints (filmes)
+        if cat.filmes.count() > 0:
+            return Response({"error": "Cannot delete category with related movies"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cat.delete()
+        log_action(request.user, 'delete_category', 'Categorias', pk, {})
+        return Response({"message": "Category deleted"})
+    except Categorias.DoesNotExist:
+        return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -36,6 +36,9 @@ export const API_CONFIG = {
         FETCH_MOVIE_METADATA: (title) => `/api/admin/filmes/fetch-metadata/?title=${encodeURIComponent(title)}`,
         IMPORT_MOVIES_CSV: '/filmes/importar-sinopses/',
         DELETE_MOVIE: (id) => `/api/admin/filmes/${id}/deletar/`,
+        CATEGORIES: '/api/categorias/',
+        CREATE_CATEGORY: '/api/admin/categorias/criar/',
+        DELETE_CATEGORY: (id) => `/api/admin/categorias/${id}/deletar/`,
     },
     TIMEOUT: 10000,
 };

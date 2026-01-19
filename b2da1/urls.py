@@ -60,6 +60,11 @@ urlpatterns = [
     path('api/admin/filmes/criar/', api_views.admin_create_movie_api, name='admin_create_movie_api'),
     path('api/admin/filmes/fetch-metadata/', api_views.fetch_movie_metadata_api, name='fetch_movie_metadata_api'),
     path('api/admin/filmes/<int:movie_id>/deletar/', api_views.admin_delete_movie_api, name='admin_delete_movie_api'),
+    
+    # Categories API
+    path('api/categorias/', api_views.categorias_api, name='categorias_api'),
+    path('api/admin/categorias/criar/', api_views.admin_create_categoria_api, name='admin_create_categoria_api'),
+    path('api/admin/categorias/<int:pk>/deletar/', api_views.admin_delete_categoria_api, name='admin_delete_categoria_api'),
 
     path('accounts/', include('django.contrib.auth.urls')),
 

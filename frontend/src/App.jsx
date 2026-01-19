@@ -24,6 +24,7 @@ import AdminSalesPage from './presentation/pages/AdminSalesPage.jsx';
 import AdminStaffPage from './presentation/pages/AdminStaffPage.jsx';
 import AdminClientsPage from './presentation/pages/AdminClientsPage.jsx';
 import AdminProductsPage from './presentation/pages/AdminProductsPage.jsx';
+import AdminCategoriesPage from './presentation/pages/AdminCategoriesPage.jsx';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -48,6 +49,7 @@ const App = () => {
                     <Route path="/tickets" element={<MyTicketsPage />} />
                     <Route path="/admin/sessions/create" element={<AdminSessionPage />} />
                     <Route path="/admin/filmes" element={<AdminMoviesPage />} />
+                    <Route path="/admin/categories" element={<AdminCategoriesPage />} />
                     <Route path="/admin/reviews" element={<AdminReviewsPage />} />
                     <Route path="/admin/cinemas" element={<AdminCinemasPage />} />
                     <Route path="/admin/sales" element={<AdminSalesPage />} />

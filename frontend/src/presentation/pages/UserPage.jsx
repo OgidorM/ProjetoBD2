@@ -309,6 +309,10 @@ const UserPage = () => {
                                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Gestão de Filmes</h3>
                                     <p className="text-sm text-white/60">Adicionar novos títulos ou remover filmes sem sessões ativas.</p>
                                 </Link>
+                                <Link to="/admin/categories" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Gestão de Categorias</h3>
+                                    <p className="text-sm text-white/60">Adicionar ou remover categorias de filmes.</p>
+                                </Link>
                                 <Link to="/admin/cinemas" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
                                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Gestão de Cinemas</h3>
                                     <p className="text-sm text-white/60">Registar novos cinemas e criar as respetivas salas e lugares.</p>
@@ -337,10 +341,6 @@ const UserPage = () => {
                                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Gestão de Clientes</h3>
                                     <p className="text-sm text-white/60">Consultar a base de dados de utilizadores registados.</p>
                                 </Link>
-                                <a href="http://localhost:8000/admin/" target="_blank" rel="noopener noreferrer" className="block p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-yellow/50 transition-all cursor-pointer group h-full">
-                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow transition-colors">Base de Dados</h3>
-                                    <p className="text-sm text-white/60">Acesso direto ao sistema de gestão de base de dados (Django Admin).</p>
-                                </a>
                             </div>
                         ) : (
                             // Regular User View
