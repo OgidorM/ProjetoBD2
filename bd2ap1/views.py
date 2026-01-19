@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
+import json
 
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -1123,49 +1124,42 @@ def bilhete_digital_api(request, bilheteid):
     from django.db import connection
     
     try:
+        # Security check: Only the owner (or staff) can view the digital ticket
+        try:
+            ticket_obj = Bilhetes.objects.get(pk=bilheteid)
+            venda_linha = VendaLinhas.objects.filter(bilheteid=ticket_obj).select_related('vendaid').first()
+            
+            if venda_linha:
+                venda = venda_linha.vendaid
+                client_user = None
+                try:
+                    profile = ClienteProfile.objects.get(cliente_dados=venda.clienteid)
+                    client_user = profile.user
+                except:
+                    pass
+                
+                if not request.user.is_staff and client_user != request.user:
+                    return Response({"error": "Não tem permissão para aceder a este bilhete"}, 
+                                    status=status.HTTP_403_FORBIDDEN)
+        except Bilhetes.DoesNotExist:
+            return Response({"error": "Bilhete não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
         with connection.cursor() as cursor:
-            # Call the PostgreSQL function
-            cursor.execute("SELECT * FROM fn_gerar_detalhes_bilhete(%s)", [bilheteid])
+            # Call the PostgreSQL function which returns a JSON object
+            cursor.execute("SELECT exportar_bilhete_pdf(%s)", [bilheteid])
             row = cursor.fetchone()
             
-            if not row:
-                return Response({"error": "Bilhete não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+            if not row or row[0] is None:
+                return Response({"error": "Erro ao gerar dados do bilhete"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Map columns from the RETURNS TABLE definition:
-            # (bilhete_id, titulo_filme, nome_cinema, nome_sala, lugar_fila, lugar_numero, data_hora_inicio, preco_pago, emissao)
-            ticket_data = {
-                "bilhete_id": row[0],
-                "titulo": row[1],
-                "cinema": row[2],
-                "sala": row[3],
-                "fila": row[4],
-                "lugar": row[5],
-                "inicio": row[6],
-                "preco": float(row[7]) if row[7] is not None else 0.0,
-                "emissao": row[8]
-            }
-            
-            # Security check: Only the owner (or staff) can view the digital ticket
-            try:
-                ticket_obj = Bilhetes.objects.get(pk=bilheteid)
-                venda_linha = VendaLinhas.objects.filter(bilheteid=ticket_obj).select_related('vendaid').first()
-                
-                if venda_linha:
-                    venda = venda_linha.vendaid
-                    client_user = None
-                    try:
-                        profile = ClienteProfile.objects.get(cliente_dados=venda.clienteid)
-                        client_user = profile.user
-                    except:
-                        pass
-                    
-                    if not request.user.is_staff and client_user != request.user:
-                        return Response({"error": "Não tem permissão para aceder a este bilhete"}, 
-                                        status=status.HTTP_403_FORBIDDEN)
-            except Bilhetes.DoesNotExist:
-                pass # Already handled by SQL row check but for safety
+            data = row[0]
+            if isinstance(data, str):
+                try:
+                    data = json.loads(data)
+                except json.JSONDecodeError:
+                    return Response({"error": "Erro ao processar dados do bilhete"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            return Response(ticket_data)
+            return Response(data)
             
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

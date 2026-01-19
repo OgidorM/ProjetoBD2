@@ -2,20 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useBooking } from '../hooks/useBooking';
 import { ApiClient } from '../../data/api/ApiClient';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { QRCodeSVG } from 'qrcode.react';
 
 const DigitalTicketModal = ({ ticket, onClose }) => {
     if (!ticket) return null;
 
-    // Data to be encoded in the QR Code
+    // Data to be encoded in the QR Code (using new API fields)
     const qrValue = JSON.stringify({
-        id: ticket.bilhete_id,
-        movie: ticket.titulo,
-        date: ticket.inicio,
+        id: ticket.id_bilhete,
+        movie: ticket.filme,
+        date: ticket.data_sessao,
+        time: ticket.hora_sessao,
         room: ticket.sala,
-        seat: `${ticket.fila}${ticket.lugar}`
+        seat: `${ticket.fila}${ticket.cadeira}`
     });
 
     return (
@@ -29,8 +28,12 @@ const DigitalTicketModal = ({ ticket, onClose }) => {
 
                 {/* Movie Title */}
                 <div className="p-8 pb-4 text-center">
-                    <h3 className="text-3xl font-serif text-white leading-none mb-2">{ticket.titulo}</h3>
-                    <p className="text-yellow text-sm font-bold tracking-widest uppercase">{ticket.cinema}</p>
+                    <h3 className="text-3xl font-serif text-white leading-none mb-2">{ticket.filme}</h3>
+                    <div className="flex justify-center gap-2 mt-2">
+                        <span className="text-yellow text-xs font-bold tracking-widest uppercase border border-yellow/30 px-2 py-1 rounded">{ticket.cinema}</span>
+                        <span className="text-white/60 text-xs font-bold tracking-widest uppercase border border-white/10 px-2 py-1 rounded">{ticket.classificacao_etaria}</span>
+                    </div>
+                    <p className="text-white/40 text-[0.6rem] uppercase tracking-widest mt-2">{ticket.duracao}</p>
                 </div>
 
                 {/* Ticket Body */}
@@ -38,11 +41,11 @@ const DigitalTicketModal = ({ ticket, onClose }) => {
                     <div className="flex justify-between border-y border-white/10 py-4">
                         <div className="text-center flex-1 border-r border-white/10">
                             <span className="block text-[0.6rem] text-white/40 uppercase tracking-widest mb-1">Data</span>
-                            <span className="text-white font-bold">{new Date(ticket.inicio).toLocaleDateString('pt-PT')}</span>
+                            <span className="text-white font-bold">{ticket.data_sessao}</span>
                         </div>
                         <div className="text-center flex-1">
                             <span className="block text-[0.6rem] text-white/40 uppercase tracking-widest mb-1">Início</span>
-                            <span className="text-white font-bold">{new Date(ticket.inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-white font-bold">{ticket.hora_sessao}</span>
                         </div>
                     </div>
 
@@ -56,8 +59,8 @@ const DigitalTicketModal = ({ ticket, onClose }) => {
                             <span className="text-white font-bold">{ticket.fila}</span>
                         </div>
                         <div className="text-center">
-                            <span className="block text-[0.6rem] text-white/40 uppercase tracking-widest mb-1">Lugar</span>
-                            <span className="text-white font-bold">{ticket.lugar}</span>
+                            <span className="block text-[0.6rem] text-white/40 uppercase tracking-widest mb-1">Cadeira</span>
+                            <span className="text-white font-bold">{ticket.cadeira}</span>
                         </div>
                     </div>
                 </div>
@@ -88,8 +91,9 @@ const DigitalTicketModal = ({ ticket, onClose }) => {
                         />
                     </div>
                     <div className="text-center">
-                        <p className="text-white/40 text-[0.6rem] uppercase tracking-[0.3em]">ID: {ticket.bilhete_id}</p>
-                        <p className="text-white/20 text-[0.5rem] mt-1 italic">Válido para entrada única</p>
+                        <p className="text-white/40 text-[0.6rem] uppercase tracking-[0.3em]">ID: {ticket.id_bilhete}</p>
+                        <p className="text-white/20 text-[0.5rem] mt-1 italic">Emitido em: {ticket.data_compra ? new Date(ticket.data_compra).toLocaleDateString() : 'N/A'}</p>
+                        <p className="text-yellow text-sm font-bold mt-2">€ {ticket.preco}</p>
                     </div>
                 </div>
 
@@ -130,27 +134,16 @@ const MyTicketsPage = () => {
     }, [user, fetchUserTickets]);
 
     const handleOpenDigitalTicket = async (ticket) => {
-        // Need to find the actual bilheteid. 
-        // In the current userTickets structure, we might need a small adjustment 
-        // or look for it in the item data.
-        
         setTicketLoading(true);
         try {
             const client = new ApiClient();
-            // Since we don't have the bilheteid in the simplified view items yet,
-            // I will first find it from the sale object.
-            const sale = userTickets.find(s => s.id === ticket.saleId);
-            // This is a simplified approach, usually the API should return it.
-            // For now, I'll use a placeholder or check if I can get it.
-            // I'll update the backend `minhas_vendas_api` to include bilheteid.
-            
-            // Assuming we added 'bilhete_id' to the items in minhas_vendas_api
             const ticketId = ticket.id; 
             
             if (!ticketId) {
                 throw new Error("Bilhete ID não disponível");
             }
 
+            // Using the updated API endpoint
             const data = await client.get(`/api/bilhetes/${ticketId}/digital/`);
             setSelectedTicket(data);
             setShowModal(true);
@@ -158,49 +151,6 @@ const MyTicketsPage = () => {
             alert("Erro ao carregar bilhete: " + err.message);
         } finally {
             setTicketLoading(false);
-        }
-    };
-
-    const exportToPDF = (sale) => {
-        try {
-            const doc = new jsPDF();
-            doc.setFontSize(22);
-            doc.setTextColor(231, 211, 147);
-            doc.text('EXPERIÊNCIA DE CINEMA', 105, 20, { align: 'center' });
-            
-            doc.setFontSize(16);
-            doc.setTextColor(40, 40, 40);
-            doc.text(`Bilhete Eletrónico #${sale.id}`, 20, 40);
-            
-            doc.setFontSize(12);
-            doc.text(`Cliente: ${user.username}`, 20, 50);
-            doc.text(`Data: ${new Date(sale.data).toLocaleDateString()}`, 20, 57);
-
-            const tableColumn = ["Item", "Sessão / Detalhes", "Lugar", "Preço"];
-            const tableRows = [];
-
-            sale.items.forEach(item => {
-                if (item.tipo === 'ticket') {
-                    tableRows.push([
-                        item.filme,
-                        `${new Date(item.data).toLocaleString()} - ${item.sala}`,
-                        item.lugar,
-                        `€ ${item.preco}`
-                    ]);
-                }
-            });
-
-            autoTable(doc, {
-                startY: 70,
-                head: [tableColumn],
-                body: tableRows,
-                theme: 'striped',
-                headStyles: { fillColor: [231, 211, 147], textColor: [0, 0, 0] },
-            });
-
-            doc.save(`bilhete_cinema_${sale.id}.pdf`);
-        } catch (error) {
-            console.error(error);
         }
     };
 
@@ -257,12 +207,6 @@ const MyTicketsPage = () => {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                                         </svg>
                                         {ticketLoading ? '...' : 'Ver Digital'}
-                                    </button>
-                                    <button 
-                                        onClick={() => exportToPDF(userTickets.find(s => s.id === ticket.saleId))}
-                                        className="bg-white/10 hover:bg-white text-white hover:text-black px-6 py-3 rounded-xl font-bold transition-all text-sm"
-                                    >
-                                        PDF
                                     </button>
                                 </div>
                             </div>
