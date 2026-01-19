@@ -40,6 +40,8 @@
                                 <i class="bi bi-house-door"></i> Home
                             </a>
                         </li>
+
+                        {% if user.is_staff or user.is_superuser %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'clientes:list' %}">
                                 <i class="bi bi-people"></i> Listar Clientes
@@ -50,6 +52,7 @@
                                 <i class="bi bi-person-plus"></i> Adicionar Cliente
                             </a>
                         </li>
+                        {% endif %}
                     </ul>
 
                     <ul class="navbar-nav ms-auto">
@@ -102,3 +105,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

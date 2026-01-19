@@ -1,12 +1,10 @@
 from rest_framework import serializers
 from .models import Filmes, Categorias, ClassificacoesEtarias, Cinemas, Sessoes, Salas, Lugares, LugaresSessao, Produtos
 
-
 class ProdutosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Produtos
         fields = ['produtoid', 'nomeproduto', 'precoproduto', 'stock', 'ativo']
-
 
 class CategoriasSerializer(serializers.ModelSerializer):
     class Meta:

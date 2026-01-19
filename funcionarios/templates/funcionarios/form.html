@@ -8,6 +8,23 @@
 
     <form method="post" class="card p-4 shadow-sm">
         {% csrf_token %}
+
+        {% if mode == 'create' %}
+        <div class="alert alert-info">
+            <strong>Login do Funcionário:</strong> preenche username e password para ele conseguir entrar no sistema.
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            {{ form.username }}
+            {{ form.username.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            {{ form.password }}
+            {{ form.password.errors }}
+        </div>
+        {% endif %}
+
         <div class="mb-3">
             <label class="form-label">Nome do Funcionário</label>
             {{ form.nomefuncionario }}

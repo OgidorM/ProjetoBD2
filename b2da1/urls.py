@@ -42,11 +42,14 @@ urlpatterns = [
     path('api/login/', api_views.login_api, name='login_api'),
     path('api/logout/', api_views.logout_api, name='logout_api'),
     path('api/signup/', api_views.signup_api, name='signup_api'),
+    path('api/produtos/', api_views.produtos_api, name='produtos_api'),
+    path('api/produtos/comprar/', api_views.comprar_produtos_api, name='comprar_produtos_api'),
     path('api/user/update/', api_views.update_profile_api, name='update_profile_api'),
     path('api/admin/avaliacoes/', api_views.admin_avaliacoes_api, name='admin_avaliacoes_api'),
     path('api/admin/vendas/', api_views.admin_vendas_api, name='admin_vendas_api'),
     path('api/admin/funcionarios/', api_views.admin_funcionarios_api, name='admin_funcionarios_api'),
-    path('api/admin/funcionarios/<int:pk>/', api_views.admin_funcionario_detail_api, name='admin_funcionario_detail_api'),
+    path('api/admin/funcionarios/<int:pk>/', api_views.admin_funcionario_detail_api,
+         name='admin_funcionario_detail_api'),
     path('api/admin/clientes/', api_views.admin_clientes_api, name='admin_clientes_api'),
     path('api/admin/clientes/<int:pk>/', api_views.admin_cliente_detail_api, name='admin_cliente_detail_api'),
     path('api/admin/produtos/criar/', api_views.admin_create_produto_api, name='admin_create_produto_api'),
@@ -59,4 +62,6 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
 
     path('accounts/signup/', SignUpView.as_view(), name='signup'),
+
+    path('api/auth/', include('clientes.api.urls'))
 ]

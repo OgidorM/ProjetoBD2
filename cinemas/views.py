@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any, List, Dict
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpRequest, JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -55,7 +55,10 @@ def cinema_detail(request: HttpRequest, cinema_id: int) -> HttpResponse:
         return JsonResponse(data)
     return render(request, 'cinemas/detail.html', {'cinema': cinema})
 
-@login_required()
+def eh_admin(user):
+    return user.is_staff or user.is_superuser
+
+@user_passes_test(eh_admin)
 def cinema_create(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
         form = CinemaForm(request.POST)
@@ -74,7 +77,7 @@ def cinema_create(request: HttpRequest) -> HttpResponse:
         form = CinemaForm()
     return render(request, 'cinemas/form.html', {'form': form, 'mode': 'create'})
 
-@login_required()
+@user_passes_test(eh_admin)
 def cinema_update(request: HttpRequest, cinema_id: int) -> HttpResponse:
     cinema = _get_or_404(cinema_id)
     if request.method == 'POST':
@@ -103,7 +106,7 @@ def cinema_update(request: HttpRequest, cinema_id: int) -> HttpResponse:
         })
     return render(request, 'cinemas/form.html', {'form': form, 'mode': 'update', 'cinema': cinema})
 
-@login_required()
+@user_passes_test(eh_admin)
 def cinema_delete(request: HttpRequest, cinema_id: int) -> HttpResponse:
     cinema = _get_or_404(cinema_id)
 
@@ -147,7 +150,6 @@ def cinema_delete(request: HttpRequest, cinema_id: int) -> HttpResponse:
     })
 
 
-@login_required
 def cinema_search(request: HttpRequest) -> HttpResponse:
     term = request.GET.get('q', '').strip()
     limit_raw = request.GET.get('limit')

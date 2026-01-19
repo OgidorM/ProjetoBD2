@@ -1,6 +1,11 @@
+from typing import Any
+
+from django.db import transaction
+
+from bd2ap1.models import Vendas
 from . import repositories as repo
 from .models import Funcionario
-from typing import Any
+from .models_auth import FuncionarioProfile
 
 
 def create(**data) -> Funcionario:
@@ -33,6 +38,24 @@ def update(employee_id: int, **data: Any) -> Funcionario:
     return repo.update(employee_id, **data)
 
 
+@transaction.atomic
 def delete(employee_id: int) -> None:
-    """Delete employee silently if it already does not exist."""
+    """Remove funcionário mantendo histórico financeiro.
+
+    Regra:
+      - Vendas não são apagadas; ficam com funcionarioid=NULL.
+      - Se existir login associado (FuncionarioProfile), ele é removido.
+    """
+    # 1) Desvincula vendas
+    Vendas.objects.filter(funcionarioid_id=employee_id).update(funcionarioid=None)
+
+    # 2) Remove vínculo auth (FuncionarioProfile -> Funcionarios é PROTECT)
+    profile = FuncionarioProfile.objects.select_related('user').filter(funcionario_dados_id=employee_id).first()
+    if profile:
+        user = profile.user
+        profile.delete()
+        if user:
+            user.delete()
+
+    # 3) Apaga o registro do funcionário
     repo.delete(employee_id)

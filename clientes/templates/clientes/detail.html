@@ -29,8 +29,10 @@
         </div>
         <div class="card-footer bg-light">
             <div class="d-flex gap-2">
+                {% if user.is_staff or user.is_superuser %}
                 <a href="{% url 'clientes:update' client.clienteid %}" class="btn btn-warning">Editar</a>
                 <a href="{% url 'clientes:delete' client.clienteid %}" class="btn btn-danger">Eliminar</a>
+                {% endif %}
                 <a href="{% url 'clientes:list' %}" class="btn btn-secondary">Voltar à Lista</a>
                 <a href="{% url 'clientes:detail' client.clienteid %}?format=json" class="btn btn-info">Ver JSON</a>
             </div>

@@ -1,18 +1,21 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render, redirect
 from bd2ap1.models import Produtos
 from .forms import ProdutoForm
 
-@login_required
+def eh_admin(user):
+    return user.is_staff or user.is_superuser
+
+@user_passes_test(eh_admin)
 def index(request):
     return redirect('lista_produtos')
 
-@login_required
+
 def lista_produtos(request):
     produtos = Produtos.objects.all().order_by('produtoid')
     return render(request, 'produtos_front/lista_produtos.html', {'produtos': produtos})
 
-@login_required
+@user_passes_test(eh_admin)
 def adicionar_produto(request):
     if request.method == 'POST':
         form = ProdutoForm(request.POST)

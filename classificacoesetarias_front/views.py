@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -7,7 +7,10 @@ from django.db import connection
 from bd2ap1.models import ClassificacoesEtarias
 from .forms import ClassificacaoEtariaForm
 
-@login_required
+def eh_admin(user):
+    return user.is_staff or user.is_superuser
+
+@user_passes_test(eh_admin)
 def index(request):
     return redirect('lista_classificacoesetarias')
 
@@ -15,7 +18,7 @@ def lista_classificacoesetarias(request):
     classificacoes = ClassificacoesEtarias.objects.order_by('classificacaoid')
     return render(request, 'classificacoesetarias_front/lista_classificacoesetarias.html', {'classificacoes': classificacoes})
 
-@login_required
+@user_passes_test(eh_admin)
 def adicionar_classificacaoetaria(request):
     if request.method == 'POST':
         form = ClassificacaoEtariaForm(request.POST)
@@ -26,6 +29,7 @@ def adicionar_classificacaoetaria(request):
         form = ClassificacaoEtariaForm()
     return render(request, 'classificacoesetarias_front/adicionar_classificacaoetaria.html', {'form': form})
 
+@user_passes_test(eh_admin)
 def editar_classificacaoetaria(request, classificacaoid):
     classificacao = ClassificacoesEtarias.objects.get(classificacaoid=classificacaoid)
     if request.method == 'POST':
@@ -37,6 +41,7 @@ def editar_classificacaoetaria(request, classificacaoid):
         form = ClassificacaoEtariaForm(instance=classificacao)
     return render(request, 'classificacoesetarias_front/editar_classificacaoetaria.html', {'form': form, 'classificacao': classificacao})
 
+@user_passes_test(eh_admin)
 def remover_classificacaoetaria(request, classificacaoid):
     classificacao = ClassificacoesEtarias.objects.get(classificacaoid=classificacaoid)
 

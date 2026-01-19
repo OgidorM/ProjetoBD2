@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
@@ -7,6 +7,10 @@ from bd2ap1.models import Filmes
 from .forms import FilmeForm
 from .services import FilmeImportService
 
+
+
+def eh_admin(user):
+    return user.is_staff or user.is_superuser
 
 
 def index(request):
@@ -19,7 +23,7 @@ def lista_filmes(request):
     return render(request, 'filmes_front/lista_filmes.html', {'filmes': filmes})
 
 
-@login_required
+@user_passes_test(eh_admin)
 def adicionar_filme(request):
     if request.method == 'POST':
         form = FilmeForm(request.POST)
