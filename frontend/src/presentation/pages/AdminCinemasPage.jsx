@@ -63,7 +63,7 @@ const AdminCinemasPage = () => {
         }
     };
 
-    if (loading) return <div className="min-h-screen bg-black text-white p-20">Loading...</div>;
+    if (loading) return <div className="min-h-screen bg-black text-white p-20">A carregar...</div>;
 
     return (
         <div className="min-h-screen bg-black pt-32 px-5 pb-20 font-sans">

@@ -69,15 +69,15 @@ const AdminSessionPage = () => {
     }, []);
 
     const handleDelete = async (sessionId) => {
-        if (!window.confirm("Are you sure you want to delete this session?")) return;
+        if (!window.confirm("Tem a certeza que deseja eliminar esta sessão?")) return;
         
         try {
             const client = new ApiClient();
             await client.delete(API_CONFIG.ENDPOINTS.DELETE_SESSION(sessionId));
-            setMessage({ type: 'success', text: 'Session deleted successfully' });
+            setMessage({ type: 'success', text: 'Sessão eliminada com sucesso' });
             fetchSessions(); // Refresh list
         } catch (error) {
-            setMessage({ type: 'error', text: error.message || 'Failed to delete session' });
+            setMessage({ type: 'error', text: error.message || 'Falha ao eliminar sessão' });
         }
     };
 
@@ -89,18 +89,18 @@ const AdminSessionPage = () => {
     };
 
     const handleCancelTicket = async (ticketId) => {
-        if (!window.confirm("Are you sure you want to cancel this ticket?")) return;
+        if (!window.confirm("Tem a certeza que deseja cancelar este bilhete?")) return;
 
         try {
             const client = new ApiClient();
             await client.delete(API_CONFIG.ENDPOINTS.CANCEL_TICKET(ticketId));
-            setMessage({ type: 'success', text: 'Ticket cancelled successfully' });
+            setMessage({ type: 'success', text: 'Bilhete cancelado com sucesso' });
             if (selectedSession) {
                 fetchTickets(selectedSession.sessaoid);
                 fetchSeats(selectedSession.sessaoid);
             }
         } catch (error) {
-            setMessage({ type: 'error', text: error.message || 'Failed to cancel ticket' });
+            setMessage({ type: 'error', text: error.message || 'Falha ao cancelar bilhete' });
         }
     };
 
@@ -115,7 +115,7 @@ const AdminSessionPage = () => {
 
         try {
             const movie = movies.find(m => m.id === parseInt(formData.filmeid));
-            if (!movie) throw new Error("Please select a movie first");
+            if (!movie) throw new Error("Por favor selecione um filme primeiro");
 
             // Combine date and time
             const startDateTime = new Date(`${formData.date}T${formData.startTime}:00`);
@@ -137,7 +137,7 @@ const AdminSessionPage = () => {
             const client = new ApiClient();
             await client.post(API_CONFIG.ENDPOINTS.CREATE_SESSION, payload);
             
-            setMessage({ type: 'success', text: 'Session created successfully!' });
+            setMessage({ type: 'success', text: 'Sessão criada com sucesso!' });
             fetchSessions(); // Refresh list after create
             // Reset form
             setFormData({
@@ -147,7 +147,7 @@ const AdminSessionPage = () => {
             setTimeout(() => setView('view'), 1500); // Redirect to list after success
         } catch (error) {
             console.error(error);
-            setMessage({ type: 'error', text: error.message || 'Failed to create session' });
+            setMessage({ type: 'error', text: error.message || 'Falha ao criar sessão' });
         } finally {
             setLoading(false);
         }
@@ -194,10 +194,10 @@ const AdminSessionPage = () => {
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                 </svg>
-                                Back to Profile
+                                Voltar ao Painel
                             </Link>
                         </div>
-                        <h1 className="text-5xl font-modern-negra text-yellow mb-12">Session Management</h1>
+                        <h1 className="text-5xl font-modern-negra text-yellow mb-12">Gestão de Sessões</h1>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
                             <button 
                                 onClick={() => setView('create')}
@@ -206,7 +206,7 @@ const AdminSessionPage = () => {
                                 <svg className="w-16 h-16 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
                                 </svg>
-                                <span className="text-2xl font-bold">Create New Session</span>
+                                <span className="text-2xl font-bold">Criar Nova Sessão</span>
                             </button>
                             
                             <button 
@@ -216,7 +216,7 @@ const AdminSessionPage = () => {
                                 <svg className="w-16 h-16 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                                 </svg>
-                                <span className="text-2xl font-bold">View All Sessions</span>
+                                <span className="text-2xl font-bold">Ver Todas as Sessões</span>
                             </button>
                         </div>
                     </div>
@@ -225,9 +225,9 @@ const AdminSessionPage = () => {
                 {view === 'create' && (
                     <div className="bg-white/5 p-8 rounded-2xl border border-white/10 max-w-2xl mx-auto">
                         <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
-                            <h1 className="text-3xl font-modern-negra text-yellow">Create Session</h1>
+                            <h1 className="text-3xl font-modern-negra text-yellow">Criar Sessão</h1>
                             <button onClick={() => setView('dashboard')} className="text-white/60 hover:text-white">
-                                &larr; Back
+                                &larr; Voltar
                             </button>
                         </div>
 
@@ -241,7 +241,7 @@ const AdminSessionPage = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Movie */}
                                 <div>
-                                    <label className="block text-white/60 text-sm mb-2">Movie</label>
+                                    <label className="block text-white/60 text-sm mb-2">Filme</label>
                                     <select 
                                         name="filmeid" 
                                         value={formData.filmeid} 
@@ -249,7 +249,7 @@ const AdminSessionPage = () => {
                                         required
                                         className="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white focus:border-yellow outline-none"
                                     >
-                                        <option value="">Select Movie</option>
+                                        <option value="">Selecionar Filme</option>
                                         {movies.map(movie => (
                                             <option key={movie.id} value={movie.id}>{movie.title}</option>
                                         ))}
@@ -258,7 +258,7 @@ const AdminSessionPage = () => {
 
                                 {/* Room */}
                                 <div>
-                                    <label className="block text-white/60 text-sm mb-2">Room ({filteredRooms.length} available)</label>
+                                    <label className="block text-white/60 text-sm mb-2">Sala ({filteredRooms.length} disponíveis)</label>
                                     <select 
                                         name="salaid" 
                                         value={formData.salaid} 
@@ -266,10 +266,10 @@ const AdminSessionPage = () => {
                                         required
                                         className="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white focus:border-yellow outline-none"
                                     >
-                                        <option value="">Select Room</option>
+                                        <option value="">Selecionar Sala</option>
                                         {filteredRooms.map(room => (
                                             <option key={room.salaid} value={room.salaid}>
-                                                {room.cinema?.nomecinema || 'Cinema'} - {room.nomesala} ({room.tiposala || 'Standard'})
+                                                {room.cinema?.nomecinema || 'Cinema'} - {room.nomesala} ({room.tiposala || 'Normal'})
                                             </option>
                                         ))}
                                     </select>
@@ -277,7 +277,7 @@ const AdminSessionPage = () => {
 
                                 {/* Date */}
                                 <div>
-                                    <label className="block text-white/60 text-sm mb-2">Date</label>
+                                    <label className="block text-white/60 text-sm mb-2">Data</label>
                                     <input 
                                         type="date" 
                                         name="date" 
@@ -290,7 +290,7 @@ const AdminSessionPage = () => {
 
                                 {/* Version */}
                                 <div>
-                                    <label className="block text-white/60 text-sm mb-2">Version</label>
+                                    <label className="block text-white/60 text-sm mb-2">Versão</label>
                                     <select 
                                         name="versao" 
                                         value={formData.versao} 
@@ -305,7 +305,7 @@ const AdminSessionPage = () => {
 
                                 {/* Start Time */}
                                 <div>
-                                    <label className="block text-white/60 text-sm mb-2">Start Time</label>
+                                    <label className="block text-white/60 text-sm mb-2">Hora de Início</label>
                                     <input 
                                         type="time" 
                                         name="startTime" 
@@ -318,7 +318,7 @@ const AdminSessionPage = () => {
 
                                 {/* Price */}
                                 <div>
-                                    <label className="block text-white/60 text-sm mb-2">Price (€)</label>
+                                    <label className="block text-white/60 text-sm mb-2">Preço (€)</label>
                                     <input 
                                         type="number" 
                                         step="0.01" 
@@ -332,16 +332,16 @@ const AdminSessionPage = () => {
                                 
                                 {/* Status */}
                                 <div>
-                                    <label className="block text-white/60 text-sm mb-2">Status</label>
+                                    <label className="block text-white/60 text-sm mb-2">Estado</label>
                                     <select 
                                         name="estadosessao" 
                                         value={formData.estadosessao} 
                                         onChange={handleChange}
                                         className="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white focus:border-yellow outline-none"
                                     >
-                                        <option value="Agendada">Scheduled</option>
-                                        <option value="Cancelada">Cancelled</option>
-                                        <option value="Concluida">Completed</option>
+                                        <option value="Agendada">Agendada</option>
+                                        <option value="Cancelada">Cancelada</option>
+                                        <option value="Concluida">Concluída</option>
                                     </select>
                                 </div>
                             </div>
@@ -351,7 +351,7 @@ const AdminSessionPage = () => {
                                 disabled={loading}
                                 className="w-full py-3 bg-yellow text-black font-bold rounded-lg hover:bg-white transition-colors disabled:opacity-50 mt-6"
                             >
-                                {loading ? 'Creating...' : 'Create Session'}
+                                {loading ? 'A criar...' : 'Criar Sessão'}
                             </button>
                         </form>
                     </div>
@@ -360,9 +360,9 @@ const AdminSessionPage = () => {
                 {view === 'view' && (
                     <div className="bg-white/5 p-8 rounded-2xl border border-white/10">
                         <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
-                            <h2 className="text-3xl font-modern-negra text-white">Manage Sessions</h2>
+                            <h2 className="text-3xl font-modern-negra text-white">Gerir Sessões</h2>
                             <button onClick={() => setView('dashboard')} className="text-white/60 hover:text-white">
-                                &larr; Back
+                                &larr; Voltar
                             </button>
                         </div>
                         
@@ -374,14 +374,14 @@ const AdminSessionPage = () => {
 
                         <div className="space-y-4">
                             {sessions.length === 0 ? (
-                                <p className="text-white/50 text-center py-10">No sessions found.</p>
+                                <p className="text-white/50 text-center py-10">Nenhuma sessão encontrada.</p>
                             ) : (
                                 sessions.map(session => (
                                     <div key={session.sessaoid} className="p-4 bg-black/30 rounded-lg border border-white/10 hover:border-yellow/30 transition-colors">
                                         <div className="flex justify-between items-start mb-2">
                                             <div>
                                                 <h3 className="text-white font-bold text-lg">
-                                                    {movies.find(m => m.id === session.filmeid)?.title || `Movie #${session.filmeid}`}
+                                                    {movies.find(m => m.id === session.filmeid)?.title || `Filme #${session.filmeid}`}
                                                 </h3>
                                                 <div className="flex gap-2 text-xs mt-1">
                                                     <span className="px-2 py-0.5 bg-yellow/20 text-yellow rounded">
@@ -409,13 +409,13 @@ const AdminSessionPage = () => {
                                                     onClick={() => handleViewDetails(session)}
                                                     className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded hover:bg-blue-500 hover:text-white transition-colors"
                                                 >
-                                                    Manage
+                                                    Gerir
                                                 </button>
                                                 <button 
                                                     onClick={() => handleDelete(session.sessaoid)}
                                                     className="px-3 py-1 bg-red-500/20 text-red-400 text-sm rounded hover:bg-red-500 hover:text-white transition-colors"
                                                 >
-                                                    Delete
+                                                    Apagar
                                                 </button>
                                             </div>
                                         </div>
@@ -430,13 +430,13 @@ const AdminSessionPage = () => {
                     <div className="bg-white/5 p-8 rounded-2xl border border-white/10">
                         <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
                             <div>
-                                <h2 className="text-3xl font-modern-negra text-white">Session Details</h2>
+                                <h2 className="text-3xl font-modern-negra text-white">Detalhes da Sessão</h2>
                                 <p className="text-white/60 mt-1">
                                     {movies.find(m => m.id === selectedSession.filmeid)?.title} • {new Date(selectedSession.inicio).toLocaleString()}
                                 </p>
                             </div>
                             <button onClick={() => setView('view')} className="text-white/60 hover:text-white">
-                                &larr; Back to List
+                                &larr; Voltar à Lista
                             </button>
                         </div>
                         
@@ -449,11 +449,11 @@ const AdminSessionPage = () => {
                         <div className="flex flex-col lg:flex-row gap-8">
                             {/* Visual Grid */}
                             <div className="flex-1">
-                                <h3 className="text-xl font-bold text-yellow mb-6">Seat Map</h3>
+                                <h3 className="text-xl font-bold text-yellow mb-6">Mapa de Lugares</h3>
                                 <div className="bg-black/30 p-6 rounded-2xl border border-white/10 overflow-x-auto">
                                     <div className="w-full mb-8">
                                         <div className="w-3/4 mx-auto h-1 bg-white/20 rounded-full mb-2"></div>
-                                        <p className="text-center text-white/20 text-xs uppercase tracking-widest">Screen</p>
+                                        <p className="text-center text-white/20 text-xs uppercase tracking-widest">Ecrã</p>
                                     </div>
                                     
                                     <div className="flex flex-col gap-2 items-center">
@@ -477,8 +477,8 @@ const AdminSessionPage = () => {
                                                                         : 'bg-white/10 text-transparent cursor-default'}
                                                                 `}
                                                                 title={isOccupied 
-                                                                    ? `Seat ${seat.lugar.fila}${seat.lugar.numero}\n${ticket?.cliente || 'Unknown'}\nClick to Cancel` 
-                                                                    : `Seat ${seat.lugar.fila}${seat.lugar.numero} (Free)`}
+                                                                    ? `Lugar ${seat.lugar.fila}${seat.lugar.numero}\n${ticket?.cliente || 'Desconhecido'}\nClique para Cancelar` 
+                                                                    : `Lugar ${seat.lugar.fila}${seat.lugar.numero} (Livre)`}
                                                             >
                                                                 {seat.lugar.numero}
                                                             </button>
@@ -492,11 +492,11 @@ const AdminSessionPage = () => {
                                     <div className="flex justify-center gap-6 mt-8 text-xs text-white/50">
                                         <div className="flex items-center gap-2">
                                             <div className="w-3 h-3 rounded bg-white/10"></div>
-                                            <span>Free</span>
+                                            <span>Livre</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="w-3 h-3 rounded bg-red-500"></div>
-                                            <span>Occupied (Click to Cancel)</span>
+                                            <span>Ocupado (Clique para Cancelar)</span>
                                         </div>
                                     </div>
                                 </div>
@@ -504,12 +504,12 @@ const AdminSessionPage = () => {
 
                             {/* Ticket List (Sidebar) */}
                             <div className="w-full lg:w-80 flex-shrink-0">
-                                <h3 className="text-xl font-bold text-yellow mb-4">Tickets ({tickets.length})</h3>
+                                <h3 className="text-xl font-bold text-yellow mb-4">Bilhetes ({tickets.length})</h3>
                                 <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                                     {tickets.map(ticket => (
                                         <div key={ticket.bilheteid} className="p-3 bg-black/30 rounded border border-white/10 text-sm">
                                             <div className="flex justify-between font-bold text-white mb-1">
-                                                <span>Seat {ticket.lugar}</span>
+                                                <span>Lugar {ticket.lugar}</span>
                                                 <span className="text-yellow">€{ticket.preco}</span>
                                             </div>
                                             <div className="text-white/60 truncate" title={ticket.cliente}>
@@ -519,11 +519,11 @@ const AdminSessionPage = () => {
                                                 onClick={() => handleCancelTicket(ticket.bilheteid)}
                                                 className="mt-2 w-full py-1 bg-red-500/10 text-red-400 text-xs rounded hover:bg-red-500 hover:text-white transition-colors"
                                             >
-                                                Cancel
+                                                Cancelar
                                             </button>
                                         </div>
                                     ))}
-                                    {tickets.length === 0 && <p className="text-white/40 text-sm">No tickets sold.</p>}
+                                    {tickets.length === 0 && <p className="text-white/40 text-sm">Nenhum bilhete vendido.</p>}
                                 </div>
                             </div>
                         </div>

@@ -27,7 +27,7 @@ const RegisterPage = () => {
         setError('');
 
         if (formData.password !== formData.confirmPassword) {
-            setError("Passwords don't match");
+            setError("As palavras-passe não coincidem");
             setLoading(false);
             return;
         }
@@ -53,11 +53,11 @@ const RegisterPage = () => {
                 // For now, let's redirect to login to be safe/standard
                 navigate('/login');
             } else {
-                setError(data.error || 'Registration failed');
+                setError(data.error || 'Falha no registo');
             }
         } catch (err) {
             console.error('Registration error:', err);
-            setError('An error occurred. Please try again.');
+            setError('Ocorreu um erro. Tente novamente.');
         } finally {
             setLoading(false);
         }
@@ -66,7 +66,7 @@ const RegisterPage = () => {
     return (
         <div className="flex min-h-screen w-full items-center justify-center bg-black radial-gradient px-4">
             <div className="w-full max-w-md rounded-2xl border border-yellow/20 bg-black/50 p-8 backdrop-blur-sm shadow-[0_0_15px_rgba(231,211,147,0.1)]">
-                <h2 className="mb-8 text-center text-4xl font-modern-negra text-white">Create Account</h2>
+                <h2 className="mb-8 text-center text-4xl font-modern-negra text-white">Criar Conta</h2>
                 
                 {error && (
                     <div className="mb-6 rounded border border-red-500/50 bg-red-900/20 p-3 text-sm text-red-200 text-center">
@@ -77,7 +77,7 @@ const RegisterPage = () => {
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                         <label className="mb-1 block text-sm font-medium text-yellow/80" htmlFor="username">
-                            Username
+                            Utilizador
                         </label>
                         <input
                             id="username"
@@ -92,7 +92,7 @@ const RegisterPage = () => {
 
                     <div>
                         <label className="mb-1 block text-sm font-medium text-yellow/80" htmlFor="email">
-                            Email (Optional)
+                            Email (Opcional)
                         </label>
                         <input
                             id="email"
@@ -106,7 +106,7 @@ const RegisterPage = () => {
                     
                     <div>
                         <label className="mb-1 block text-sm font-medium text-yellow/80" htmlFor="password">
-                            Password
+                            Palavra-passe
                         </label>
                         <input
                             id="password"
@@ -121,7 +121,7 @@ const RegisterPage = () => {
 
                     <div>
                         <label className="mb-1 block text-sm font-medium text-yellow/80" htmlFor="confirmPassword">
-                            Confirm Password
+                            Confirmar Palavra-passe
                         </label>
                         <input
                             id="confirmPassword"
@@ -141,14 +141,14 @@ const RegisterPage = () => {
                             loading ? 'cursor-not-allowed opacity-70' : ''
                         }`}
                     >
-                        {loading ? 'Creating Account...' : 'Register'}
+                        {loading ? 'A criar conta...' : 'Registar'}
                     </button>
                 </form>
                 
                 <p className="mt-6 text-center text-sm text-white/60">
-                    Already have an account?{' '}
+                    Já tem conta?{' '}
                     <Link to="/login" className="font-bold text-yellow hover:text-white transition-colors">
-                        Login
+                        Entrar
                     </Link>
                 </p>
             </div>

@@ -43,12 +43,12 @@ const Sidebar = () => {
     }, []);
 
     const links = [
-        { title: 'Home', path: '/' },
-        { title: 'Movies', path: '/filmes' },
+        { title: 'Início', path: '/' },
+        { title: 'Filmes', path: '/filmes' },
         { title: 'Cinemas', path: '/cinemas' },
-        { title: 'Shop', path: '/shop' },
-        { title: 'Cart', path: '/cart', count: true },
-        { title: 'My Tickets', path: '/tickets' },
+        { title: 'Loja', path: '/shop' },
+        { title: 'Carrinho', path: '/cart', count: true },
+        { title: 'Bilhetes', path: '/tickets' },
     ];
 
     const isAdmin = user && (user.is_staff || user.is_superuser);
@@ -110,7 +110,7 @@ const Sidebar = () => {
                                     to="/profile"
                                     className="text-sm uppercase tracking-wider text-yellow hover:text-white transition-colors"
                                 >
-                                    My Profile
+                                    Perfil
                                 </Link>
                             </div>
                         ) : (
@@ -118,7 +118,7 @@ const Sidebar = () => {
                                 to="/login" 
                                 className="inline-block rounded-full bg-white px-6 py-2 text-center text-black font-bold hover:bg-yellow transition-colors"
                             >
-                                Login
+                                Entrar
                             </Link>
                         )}
                     </div>

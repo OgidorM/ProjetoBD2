@@ -23,6 +23,7 @@ export const API_CONFIG = {
         UPDATE_PROFILE: '/api/user/update/',
         ADMIN_REVIEWS: '/api/admin/avaliacoes/',
         ADMIN_SALES: '/api/admin/vendas/',
+        EXPORT_SALES_CSV: '/vendas/relatorios/mv-vendas-diarias.csv',
         ADMIN_STAFF: '/api/admin/funcionarios/',
         ADMIN_STAFF_DETAIL: (id) => `/api/admin/funcionarios/${id}/`,
         ADMIN_CLIENTS: '/api/admin/clientes/',

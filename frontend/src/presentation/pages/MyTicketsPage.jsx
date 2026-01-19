@@ -29,7 +29,7 @@ const MyTicketsPage = () => {
             const doc = new jsPDF();
             doc.setFontSize(22);
             doc.setTextColor(231, 211, 147);
-            doc.text('CINEMA EXPERIENCE', 105, 20, { align: 'center' });
+            doc.text('EXPERIÊNCIA DE CINEMA', 105, 20, { align: 'center' });
             
             doc.setFontSize(16);
             doc.setTextColor(40, 40, 40);
@@ -67,7 +67,7 @@ const MyTicketsPage = () => {
         }
     };
 
-    if (loading) return <div className="min-h-screen bg-black text-white p-20 font-modern-negra text-center">A carregar os seus bilhetes...</div>;
+    if (loading) return <div className="min-h-screen bg-black text-white p-20 font-modern-negra text-center">A carregar bilhetes...</div>;
 
     // Filter only ticket items from the sales
     const allTickets = userTickets.flatMap(sale => 
@@ -82,13 +82,13 @@ const MyTicketsPage = () => {
         <div className="min-h-screen bg-black pt-32 px-5 pb-20 font-sans">
             <div className="container mx-auto max-w-4xl">
                 <div className="flex justify-between items-center mb-12">
-                    <h1 className="text-5xl md:text-7xl font-modern-negra text-yellow">Os Meus Bilhetes</h1>
+                    <h1 className="text-5xl md:text-7xl font-modern-negra text-yellow">Bilhetes</h1>
                     <Link to="/profile" className="text-white/40 hover:text-white">Ver Perfil</Link>
                 </div>
 
                 {allTickets.length === 0 ? (
                     <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10">
-                        <p className="text-white/60 text-xl mb-8">Ainda não tem bilhetes reservados.</p>
+                        <p className="text-white/60 text-xl mb-8">Ainda não existem bilhetes reservados.</p>
                         <Link to="/filmes" className="bg-yellow text-black font-bold px-8 py-4 rounded-full hover:bg-white transition-all">Explorar Filmes</Link>
                     </div>
                 ) : (

@@ -51,7 +51,7 @@ const MoviesPage = () => {
                     <h1
                         className="text-5xl md:text-7xl lg:text-8xl font-modern-negra text-yellow mb-4"
                     >
-                        Todos os Filmes
+                        Filmes
                     </h1>
                     <p className="text-white/60 text-lg">
                         {movies.length} {movies.length === 1 ? 'filme disponível' : 'filmes disponíveis'}

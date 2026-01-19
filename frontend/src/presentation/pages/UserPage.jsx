@@ -197,13 +197,13 @@ const UserPage = () => {
             <div className="container mx-auto">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-12">
                     <h1 className="text-5xl md:text-7xl font-modern-negra text-white">
-                        {isAdmin ? 'Admin Dashboard' : 'My Profile'}
+                        {isAdmin ? 'Painel de Administração' : 'Perfil'}
                     </h1>
                     <button 
                         onClick={handleLogout}
                         className="mt-4 md:mt-0 px-6 py-2 border border-red-500/50 text-red-400 rounded-full hover:bg-red-900/20 transition-colors"
                     >
-                        Logout
+                        Sair
                     </button>
                 </div>
 
@@ -217,22 +217,22 @@ const UserPage = () => {
                             <div>
                                 <h2 className="text-2xl font-bold text-white">{user.username}</h2>
                                 <p className="text-yellow/80 text-sm">
-                                    {isAdmin ? 'Administrator' : 'Movie Enthusiast'}
+                                    {isAdmin ? 'Administrador' : 'Entusiasta de Cinema'}
                                 </p>
                             </div>
                         </div>
                         
                         <div className="space-y-4 text-white/70">
                             <p className="flex justify-between border-b border-white/10 pb-2">
-                                <span>Status</span>
-                                <span className="text-white">{isAdmin ? 'Staff Access' : 'Active'}</span>
+                                <span>Estado</span>
+                                <span className="text-white">{isAdmin ? 'Acesso Staff' : 'Ativo'}</span>
                             </p>
                             <p className="flex justify-between border-b border-white/10 pb-2">
                                 <span>Email</span>
                                 <span className="text-white truncate max-w-[150px]">{user.email || 'N/A'}</span>
                             </p>
                             <p className="flex justify-between border-b border-white/10 pb-2">
-                                <span>Member Since</span>
+                                <span>Membro desde</span>
                                 <span className="text-white">2024</span>
                             </p>
                         </div>
@@ -242,12 +242,12 @@ const UserPage = () => {
                                 onClick={() => setIsEditing(true)}
                                 className="w-full mt-8 py-3 border border-yellow/50 text-yellow rounded-xl hover:bg-yellow hover:text-black transition-all font-bold"
                             >
-                                Edit Profile
+                                Editar Perfil
                             </button>
                         ) : (
                             <form onSubmit={handleUpdateProfile} className="mt-8 space-y-4">
                                 <div>
-                                    <label className="block text-xs uppercase tracking-widest text-white/40 mb-1">Username</label>
+                                    <label className="block text-xs uppercase tracking-widest text-white/40 mb-1">Utilizador</label>
                                     <input 
                                         type="text"
                                         value={formData.username}
@@ -276,7 +276,7 @@ const UserPage = () => {
                                         disabled={updateStatus.loading}
                                         className="flex-1 py-2 bg-yellow text-black font-bold rounded-lg hover:bg-white disabled:opacity-50 transition-all"
                                     >
-                                        {updateStatus.loading ? 'Saving...' : 'Save'}
+                                        {updateStatus.loading ? 'A guardar...' : 'Guardar'}
                                     </button>
                                     <button 
                                         type="button"
@@ -289,14 +289,14 @@ const UserPage = () => {
                                         }}
                                         className="px-4 py-2 border border-white/10 text-white rounded-lg hover:bg-white/10 transition-all"
                                     >
-                                        Cancel
+                                        Cancelar
                                     </button>
                                 </div>
                             </form>
                         )}
                         
                         {updateStatus.success && (
-                            <p className="mt-4 text-green-500 text-sm text-center font-bold">Profile updated successfully!</p>
+                            <p className="mt-4 text-green-500 text-sm text-center font-bold">Perfil atualizado com sucesso!</p>
                         )}
                     </div>
 
@@ -346,10 +346,10 @@ const UserPage = () => {
                             // Regular User View
                             <div className="space-y-6">
                                 <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-                                    <h3 className="text-3xl font-modern-negra text-yellow mb-4">My Purchases</h3>
+                                    <h3 className="text-3xl font-modern-negra text-yellow mb-4">Compras</h3>
                                     
                                     {loading ? (
-                                        <p className="text-white/60">Loading history...</p>
+                                        <p className="text-white/60">A carregar histórico...</p>
                                     ) : userTickets.length > 0 ? (
                                         <>
                                             <div className="space-y-4">
@@ -361,7 +361,7 @@ const UserPage = () => {
                                                         <div key={sale.id} className="bg-white/5 p-4 rounded-xl border border-white/10">
                                                             <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-sm text-white/60">Order #{sale.id}</span>
+                                                                    <span className="text-sm text-white/60">Encomenda #{sale.id}</span>
                                                                     <span className="text-yellow font-bold">€ {displayTotal}</span>
                                                                 </div>
                                                             <div className="flex gap-2">
@@ -377,7 +377,7 @@ const UserPage = () => {
                                                                     onClick={() => exportToPDF(sale)}
                                                                     className="px-4 py-2 bg-yellow/10 border border-yellow/20 text-yellow text-xs font-bold rounded-lg hover:bg-yellow hover:text-black transition-all"
                                                                 >
-                                                                    Export PDF
+                                                                    Exportar PDF
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -393,7 +393,7 @@ const UserPage = () => {
                                                                                 {item.filme}
                                                                             </span>
                                                                             <span className="text-white/70">
-                                                                                {new Date(item.data).toLocaleString()} • {item.sala} • Seat {item.lugar}
+                                                                                {new Date(item.data).toLocaleString()} • {item.sala} • Lugar {item.lugar}
                                                                             </span>
                                                                         </>
                                                                     ) : (
@@ -405,7 +405,7 @@ const UserPage = () => {
                                                                                 {item.nome} x {item.quantidade}
                                                                             </span>
                                                                             <span className="text-white/70">
-                                                                                Concession • € {item.preco}
+                                                                                Bar • € {item.preco}
                                                                             </span>
                                                                         </>
                                                                     )}
@@ -425,29 +425,29 @@ const UserPage = () => {
                                                         disabled={currentPage === 1}
                                                         className="px-4 py-2 border border-white/10 text-white rounded-lg hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                                     >
-                                                        Previous
+                                                        Anterior
                                                     </button>
                                                     <span className="text-white/60 text-sm">
-                                                        Page {currentPage} of {Math.ceil(userTickets.length / itemsPerPage)}
+                                                        Página {currentPage} de {Math.ceil(userTickets.length / itemsPerPage)}
                                                     </span>
                                                     <button 
                                                         onClick={() => setCurrentPage(p => Math.min(Math.ceil(userTickets.length / itemsPerPage), p + 1))}
                                                         disabled={currentPage === Math.ceil(userTickets.length / itemsPerPage)}
                                                         className="px-4 py-2 border border-white/10 text-white rounded-lg hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                                     >
-                                                        Next
+                                                        Próximo
                                                     </button>
                                                 </div>
                                             )}
                                         </>
                                     ) : (
                                         <>
-                                            <p className="text-white/60">You haven't purchased anything yet.</p>
+                                            <p className="text-white/60">Ainda não foram realizadas compras.</p>
                                             <button 
                                                 onClick={() => navigate('/filmes')}
                                                 className="mt-6 px-6 py-2 bg-white text-black font-bold rounded-full hover:bg-yellow transition-colors"
                                             >
-                                                Start Browsing
+                                                Explorar Filmes
                                             </button>
                                         </>
                                     )}
@@ -468,7 +468,7 @@ const UserPage = () => {
                             {['filme', 'cinema', 'funcionario'].map((type) => (
                                 <div key={type} className="space-y-2">
                                     <label className="block text-sm uppercase tracking-widest text-white/60">
-                                        Nota do {type === 'filme' ? 'Filme' : type === 'cinema' ? 'Cinema' : 'Atendimento'}
+                                        Nota: {type === 'filme' ? 'Filme' : type === 'cinema' ? 'Cinema' : 'Atendimento'}
                                     </label>
                                     <div className="flex gap-2">
                                         {[1, 2, 3, 4, 5].map((star) => (
@@ -495,7 +495,7 @@ const UserPage = () => {
                                     value={reviewForm.comentario}
                                     onChange={(e) => setReviewForm({ ...reviewForm, comentario: e.target.value })}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-yellow outline-none transition-colors h-24 resize-none"
-                                    placeholder="Partilhe a sua experiência..."
+                                    placeholder="Partilhar experiência..."
                                 />
                             </div>
 

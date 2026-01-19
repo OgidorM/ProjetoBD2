@@ -10,7 +10,7 @@ const CinemasPage = () => {
             <section className="min-h-screen bg-black flex items-center justify-center">
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow"></div>
-                    <p className="text-white text-xl mt-4">Carregando cinemas...</p>
+                    <p className="text-white text-xl mt-4">A carregar cinemas...</p>
                 </div>
             </section>
         );
@@ -51,7 +51,7 @@ const CinemasPage = () => {
                     <h1
                         className="text-5xl md:text-7xl lg:text-8xl font-modern-negra text-yellow mb-4"
                     >
-                        Nossos Cinemas
+                        Os nossos Cinemas
                     </h1>
                     <p className="text-white/60 text-lg">
                         {cinemas.length} {cinemas.length === 1 ? 'localização disponível' : 'localizações disponíveis'}

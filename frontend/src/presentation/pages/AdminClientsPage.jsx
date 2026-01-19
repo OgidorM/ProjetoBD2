@@ -52,14 +52,14 @@ const AdminClientsPage = () => {
         }
     };
 
-    if (loading) return <div className="min-h-screen bg-black text-white p-20 font-modern-negra">Loading...</div>;
+    if (loading) return <div className="min-h-screen bg-black text-white p-20 font-modern-negra">A carregar...</div>;
 
     return (
         <div className="min-h-screen bg-black pt-32 px-5 pb-20 font-sans">
             <div className="container mx-auto max-w-6xl">
                 <div className="flex justify-between items-center mb-12">
                     <h1 className="text-5xl font-modern-negra text-yellow">Gestão de Clientes</h1>
-                    <Link to="/profile" className="text-white/60 hover:text-white">Voltar</Link>
+                    <Link to="/profile" className="text-white/60 hover:text-white">Voltar ao Painel</Link>
                 </div>
 
                 <div className="grid gap-4">

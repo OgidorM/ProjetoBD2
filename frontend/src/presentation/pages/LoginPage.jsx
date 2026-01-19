@@ -47,7 +47,7 @@ const LoginPage = () => {
     return (
         <div className="flex min-h-screen w-full items-center justify-center bg-black radial-gradient px-4">
             <div className="w-full max-w-md rounded-2xl border border-yellow/20 bg-black/50 p-8 backdrop-blur-sm shadow-[0_0_15px_rgba(231,211,147,0.1)]">
-                <h2 className="mb-8 text-center text-4xl font-modern-negra text-white">Login</h2>
+                <h2 className="mb-8 text-center text-4xl font-modern-negra text-white">Iniciar Sessão</h2>
                 
                 {error && (
                     <div className="mb-6 rounded border border-red-500/50 bg-red-900/20 p-3 text-sm text-red-200 text-center">
@@ -58,13 +58,13 @@ const LoginPage = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label className="mb-2 block text-sm font-medium text-yellow/80" htmlFor="username">
-                            Username
+                            Utilizador
                         </label>
                         <input
                             id="username"
                             type="text"
                             className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/30 focus:border-yellow focus:outline-none focus:ring-1 focus:ring-yellow transition-colors"
-                            placeholder="Enter your username"
+                            placeholder="Nome de utilizador"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             required
@@ -73,13 +73,13 @@ const LoginPage = () => {
                     
                     <div>
                         <label className="mb-2 block text-sm font-medium text-yellow/80" htmlFor="password">
-                            Password
+                            Palavra-passe
                         </label>
                         <input
                             id="password"
                             type="password"
                             className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/30 focus:border-yellow focus:outline-none focus:ring-1 focus:ring-yellow transition-colors"
-                            placeholder="Enter your password"
+                            placeholder="Palavra-passe"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -93,14 +93,14 @@ const LoginPage = () => {
                             loading ? 'cursor-not-allowed opacity-70' : ''
                         }`}
                     >
-                        {loading ? 'Logging in...' : 'Sign In'}
+                        {loading ? 'A entrar...' : 'Entrar'}
                     </button>
                 </form>
                 
                 <p className="mt-6 text-center text-sm text-white/60">
-                    Don't have an account?{' '}
+                    Não tem conta?{' '}
                     <Link to="/register" className="font-bold text-yellow hover:text-white transition-colors">
-                        Register
+                        Registar
                     </Link>
                 </p>
             </div>

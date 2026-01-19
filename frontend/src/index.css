@@ -317,7 +317,7 @@ body {
     }
 
     #contact {
-        @apply relative md:mt-20 mt-0 px-4 text-center w-full overflow-hidden radial-gradient;
+        @apply relative mt-0 px-4 text-center w-full overflow-hidden;
 
         #f-left-leaf {
             @apply absolute bottom-0 left-0 pointer-events-none lg:w-fit w-1/3;

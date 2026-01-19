@@ -42,12 +42,12 @@ const ConcessionsPage = () => {
         navigate('/cart');
     };
 
-    if (loading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Loading treats...</div>;
+    if (loading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">A carregar produtos...</div>;
 
     return (
         <section className="min-h-screen bg-black py-32 px-4">
             <div className="container mx-auto max-w-6xl">
-                <h1 className="text-5xl md:text-7xl font-modern-negra text-yellow mb-12 text-center">Concessions Shop</h1>
+                <h1 className="text-5xl md:text-7xl font-modern-negra text-yellow mb-12 text-center">Loja</h1>
 
                 <div className="grid md:grid-cols-3 gap-12">
                     {/* Products List */}
@@ -57,13 +57,13 @@ const ConcessionsPage = () => {
                                 <div>
                                     <h3 className="text-xl font-bold text-white mb-2">{product.nomeproduto}</h3>
                                     <p className="text-yellow text-2xl font-bold">€ {product.precoproduto}</p>
-                                    <p className="text-white/40 text-sm mt-2">In stock: {product.stock}</p>
+                                    <p className="text-white/40 text-sm mt-2">Stock: {product.stock}</p>
                                 </div>
                                 <button 
                                     onClick={() => addToCart(product)}
                                     className="mt-6 w-full py-3 bg-yellow text-black font-bold rounded-xl hover:bg-white transition-all"
                                 >
-                                    Add to Cart
+                                    Adicionar ao Carrinho
                                 </button>
                             </div>
                         ))}
@@ -71,10 +71,10 @@ const ConcessionsPage = () => {
 
                     {/* Cart Summary Panel */}
                     <div className="bg-white/5 border border-white/10 rounded-3xl p-8 h-fit sticky top-32">
-                        <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4">Your Selection</h2>
+                        <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4">Seleção</h2>
                         
                         {cartItems.length === 0 ? (
-                            <p className="text-white/40 italic">Your cart is empty.</p>
+                            <p className="text-white/40 italic">O carrinho está vazio.</p>
                         ) : (
                             <>
                                 <div className="space-y-4 mb-8">
@@ -104,7 +104,7 @@ const ConcessionsPage = () => {
                                     onClick={handleGoToCart}
                                     className="w-full py-4 bg-yellow text-black font-bold rounded-full hover:bg-white transition-all shadow-[0_0_20px_rgba(231,211,147,0.3)]"
                                 >
-                                    View Full Cart
+                                    Ver Carrinho
                                 </button>
                             </>
                         )}

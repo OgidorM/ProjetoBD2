@@ -27,14 +27,14 @@ const MovieDetailPage = () => {
         loadMovie();
     }, [id, fetchSessions]);
 
-    if (loading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Loading...</div>;
-    if (!movie) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Movie not found</div>;
+    if (loading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">A carregar...</div>;
+    if (!movie) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Filme não encontrado</div>;
 
     return (
         <section className="min-h-screen bg-black py-20 px-4">
             <div className="container mx-auto max-w-6xl">
                  <Link to="/filmes" className="text-yellow hover:text-white mb-8 inline-block">
-                    &larr; Back to Movies
+                    &larr; Voltar aos Filmes
                 </Link>
                 
                 <div className="grid md:grid-cols-2 gap-12">
@@ -56,25 +56,25 @@ const MovieDetailPage = () => {
                         </p>
                         
                         <div className="border-t border-white/10 pt-6 space-y-2 text-sm text-white/60">
-                            <p>Director: <span className="text-white">{movie.director}</span></p>
+                            <p>Realizador: <span className="text-white">{movie.director}</span></p>
                             <p>Cinema: <span className="text-white">{movie.cinema}</span></p>
-                            <p>Language: <span className="text-white">{movie.language}</span></p>
+                            <p>Idioma: <span className="text-white">{movie.language}</span></p>
                         </div>
                     </div>
 
                     {/* Sessions */}
                     <div className="bg-white/5 p-8 rounded-2xl border border-white/10">
-                        <h2 className="text-3xl font-modern-negra text-white mb-6">Sessions</h2>
+                        <h2 className="text-3xl font-modern-negra text-white mb-6">Sessões</h2>
                         
                         {sessionsLoading ? (
-                            <div className="text-white/50">Loading sessions...</div>
+                            <div className="text-white/50">A carregar sessões...</div>
                         ) : sessions.length === 0 ? (
-                            <div className="text-white/50">No sessions available.</div>
+                            <div className="text-white/50">Sem sessões disponíveis.</div>
                         ) : (
                             <div className="space-y-8">
                                 {Object.entries(
                                     sessions.reduce((acc, session) => {
-                                        const cinemaName = session.sala?.cinema?.nomecinema || 'Unknown Cinema';
+                                        const cinemaName = session.sala?.cinema?.nomecinema || 'Cinema Desconhecido';
                                         if (!acc[cinemaName]) acc[cinemaName] = [];
                                         acc[cinemaName].push(session);
                                         return acc;
@@ -103,7 +103,7 @@ const MovieDetailPage = () => {
                                                             to={`/booking/${session.sessaoid}`}
                                                             className="inline-block mt-2 px-4 py-1 bg-yellow text-black text-sm font-bold rounded hover:bg-white transition-colors"
                                                         >
-                                                            Book
+                                                            Reservar
                                                         </Link>
                                                     </div>
                                                 </div>

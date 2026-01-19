@@ -2,7 +2,7 @@ import React from 'react';
 
 const Contact = () => {
     return (
-        <section id="contact">
+        <section id="contact" className="relative bg-stone-950/50 backdrop-blur-sm">
             <div className="noisy absolute inset-0 opacity-20 pointer-events-none"></div>
             
             <div className="content relative z-10">

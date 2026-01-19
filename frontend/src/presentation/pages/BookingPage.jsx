@@ -102,15 +102,15 @@ const BookingPage = () => {
     const sortedRows = Object.keys(rows).sort();
     sortedRows.forEach(row => rows[row].sort((a, b) => a.lugar.numero - b.lugar.numero));
 
-    if (loading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Loading...</div>;
-    if (error) return <div className="min-h-screen bg-black text-red-500 flex items-center justify-center font-bold">Error: {error}</div>;
+    if (loading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">A carregar...</div>;
+    if (error) return <div className="min-h-screen bg-black text-red-500 flex items-center justify-center font-bold">Erro: {error}</div>;
 
     if (step === 'snacks') {
         return (
             <section className="min-h-screen bg-black py-32 px-4">
                 <div className="container mx-auto max-w-4xl">
-                    <h1 className="text-4xl font-modern-negra text-yellow text-center mb-4">Want some snacks?</h1>
-                    <p className="text-white/60 text-center mb-12 text-lg">Add concessions to your movie experience.</p>
+                    <h1 className="text-4xl font-modern-negra text-yellow text-center mb-4">Deseja snacks?</h1>
+                    <p className="text-white/60 text-center mb-12 text-lg">Adicione produtos de bar à experiência de cinema.</p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-20">
                         {products.map(product => (
@@ -135,17 +135,17 @@ const BookingPage = () => {
                     <div className="fixed bottom-0 left-0 w-full bg-neutral-900 border-t border-white/10 p-6">
                         <div className="container max-w-4xl mx-auto flex justify-between items-center">
                             <button onClick={() => setStep('seats')} className="text-white/60 hover:text-white font-bold transition-colors">
-                                &larr; Back to Seats
+                                &larr; Voltar aos Lugares
                             </button>
                             <div className="flex items-center gap-8">
                                 <div className="text-right">
-                                    <p className="text-white/40 text-xs uppercase tracking-widest">Selected</p>
+                                    <p className="text-white/40 text-xs uppercase tracking-widest">Selecionado</p>
                                     <p className="text-white text-xl font-bold">
-                                        {selectedSeats.length} Tickets {Object.keys(cart).length > 0 && `+ Snacks`}
+                                        {selectedSeats.length} Bilhetes {Object.keys(cart).length > 0 && `+ Snacks`}
                                     </p>
                                 </div>
                                 <button onClick={handleAddToCart} className="px-10 py-4 bg-yellow text-black rounded-full font-bold hover:bg-white transition-all shadow-[0_0_20px_rgba(231,211,147,0.3)]">
-                                    Add to Cart
+                                    Adicionar ao Carrinho
                                 </button>
                             </div>
                         </div>
@@ -158,12 +158,12 @@ const BookingPage = () => {
     return (
         <section className="min-h-screen bg-black py-20 px-4 flex flex-col items-center">
             <div className="container max-w-4xl">
-                <h1 className="text-4xl font-modern-negra text-yellow text-center mb-8">Select Seats</h1>
+                <h1 className="text-4xl font-modern-negra text-yellow text-center mb-8">Selecionar Lugares</h1>
                 
                 {/* Screen */}
                 <div className="w-full mb-12">
                     <div className="w-3/4 mx-auto h-2 bg-yellow shadow-[0_10px_30px_rgba(231,211,147,0.3)] rounded-full mb-4"></div>
-                    <p className="text-center text-white/40 text-sm uppercase tracking-widest">Screen</p>
+                    <p className="text-center text-white/40 text-sm uppercase tracking-widest">Ecrã</p>
                 </div>
 
                 {/* Seats Grid */}
@@ -204,15 +204,15 @@ const BookingPage = () => {
                 <div className="flex justify-center gap-8 mb-12 text-sm text-white/60">
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded bg-white/30"></div>
-                        <span>Available</span>
+                        <span>Disponível</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded bg-yellow"></div>
-                        <span>Selected</span>
+                        <span>Selecionado</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded bg-white/10"></div>
-                        <span>Occupied</span>
+                        <span>Ocupado</span>
                     </div>
                 </div>
 
@@ -220,7 +220,7 @@ const BookingPage = () => {
                 <div className="fixed bottom-0 left-0 w-full bg-neutral-900 border-t border-white/10 p-4">
                     <div className="container max-w-4xl mx-auto flex justify-between items-center">
                         <div className="text-white">
-                            <span className="block text-sm text-white/60">Selected Seats</span>
+                            <span className="block text-sm text-white/60">Lugares Selecionados</span>
                             <span className="text-xl font-bold">{selectedSeats.length}</span>
                         </div>
                         <button
@@ -233,7 +233,7 @@ const BookingPage = () => {
                                     : 'bg-gray-600 cursor-not-allowed'}
                             `}
                         >
-                            Confirm Seats & Add Snacks
+                            Confirmar Lugares & Snacks
                         </button>
                     </div>
                 </div>

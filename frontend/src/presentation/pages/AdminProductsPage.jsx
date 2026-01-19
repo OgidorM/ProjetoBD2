@@ -83,7 +83,7 @@ const AdminProductsPage = () => {
         }
     };
 
-    if (loading) return <div className="min-h-screen bg-black text-white p-20 font-modern-negra">Loading...</div>;
+    if (loading) return <div className="min-h-screen bg-black text-white p-20 font-modern-negra">A carregar...</div>;
 
     return (
         <div className="min-h-screen bg-black pt-32 px-5 pb-20 font-sans">
@@ -94,7 +94,7 @@ const AdminProductsPage = () => {
                         <button onClick={() => setShowAdd(!showAdd)} className="bg-yellow text-black px-6 py-2 rounded-full font-bold">
                             {showAdd ? 'Cancelar' : '+ Novo Produto'}
                         </button>
-                        <Link to="/profile" className="text-white/60 hover:text-white py-2">Voltar</Link>
+                        <Link to="/profile" className="text-white/60 hover:text-white py-2">Voltar ao Painel</Link>
                     </div>
                 </div>
 
@@ -119,7 +119,7 @@ const AdminProductsPage = () => {
                                     <input type="number" value={editForm.stock} onChange={e => setEditForm({...editForm, stock: e.target.value})} className="bg-black border border-white/20 rounded p-2 text-white" />
                                     <div className="flex gap-2">
                                         <button type="submit" className="bg-yellow text-black px-4 py-2 rounded font-bold">Salvar</button>
-                                        <button type="button" onClick={() => setEditingId(null)} className="border border-white/20 text-white px-4 py-2 rounded">X</button>
+                                        <button type="button" onClick={() => setEditingId(null)} className="border border-white/20 text-white px-4 py-2 rounded">Cancelar</button>
                                     </div>
                                 </form>
                             ) : (

@@ -29,7 +29,7 @@ const CartPage = () => {
         <section className="min-h-screen bg-black py-32 px-4">
             <div className="container mx-auto max-w-4xl">
                 <div className="flex justify-between items-end mb-12">
-                    <h1 className="text-5xl md:text-7xl font-modern-negra text-yellow">Your Cart</h1>
+                    <h1 className="text-5xl md:text-7xl font-modern-negra text-yellow">Carrinho</h1>
                     {cartItems.length > 0 && (
                         <button 
                             onClick={() => {
@@ -46,12 +46,12 @@ const CartPage = () => {
 
                 {cartItems.length === 0 ? (
                     <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10">
-                        <p className="text-white/60 text-xl mb-8">Your cart is currently empty.</p>
+                        <p className="text-white/60 text-xl mb-8">O carrinho está vazio.</p>
                         <Link 
                             to="/shop" 
                             className="px-8 py-4 bg-yellow text-black font-bold rounded-full hover:bg-white transition-all"
                         >
-                            Visit Shop
+                            Visitar Loja
                         </Link>
                     </div>
                 ) : (
@@ -75,7 +75,7 @@ const CartPage = () => {
                                             </h3>
                                             {item.tipo === 'ticket' && (
                                                 <p className="text-white/40 text-sm font-bold">
-                                                    {item.seats.length} Seats: {item.seats.map(s => `${s.lugar.fila}${s.lugar.numero}`).join(', ')}
+                                                    {item.seats.length} Lugares: {item.seats.map(s => `${s.lugar.fila}${s.lugar.numero}`).join(', ')}
                                                 </p>
                                             )}
                                             <p className="text-yellow font-bold text-lg">€ {item.precoproduto}</p>
@@ -121,7 +121,7 @@ const CartPage = () => {
                         {/* Summary */}
                         <div className="bg-white/5 rounded-3xl border border-white/10 p-8">
                             <div className="flex justify-between items-center mb-8">
-                                <span className="text-white/60 text-xl">Total Amount</span>
+                                <span className="text-white/60 text-xl">Valor Total</span>
                                 <span className="text-yellow text-4xl font-bold font-sans">€ {total}</span>
                             </div>
                             
@@ -130,13 +130,13 @@ const CartPage = () => {
                                     to="/shop" 
                                     className="flex-1 px-8 py-4 border border-white/20 text-white font-bold rounded-full text-center hover:bg-white/10 transition-all"
                                 >
-                                    Continue Shopping
+                                    Continuar a Comprar
                                 </Link>
                                 <button 
                                     onClick={handleCheckout}
                                     className="flex-1 px-8 py-4 bg-yellow text-black font-bold rounded-full text-center hover:bg-white transition-all shadow-[0_0_20px_rgba(231,211,147,0.3)]"
                                 >
-                                    Proceed to Checkout
+                                    Finalizar Compra
                                 </button>
                             </div>
                         </div>

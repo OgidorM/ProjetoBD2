@@ -33,10 +33,12 @@ const CheckoutPage = () => {
 
     if (cartItems.length === 0) {
         return (
-            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-6">
-                <p className="text-xl opacity-60 italic">Your cart is empty.</p>
-                <Link to="/filmes" className="px-8 py-3 bg-yellow text-black font-bold rounded-full">Go to Movies</Link>
-            </div>
+            <section className="min-h-screen bg-black py-32 px-4 flex flex-col items-center justify-center">
+                <div className="text-center space-y-8 animate-in fade-in zoom-in duration-700">
+                    <p className="text-xl opacity-60 italic">O carrinho está vazio.</p>
+                    <Link to="/filmes" className="px-8 py-3 bg-yellow text-black font-bold rounded-full">Ver Filmes</Link>
+                </div>
+            </section>
         );
     }
 
@@ -97,54 +99,65 @@ const CheckoutPage = () => {
 
     const error = apiError || bookingError;
 
-    if (success) {
+    if (isSuccess) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center text-center px-4">
-                <div>
-                    <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <section className="min-h-screen bg-black py-32 px-4 flex flex-col items-center justify-center">
+                <div className="text-center space-y-8 animate-in fade-in zoom-in duration-700">
+                    <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-8 border border-green-500/50">
+                        <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h2 className="text-4xl font-modern-negra text-white mb-4">Purchase Confirmed!</h2>
-                    <p className="text-white/60">Enjoy your movie and treats.</p>
+                    <h2 className="text-4xl font-modern-negra text-white mb-4">Compra Confirmada!</h2>
+                    <p className="text-white/60 max-w-md mx-auto">
+                        Os bilhetes já estão disponíveis no perfil. Prepare-se para uma experiência inesquecível.
+                    </p>
+                    <div className="flex gap-4 justify-center pt-8">
+                        <Link to="/profile" className="px-8 py-3 bg-yellow text-black font-bold rounded-full hover:bg-white transition-all">Ver Perfil</Link>
+                        <Link to="/" className="px-8 py-3 border border-white/20 text-white font-bold rounded-full hover:bg-white/10 transition-all">Página Inicial</Link>
+                    </div>
                 </div>
-            </div>
+            </section>
         );
     }
 
     return (
         <section className="min-h-screen bg-black py-20 px-4 flex items-center justify-center">
             <div className="bg-white/5 p-8 rounded-2xl border border-white/10 max-w-xl w-full">
-                <h1 className="text-3xl font-modern-negra text-yellow mb-8 border-b border-white/10 pb-4">Checkout</h1>
-                
+                <h1 className="text-3xl font-modern-negra text-yellow mb-8 border-b border-white/10 pb-4">Finalizar Compra</h1>                         │
                 <div className="space-y-6 mb-8">
-                    {/* Tickets Section */}
-                    {tickets.map((t, idx) => (
-                        <div key={idx}>
-                            <p className="text-white/40 text-sm mb-1 uppercase tracking-widest">Tickets: {t.movieTitle}</p>
-                            <div className="text-white text-lg font-bold">
-                                {t.seats.length} x Movie Tickets
+                        {/* Tickets Section */}
+                        {tickets.length > 0 && (
+                            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
+                                <h3 className="text-xl font-bold text-white mb-6 border-b border-white/5 pb-4">Bilhetes</h3>
+                                <div className="space-y-6">
+                                    {tickets.map((t, idx) => (
+                                        <div key={idx} className="flex justify-between items-start">
+                                            <div>
+                                                <p className="text-white/40 text-sm mb-1 uppercase tracking-widest">Bilhetes: {t.movieTitle}</p>
+                                                <p className="text-white font-bold text-xl">
+                                                    {t.seats.length} x Bilhetes de Cinema
+                                                </p>
+                                                <p className="text-white/60 text-sm mt-1">
+                                                    Lugares: {t.seats.map(s => `${s.lugar.fila}${s.lugar.numero}`).join(', ')}
+                                                </p>
+                                            </div>
+                                            <p className="text-yellow font-bold text-xl">€ {t.precoproduto}</p>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="flex flex-wrap gap-2 mt-2 border-b border-white/5 pb-4">
-                                {t.seats.map(s => (
-                                    <span key={s.lugarsessaoid} className="px-2 py-1 bg-white/10 rounded text-xs text-white">
-                                        {s.lugar.fila}{s.lugar.numero}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
+                        )}
 
                     {/* Concessions Section */}
                     <div>
                         <div className="flex justify-between items-center mb-2">
-                            <p className="text-white/40 text-sm uppercase tracking-widest">Concessions</p>
+                            <p className="text-white/40 text-sm uppercase tracking-widest">Produtos de Bar</p>
                             <button 
                                 onClick={() => setShowSnacks(!showSnacks)}
                                 className="text-xs text-yellow hover:text-white transition-colors"
                             >
-                                {showSnacks ? "Done" : "+ Add More"}
+                                {showSnacks ? "Concluído" : "+ Adicionar Snacks"}
                             </button>
                         </div>
 
@@ -167,7 +180,7 @@ const CheckoutPage = () => {
                         ) : (
                             <div className="space-y-1">
                                 {concessions.length === 0 ? (
-                                    <p className="text-white/30 text-sm italic">No concessions added.</p>
+                                    <p className="text-white/30 text-sm italic">Nenhum produto de bar adicionado.</p>
                                 ) : (
                                     concessions.map(p => (
                                         <div key={p.produtoid} className="flex justify-between text-white text-sm">
@@ -200,14 +213,14 @@ const CheckoutPage = () => {
                         onClick={() => navigate(-1)}
                         className="flex-1 px-6 py-3 border border-white/20 rounded-full text-white font-bold hover:bg-white/10 transition-colors"
                     >
-                        Cancel
+                        Cancelar
                     </button>
                     <button
                         onClick={handleConfirm}
                         disabled={loading}
                         className="flex-1 px-6 py-3 bg-yellow text-black rounded-full font-bold hover:bg-white transition-colors disabled:opacity-50"
                     >
-                        {loading ? 'Processing...' : 'Confirm Purchase'}
+                        {loading ? 'A processar...' : 'Confirmar Compra'}
                     </button>
                 </div>
             </div>

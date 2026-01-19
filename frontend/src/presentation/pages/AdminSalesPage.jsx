@@ -5,6 +5,7 @@ import { ApiClient, API_CONFIG } from '../../data/api/ApiClient';
 const AdminSalesPage = () => {
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
 
     useEffect(() => {
         const fetchSales = async () => {
@@ -23,17 +24,74 @@ const AdminSalesPage = () => {
 
     const totalRevenue = sales.reduce((acc, sale) => acc + parseFloat(sale.total), 0).toFixed(2);
 
-    if (loading) return <div className="min-h-screen bg-black text-white p-20">Loading...</div>;
+    const handleExportCsv = () => {
+        let url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.EXPORT_SALES_CSV}`;
+        const params = new URLSearchParams();
+        if (dateFilter.start) params.append('start', dateFilter.start);
+        if (dateFilter.end) params.append('end', dateFilter.end);
+        
+        if (params.toString()) url += `?${params.toString()}`;
+
+        // Since it's a file download that requires authentication, we use fetch and create a blob
+        fetch(url, { credentials: 'include' })
+            .then(response => {
+                if (!response.ok) throw new Error("Falha ao exportar CSV");
+                return response.blob();
+            })
+            .then(blob => {
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `vendas_diarias_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            })
+            .catch(err => alert(err.message));
+    };
+
+    if (loading) return <div className="min-h-screen bg-black text-white p-20">A carregar...</div>;
 
     return (
         <div className="min-h-screen bg-black pt-32 px-5 pb-20 font-sans">
             <div className="container mx-auto max-w-6xl">
-                <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
-                    <div>
+                <div className="flex flex-col lg:flex-row justify-between items-end mb-12 gap-8">
+                    <div className="flex-1">
                         <h1 className="text-5xl font-modern-negra text-yellow mb-2">Relatório de Vendas</h1>
                         <p className="text-white/40 uppercase tracking-widest text-sm">Histórico global de transações</p>
                     </div>
-                    <div className="bg-yellow/10 border border-yellow/20 p-6 rounded-3xl text-center md:text-right min-w-[200px]">
+
+                    <div className="flex flex-wrap items-end gap-4 bg-white/5 p-6 rounded-3xl border border-white/10">
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[10px] uppercase text-white/40 font-bold">Início</label>
+                            <input 
+                                type="date" 
+                                value={dateFilter.start} 
+                                onChange={e => setDateFilter({...dateFilter, start: e.target.value})}
+                                className="bg-black border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-yellow transition-colors" 
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[10px] uppercase text-white/40 font-bold">Fim</label>
+                            <input 
+                                type="date" 
+                                value={dateFilter.end} 
+                                onChange={e => setDateFilter({...dateFilter, end: e.target.value})}
+                                className="bg-black border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-yellow transition-colors" 
+                            />
+                        </div>
+                        <button 
+                            onClick={handleExportCsv}
+                            className="bg-yellow text-black px-6 py-2.5 rounded-xl font-bold hover:bg-white transition-all flex items-center gap-2"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Exportar CSV
+                        </button>
+                    </div>
+
+                    <div className="bg-yellow/10 border border-yellow/20 p-6 rounded-3xl text-center lg:text-right min-w-[200px]">
                         <p className="text-white/40 text-xs uppercase mb-1">Receita Total</p>
                         <p className="text-yellow text-4xl font-bold">€ {totalRevenue}</p>
                     </div>
@@ -81,7 +139,7 @@ const AdminSalesPage = () => {
                                                     <p className="text-white/40 text-xs">
                                                         {item.tipo === 'ticket' 
                                                             ? `${new Date(item.data).toLocaleString()} • ${item.sala} • Lugar ${item.lugar}` 
-                                                            : `Concessão • Qtd: ${item.quantidade}`}
+                                                            : `Bar • Qtd: ${item.quantidade}`}
                                                     </p>
                                                 </div>
                                             </div>
