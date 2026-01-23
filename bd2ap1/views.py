@@ -584,14 +584,18 @@ def criar_avaliacao_api(request):
         if hasattr(venda, 'avaliacao'):
             return Response({"error": "Sale already rated"}, status=status.HTTP_400_BAD_REQUEST)
 
-        avaliacao = Avaliacoes.objects.create(
-            venda=venda,
-            tituloavaliacao=titulo,
-            avaliacaocinema=nota_cinema,
-            avaliacaofilme=nota_filme,
-            avaliacaofuncionario=nota_funcionario,
-            comentario=comentario
-        )
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("CALL inserir_avaliacao(%s, %s, %s, %s, %s, %s)", [
+                venda.vendaid,
+                titulo,
+                nota_cinema,
+                nota_filme,
+                nota_funcionario,
+                comentario
+            ])
+            
+        avaliacao = Avaliacoes.objects.get(venda=venda)
 
         log_action(user, 'create_review', 'Avaliacoes', avaliacao.avaliacaoid, {"venda_id": venda_id})
 
@@ -674,12 +678,16 @@ def admin_create_produto_api(request):
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
     try:
-        p = Produtos.objects.create(
-            nomeproduto=request.data.get('nome'),
-            precoproduto=request.data.get('preco'),
-            stock=request.data.get('stock', 0),
-            ativo=True
-        )
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("CALL inserir_produto(%s, %s, %s, %s)", [
+                request.data.get('nome'),
+                request.data.get('preco'),
+                request.data.get('stock', 0),
+                True
+            ])
+        
+        p = Produtos.objects.get(nomeproduto=request.data.get('nome'))
         return Response({"id": p.produtoid}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -727,11 +735,20 @@ def admin_clientes_api(request):
         return Response(data)
 
     if request.method == 'POST':
-        c = Clientes.objects.create(
-            nomecliente=request.data.get('nome'),
-            emailcliente=request.data.get('email'),
-            nif=request.data.get('nif', '')
-        )
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("CALL inserir_cliente(%s, %s, %s, %s, %s, %s, %s, %s)", [
+                request.data.get('nome'),
+                request.data.get('email'),
+                request.data.get('telefone', ''),
+                request.data.get('datanascimento', None),
+                request.data.get('morada', ''),
+                request.data.get('codigo_postal', ''),
+                request.data.get('localidade', ''),
+                request.data.get('nif', '')
+            ])
+            
+        c = Clientes.objects.get(emailcliente=request.data.get('email'))
         return Response({"id": c.clienteid})
 
 
@@ -805,19 +822,27 @@ def admin_create_movie_api(request):
         cinema_id = request.data.get('cinemaid')
         cinema = Cinemas.objects.get(pk=cinema_id) if cinema_id else None
 
-        movie = Filmes.objects.create(
-            titulo=request.data.get('titulo'),
-            categoriaid=categoria,
-            cinemaid=cinema,
-            datalancamento=request.data.get('datalancamento'),
-            duracao=request.data.get('duracao'),
-            produtora=request.data.get('produtora'),
-            idioma=request.data.get('idioma', 'PT'),
-            sinopse=request.data.get('sinopse', ''),
-            cartaz_url=request.data.get('cartaz_url'),
-            classificacaoetaria=classificacao,
-            ranking=request.data.get('ranking', 0.0)
-        )
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("CALL inserir_filme(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [
+                categoria.categoriaid,
+                cinema.cinemaid if cinema else None,
+                request.data.get('titulo'),
+                request.data.get('datalancamento'),
+                request.data.get('duracao'),
+                request.data.get('produtora'),
+                request.data.get('fimexebicao'),
+                request.data.get('idioma', 'PT'),
+                request.data.get('sinopse', ''),
+                classificacao.classificacaoid,
+                request.data.get('ranking', 0.0)
+            ])
+        
+        # Fetch the movie to return ID and update cartaz_url which isn't in the procedure
+        movie = Filmes.objects.get(titulo=request.data.get('titulo'), duracao=request.data.get('duracao'))
+        if request.data.get('cartaz_url'):
+            movie.cartaz_url = request.data.get('cartaz_url')
+            movie.save()
 
         log_action(request.user, 'create_movie', 'Filmes', movie.filmeid, {"titulo": movie.titulo})
 
@@ -896,15 +921,20 @@ def admin_create_cinema_api(request):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        cinema = Cinemas.objects.create(
-            nomecinema=request.data.get('nome'),
-            localidadecinema=request.data.get('localidade'),
-            emailcinema=request.data.get('email', ''),
-            telefonecinema=request.data.get('telefone', ''),
-            moradacinema=request.data.get('morada', ''),
-            codigopostalcinema=request.data.get('codigo_postal', ''),
-            ranking=0.0
-        )
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("CALL inserir_cinema(%s, %s, %s, %s, %s, %s, %s)", [
+                request.data.get('nome'),
+                request.data.get('email', ''),
+                request.data.get('telefone', ''),
+                request.data.get('morada', ''),
+                request.data.get('codigo_postal', ''),
+                request.data.get('localidade'),
+                0.0
+            ])
+        
+        cinema = Cinemas.objects.get(nomecinema=request.data.get('nome'), localidadecinema=request.data.get('localidade'))
+        
         log_action(request.user, 'create_cinema', 'Cinemas', cinema.cinemaid, {"nome": cinema.nomecinema})
         return Response({"message": "Cinema created successfully", "id": cinema.cinemaid},
                         status=status.HTTP_201_CREATED)
@@ -924,32 +954,19 @@ def admin_create_room_api(request, cinema_id):
 
     try:
         cinema = Cinemas.objects.get(pk=cinema_id)
-        room = Salas.objects.create(
-            cinemaid=cinema,
-            nomesala=request.data.get('nome'),
-            capacidade=request.data.get('capacidade', 0),
-            filas=request.data.get('filas', 0),
-            colunas=request.data.get('colunas', 0),
-            tiposala=request.data.get('tipo', 'Normal')
-        )
-
-        # Automatically generate seats (Lugares) for the room
-        filas_count = int(request.data.get('filas', 0))
-        colunas_count = int(request.data.get('colunas', 0))
-
-        if filas_count > 0 and colunas_count > 0:
-            alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            lugares = []
-            for f in range(filas_count):
-                fila_label = alphabet[f] if f < len(alphabet) else f"R{f}"
-                for c in range(1, colunas_count + 1):
-                    lugares.append(Lugares(
-                        salaid=room,
-                        fila=fila_label,
-                        numero=c,
-                        tipolugar='Normal'
-                    ))
-            Lugares.objects.bulk_create(lugares)
+        
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("CALL inserir_sala(%s, %s, %s, %s, %s)", [
+                cinema.cinemaid,
+                request.data.get('nome'),
+                request.data.get('filas', 0),
+                request.data.get('colunas', 0),
+                request.data.get('tipo', 'Normal')
+            ])
+            
+        # Fetch the created room
+        room = Salas.objects.filter(cinemaid=cinema, nomesala=request.data.get('nome')).last()
 
         log_action(request.user, 'create_room', 'Salas', room.salaid,
                    {"cinema": cinema.nomecinema, "nome": room.nomesala})
@@ -997,32 +1014,46 @@ def criar_sessao_api(request):
 
     serializer = SessaoCreateSerializer(data=request.data)
     if serializer.is_valid():
-        sessao = serializer.save()
+        data = serializer.validated_data
+        
+        # Construct start/end timestamps
+        # Data comes as validated data. 'inicio' and 'fim' are already datetime objects from serializer if model field is DateTimeField.
+        # But wait, in `AdminSessionPage.jsx` payload sends ISO string. Serializer parses it.
+        # `Sessoes` model has `inicio` as DateTimeField.
+        
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("CALL inserir_sessao(%s, %s, %s, %s, %s, %s, %s)", [
+                data['salaid'].salaid if data.get('salaid') else None,
+                data['filmeid'].filmeid if data.get('filmeid') else None,
+                data['inicio'],
+                data['fim'],
+                data.get('versao', '2D'),
+                data.get('estadosessao', 'Agendada'),
+                data.get('precosessao', 0)
+            ])
 
         # Logic: If the movie was "global" (no cinema), assign it to this session's cinema
+        # This was in the old code. We can keep it if we fetch the session or movie back.
+        # For simplicity and sticking to "use procedures", I'll skip the side-effect update unless crucial. 
+        # But let's keep the return response consistent.
+        
+        # Fetch the session we just created (assuming unique enough constraints or just last one)
+        sessao = Sessoes.objects.filter(
+            salaid=data['salaid'], 
+            inicio=data['inicio']
+        ).last()
+
+        # Update movie cinema if needed
         movie = sessao.filmeid
         room = sessao.salaid
         if movie and room and not movie.cinemaid:
             movie.cinemaid = room.cinemaid
             movie.save()
 
-        # Initialize seats for the session
-        try:
-            sala = sessao.salaid
-            lugares = Lugares.objects.filter(salaid=sala)
-            lugares_sessao = [
-                LugaresSessao(
-                    lugarid=lugar,
-                    sessaoid=sessao,
-                    estado='Livre'
-                ) for lugar in lugares
-            ]
-            LugaresSessao.objects.bulk_create(lugares_sessao)
-        except Exception as e:
-            # If seat generation fails, we might want to warn or rollback
-            pass
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # Re-serialize to return full object
+        from .serializers import SessoesSerializer
+        return Response(SessoesSerializer(sessao).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
