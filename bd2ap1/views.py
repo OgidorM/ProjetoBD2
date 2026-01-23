@@ -609,20 +609,32 @@ def admin_avaliacoes_api(request):
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
-    avaliacoes = Avaliacoes.objects.all().select_related('venda__clienteid').order_by('-avaliacaoid')
-    data = []
-    for a in avaliacoes:
-        data.append({
-            "id": a.avaliacaoid,
-            "venda_id": a.venda.vendaid,
-            "cliente": a.venda.clienteid.nomecliente if a.venda.clienteid else "Unknown",
-            "titulo": a.tituloavaliacao,
-            "nota_cinema": a.avaliacaocinema,
-            "nota_filme": a.avaliacaofilme,
-            "nota_funcionario": a.avaliacaofuncionario,
-            "comentario": a.comentario
-        })
-    return Response(data)
+    try:
+        from django.db import connections
+        with connections['admin'].cursor() as cursor:
+            # Uses the simplified view created in SQL
+            cursor.execute("SELECT * FROM v_avaliacoes_cliente")
+            
+            # Map columns to keys automatically
+            columns = [col[0] for col in cursor.description]
+            data = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            
+            mapped_data = []
+            for row in data:
+                mapped_data.append({
+                    "id": row['avaliacaoid'],
+                    "venda_id": row['vendaid'],
+                    "cliente": row['cliente_nome'],
+                    "titulo": row['tituloavaliacao'],
+                    "nota_cinema": row['avaliacaocinema'],
+                    "nota_filme": row['avaliacaofilme'],
+                    "nota_funcionario": row['avaliacaofuncionario'],
+                    "comentario": row['comentario']
+                })
+                
+        return Response(mapped_data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'POST'])
@@ -633,8 +645,8 @@ def admin_funcionarios_api(request):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     if request.method == 'GET':
-        from django.db import connection
-        with connection.cursor() as cursor:
+        from django.db import connections
+        with connections['admin'].cursor() as cursor:
             cursor.execute("SELECT * FROM mv_funcionarios_top")
             columns = [col[0] for col in cursor.description]
             data = [
@@ -646,7 +658,7 @@ def admin_funcionarios_api(request):
     if request.method == 'POST':
         try:
             cinema = Cinemas.objects.get(pk=request.data.get('cinemaid')) if request.data.get('cinemaid') else None
-            f = Funcionarios.objects.create(
+            f = Funcionarios.objects.db_manager('admin').create(
                 nomefuncionario=request.data.get('nome'),
                 emailfuncionario=request.data.get('email'),
                 telefonefuncionario=request.data.get('telefone', ''),
@@ -667,8 +679,8 @@ def admin_create_produto_api(request):
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
     try:
-        from django.db import connection
-        with connection.cursor() as cursor:
+        from django.db import connections
+        with connections['admin'].cursor() as cursor:
             cursor.execute("CALL inserir_produto(%s, %s, %s, %s)", [
                 request.data.get('nome'),
                 float(request.data.get('preco')),
@@ -676,7 +688,7 @@ def admin_create_produto_api(request):
                 True
             ])
         
-        p = Produtos.objects.get(nomeproduto=request.data.get('nome'))
+        p = Produtos.objects.using('admin').get(nomeproduto=request.data.get('nome'))
         return Response({"id": p.produtoid}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -690,16 +702,16 @@ def admin_funcionario_detail_api(request, pk):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        funcionario = Funcionarios.objects.get(pk=pk)
+        funcionario = Funcionarios.objects.using('admin').get(pk=pk)
         if request.method == 'DELETE':
-            funcionario.delete()
+            funcionario.delete(using='admin')
             return Response({"message": "Eliminado"})
 
         # Update
         funcionario.nomefuncionario = request.data.get('nome', funcionario.nomefuncionario)
         funcionario.cargo = request.data.get('cargo', funcionario.cargo)
         funcionario.salario = request.data.get('salario', funcionario.salario)
-        funcionario.save()
+        funcionario.save(using='admin')
         return Response({"message": "Atualizado"})
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -713,7 +725,7 @@ def admin_clientes_api(request):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     if request.method == 'GET':
-        clientes = Clientes.objects.all()
+        clientes = Clientes.objects.using('admin').all()
         data = [{
             "id": c.clienteid,
             "nome": c.nomecliente,
@@ -724,8 +736,8 @@ def admin_clientes_api(request):
         return Response(data)
 
     if request.method == 'POST':
-        from django.db import connection
-        with connection.cursor() as cursor:
+        from django.db import connections
+        with connections['admin'].cursor() as cursor:
             cursor.execute("CALL inserir_cliente(%s, %s, %s, %s, %s, %s, %s, %s)", [
                 request.data.get('nome'),
                 request.data.get('email'),
@@ -737,7 +749,7 @@ def admin_clientes_api(request):
                 request.data.get('nif', '')
             ])
             
-        c = Clientes.objects.get(emailcliente=request.data.get('email'))
+        c = Clientes.objects.using('admin').get(emailcliente=request.data.get('email'))
         return Response({"id": c.clienteid})
 
 
@@ -748,13 +760,13 @@ def admin_cliente_detail_api(request, pk):
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
     try:
-        cliente = Clientes.objects.get(pk=pk)
+        cliente = Clientes.objects.using('admin').get(pk=pk)
         if request.method == 'DELETE':
-            cliente.delete()
+            cliente.delete(using='admin')
             return Response({"message": "Eliminado"})
         cliente.nomecliente = request.data.get('nome', cliente.nomecliente)
         cliente.emailcliente = request.data.get('email', cliente.emailcliente)
-        cliente.save()
+        cliente.save(using='admin')
         return Response({"message": "Atualizado"})
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -767,10 +779,10 @@ def admin_produto_detail_api(request, pk):
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
     try:
-        produto = Produtos.objects.get(pk=pk)
+        produto = Produtos.objects.using('admin').get(pk=pk)
         if request.method == 'DELETE':
             produto.ativo = False  # Soft delete
-            produto.save()
+            produto.save(using='admin')
             return Response({"message": "Desativado"})
 
         # New: support relative stock update if 'stock_change' is provided
@@ -786,7 +798,7 @@ def admin_produto_detail_api(request, pk):
             produto.precoproduto = request.data.get('preco', produto.precoproduto)
             produto.stock = request.data.get('stock', produto.stock)
 
-        produto.save()
+        produto.save(using='admin')
         return Response({"message": "Atualizado", "new_stock": produto.stock})
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -811,8 +823,8 @@ def admin_create_movie_api(request):
         cinema_id = request.data.get('cinemaid')
         cinema = Cinemas.objects.get(pk=cinema_id) if cinema_id else None
 
-        from django.db import connection
-        with connection.cursor() as cursor:
+        from django.db import connections
+        with connections['admin'].cursor() as cursor:
             cursor.execute("CALL inserir_filme(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [
                 categoria.categoriaid,
                 cinema.cinemaid if cinema else None,
@@ -828,10 +840,10 @@ def admin_create_movie_api(request):
             ])
         
         # Fetch the movie to return ID and update cartaz_url which isn't in the procedure
-        movie = Filmes.objects.get(titulo=request.data.get('titulo'), duracao=request.data.get('duracao'))
+        movie = Filmes.objects.using('admin').get(titulo=request.data.get('titulo'), duracao=request.data.get('duracao'))
         if request.data.get('cartaz_url'):
             movie.cartaz_url = request.data.get('cartaz_url')
-            movie.save()
+            movie.save(using='admin')
 
         log_action(request.user, 'create_movie', 'Filmes', movie.filmeid, {"titulo": movie.titulo})
 
@@ -851,7 +863,7 @@ def admin_vendas_api(request):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        vendas = Vendas.objects.all().select_related('clienteid').order_by('-data', '-vendaid')
+        vendas = Vendas.objects.using('admin').all().select_related('clienteid').order_by('-data', '-vendaid')
         data = []
         for v in vendas:
             # Reusing the same detailed logic from minhas_vendas but for all sales
@@ -880,8 +892,8 @@ def admin_vendas_api(request):
             # Calculate total from lines if totalvenda is 0 or None
             calc_total = v.totalvenda
             if not calc_total or calc_total == 0:
-                from django.db import connection
-                with connection.cursor() as cursor:
+                from django.db import connections
+                with connections['admin'].cursor() as cursor:
                     cursor.execute("SELECT fn_calcular_total_venda(%s)", [v.vendaid])
                     result = cursor.fetchone()
                     calc_total = result[0] if result else 0
@@ -910,8 +922,8 @@ def admin_create_cinema_api(request):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        from django.db import connection
-        with connection.cursor() as cursor:
+        from django.db import connections
+        with connections['admin'].cursor() as cursor:
             cursor.execute("CALL inserir_cinema(%s, %s, %s, %s, %s, %s, %s)", [
                 request.data.get('nome'),
                 request.data.get('email', ''),
@@ -922,7 +934,7 @@ def admin_create_cinema_api(request):
                 0.0
             ])
         
-        cinema = Cinemas.objects.get(nomecinema=request.data.get('nome'), localidadecinema=request.data.get('localidade'))
+        cinema = Cinemas.objects.using('admin').get(nomecinema=request.data.get('nome'), localidadecinema=request.data.get('localidade'))
         
         log_action(request.user, 'create_cinema', 'Cinemas', cinema.cinemaid, {"nome": cinema.nomecinema})
         return Response({"message": "Cinema created successfully", "id": cinema.cinemaid},
@@ -942,10 +954,10 @@ def admin_create_room_api(request, cinema_id):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        cinema = Cinemas.objects.get(pk=cinema_id)
+        cinema = Cinemas.objects.using('admin').get(pk=cinema_id)
         
-        from django.db import connection
-        with connection.cursor() as cursor:
+        from django.db import connections
+        with connections['admin'].cursor() as cursor:
             cursor.execute("CALL inserir_sala(%s, %s, %s, %s, %s)", [
                 cinema.cinemaid,
                 request.data.get('nome'),
@@ -955,7 +967,7 @@ def admin_create_room_api(request, cinema_id):
             ])
             
         # Fetch the created room
-        room = Salas.objects.filter(cinemaid=cinema, nomesala=request.data.get('nome')).last()
+        room = Salas.objects.using('admin').filter(cinemaid=cinema, nomesala=request.data.get('nome')).last()
 
         log_action(request.user, 'create_room', 'Salas', room.salaid,
                    {"cinema": cinema.nomecinema, "nome": room.nomesala})
@@ -976,12 +988,12 @@ def admin_delete_movie_api(request, movie_id):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        movie = Filmes.objects.get(pk=movie_id)
+        movie = Filmes.objects.using('admin').get(pk=movie_id)
         # Check for sessions
         if movie.sessoes.count() > 0:
             return Response({"error": "Cannot delete movie with active sessions"}, status=status.HTTP_400_BAD_REQUEST)
 
-        movie.delete()
+        movie.delete(using='admin')
         log_action(request.user, 'delete_movie', 'Filmes', movie_id, {})
         return Response({"message": "Movie deleted successfully"})
     except Filmes.DoesNotExist:
@@ -1011,8 +1023,8 @@ def criar_sessao_api(request):
         # `Sessoes` model has `inicio` as DateTimeField.
         
         try:
-            from django.db import connection
-            with connection.cursor() as cursor:
+            from django.db import connections
+            with connections['admin'].cursor() as cursor:
                 cursor.execute("CALL inserir_sessao(%s, %s, %s::timestamp, %s::timestamp, %s, %s, %s)", [
                     data['salaid'].salaid if data.get('salaid') else None,
                     data['filmeid'].filmeid if data.get('filmeid') else None,
@@ -1031,7 +1043,7 @@ def criar_sessao_api(request):
         # But let's keep the return response consistent.
         
         # Fetch the session we just created (assuming unique enough constraints or just last one)
-        sessao = Sessoes.objects.filter(
+        sessao = Sessoes.objects.using('admin').filter(
             salaid=data['salaid'], 
             inicio=data['inicio']
         ).last()
@@ -1041,7 +1053,7 @@ def criar_sessao_api(request):
         room = sessao.salaid
         if movie and room and not movie.cinemaid:
             movie.cinemaid = room.cinemaid
-            movie.save()
+            movie.save(using='admin')
 
         # Re-serialize to return full object
         from .serializers import SessoesSerializer
@@ -1060,16 +1072,16 @@ def deletar_sessao_api(request, sessaoid):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        sessao = Sessoes.objects.get(pk=sessaoid)
+        sessao = Sessoes.objects.using('admin').get(pk=sessaoid)
 
         # Check for sold tickets (Bilhetes)
         if sessao.bilhetes.count() > 0:
             return Response({"error": "Cannot delete session with sold tickets"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Clean up LugaresSessao
-        LugaresSessao.objects.filter(sessaoid=sessao).delete()
+        LugaresSessao.objects.using('admin').filter(sessaoid=sessao).delete()
 
-        sessao.delete()
+        sessao.delete(using='admin')
         return Response({"message": "Session deleted successfully"}, status=status.HTTP_200_OK)
     except Sessoes.DoesNotExist:
         return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -1092,8 +1104,8 @@ def atualizar_sessao_api(request, sessaoid):
         return Response({"error": "State is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        from django.db import connection
-        with connection.cursor() as cursor:
+        from django.db import connections
+        with connections['admin'].cursor() as cursor:
             cursor.execute("CALL alterar_estado_sessao(%s, %s)", [sessaoid, novo_estado])
             
         return Response({"message": "Session updated successfully"})
@@ -1111,7 +1123,7 @@ def bilhetes_sessao_api(request, sessaoid):
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
-    bilhetes = Bilhetes.objects.filter(sessaoid=sessaoid).select_related('lugarid')
+    bilhetes = Bilhetes.objects.using('admin').filter(sessaoid=sessaoid).select_related('lugarid')
     data = []
     for b in bilhetes:
         try:
@@ -1148,24 +1160,24 @@ def cancelar_bilhete_api(request, bilheteid):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        with transaction.atomic():
-            bilhete = Bilhetes.objects.get(pk=bilheteid)
+        with transaction.atomic(using='admin'):
+            bilhete = Bilhetes.objects.using('admin').get(pk=bilheteid)
             lugar = bilhete.lugarid
             sessao = bilhete.sessaoid
 
             # 1. Update LugaresSessao to Livre
             try:
-                ls = LugaresSessao.objects.get(lugarid=lugar, sessaoid=sessao)
+                ls = LugaresSessao.objects.using('admin').get(lugarid=lugar, sessaoid=sessao)
                 ls.estado = 'Livre'
-                ls.save()
+                ls.save(using='admin')
             except LugaresSessao.DoesNotExist:
                 pass
 
             # 2. Delete VendaLinha
-            VendaLinhas.objects.filter(bilheteid=bilhete).delete()
+            VendaLinhas.objects.using('admin').filter(bilheteid=bilhete).delete()
 
             # 3. Delete Bilhete
-            bilhete.delete()
+            bilhete.delete(using='admin')
 
             return Response({"message": "Ticket cancelled successfully"})
     except Exception as e:
@@ -1307,7 +1319,7 @@ def exportar_faturas_dia_api(request):
     target_date = parse_date(data_str) if data_str else timezone.now().date()
 
     try:
-        with connection.cursor() as cursor:
+        with connections['admin'].cursor() as cursor:
             cursor.execute("SELECT exportar_faturas_por_data(%s)", [target_date])
             row = cursor.fetchone()
             
@@ -1350,7 +1362,7 @@ def admin_create_categoria_api(request):
         if not nome:
             return Response({"error": "Name is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        cat = Categorias.objects.create(nomecategoria=nome)
+        cat = Categorias.objects.db_manager('admin').create(nomecategoria=nome)
         log_action(request.user, 'create_category', 'Categorias', cat.categoriaid, {"nome": nome})
         return Response({"message": "Category created", "id": cat.categoriaid}, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -1368,12 +1380,12 @@ def admin_delete_categoria_api(request, pk):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        cat = Categorias.objects.get(pk=pk)
+        cat = Categorias.objects.using('admin').get(pk=pk)
         # Check constraints (filmes)
         if cat.filmes.count() > 0:
             return Response({"error": "Cannot delete category with related movies"}, status=status.HTTP_400_BAD_REQUEST)
 
-        cat.delete()
+        cat.delete(using='admin')
         log_action(request.user, 'delete_category', 'Categorias', pk, {})
         return Response({"message": "Category deleted"})
     except Categorias.DoesNotExist:

@@ -212,3 +212,22 @@ GROUP BY
     c.localidadecliente,
     c.codigopostalcliente
 ORDER BY total_gasto DESC;
+
+-- ==============================================================
+-- Vista simples: Avaliações por cliente
+-- ==============================================================
+CREATE OR REPLACE VIEW v_avaliacoes_cliente AS
+SELECT 
+    a.avaliacaoid,
+    a.vendaid,
+    c.nomecliente AS cliente_nome,
+    c.emailcliente AS cliente_email,
+    a.tituloavaliacao,
+    a.avaliacaocinema,
+    a.avaliacaofilme,
+    a.avaliacaofuncionario,
+    a.comentario
+FROM avaliacoes a
+JOIN vendas v ON a.vendaid = v.vendaid
+JOIN clientes c ON v.clienteid = c.clienteid
+ORDER BY a.avaliacaoid DESC;
