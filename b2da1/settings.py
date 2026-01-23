@@ -97,6 +97,14 @@ DATABASES = {
         'PASSWORD': 'app123',
         'HOST': 'localhost',
         'PORT': '5432',
+    },
+    'admin': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'cinemaDB',
+        'USER': 'admin_bd',
+        'PASSWORD': 'admin123',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
