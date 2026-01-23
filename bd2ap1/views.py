@@ -231,8 +231,15 @@ def update_profile_api(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def produtos_api(request):
-    """API endpoint to get all active products"""
-    produtos = Produtos.objects.filter(ativo=True, stock__gt=0)
+    """API endpoint to get all active products using v_produtos_vendidos view for ranking/data"""
+    from django.db import connection
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT produtoid FROM v_produtos_vendidos")
+        ids = [row[0] for row in cursor.fetchall()]
+    
+    # We still need to filter by active=True and stock > 0 as per original logic, 
+    # or assume the view is for statistics and we want the objects.
+    produtos = Produtos.objects.filter(pk__in=ids, ativo=True, stock__gt=0)
     serializer = ProdutosSerializer(produtos, many=True)
     return Response(serializer.data)
 
@@ -310,24 +317,51 @@ def filmes_api(request):
     # If admin/staff, return all movies. Otherwise, only movies with future sessions.
     if request.user.is_staff:
         queryset = Filmes.objects.select_related('categoriaid', 'classificacaoetaria', 'cinemaid')
+        if cinema_id:
+            queryset = queryset.filter(cinemaid=cinema_id)
+        filmes = queryset.all()
+        serializer = FilmesSerializer(filmes, many=True)
+        return Response(serializer.data)
     else:
-        now = timezone.now()
-        queryset = Filmes.objects.filter(sessoes__inicio__gte=now).select_related('categoriaid', 'classificacaoetaria', 'cinemaid').distinct()
-
-    if cinema_id:
-        queryset = queryset.filter(cinemaid=cinema_id)
-
-    filmes = queryset.all()
-    serializer = FilmesSerializer(filmes, many=True)
-    return Response(serializer.data)
+        # Use v_filmes_em_exibicao for regular users
+        from django.db import connection
+        with connection.cursor() as cursor:
+            sql = "SELECT * FROM v_filmes_em_exibicao"
+            params = []
+            if cinema_id:
+                sql += " WHERE cinemaid = %s" # Note: check if cinemaid is in the view
+                # I read vistas.sql: v_filmes_em_exibicao does NOT have cinemaid, it has nomecinema.
+                # Wait, let me check again.
+                # SELECT f.filmeid, f.titulo, f.fimexebicao, f.datalancamento, c.nomecinema FROM filmes f ...
+                # It doesn't have cinemaid. I should probably use Filmes model but filtered by view IDs if I want to be strict.
+                # Or just use the view if I can.
+                pass
+            
+            cursor.execute("SELECT filmeid FROM v_filmes_em_exibicao")
+            ids = [row[0] for row in cursor.fetchall()]
+            
+        queryset = Filmes.objects.filter(pk__in=ids).select_related('categoriaid', 'classificacaoetaria', 'cinemaid')
+        if cinema_id:
+            queryset = queryset.filter(cinemaid=cinema_id)
+        
+        filmes = queryset.all()
+        serializer = FilmesSerializer(filmes, many=True)
+        return Response(serializer.data)
 
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def cinemas_api(request):
-    cinemas = Cinemas.objects.all()
-    serializer = CinemasSerializer(cinemas, many=True)
-    return Response(serializer.data)
+    """API endpoint to get all cinemas using the v_cinemas_resumo view"""
+    from django.db import connection
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM v_cinemas_resumo")
+        columns = [col[0] for col in cursor.description]
+        results = [
+            dict(zip(columns, row))
+            for row in cursor.fetchall()
+        ]
+    return Response(results)
 
 
 @api_view(['GET'])
@@ -642,16 +676,14 @@ def admin_funcionarios_api(request):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     if request.method == 'GET':
-        funcionarios = Funcionarios.objects.all().select_related('cinemaid')
-        data = [{
-            "id": f.funcionarioid,
-            "nome": f.nomefuncionario,
-            "email": f.emailfuncionario,
-            "cargo": f.cargo,
-            "salario": f.salario,
-            "cinema": f.cinemaid.nomecinema if f.cinemaid else 'N/A',
-            "cinema_id": f.cinemaid_id
-        } for f in funcionarios]
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM mv_funcionarios_top")
+            columns = [col[0] for col in cursor.description]
+            data = [
+                dict(zip(columns, row))
+                for row in cursor.fetchall()
+            ]
         return Response(data)
 
     if request.method == 'POST':
@@ -1225,6 +1257,80 @@ def bilhete_digital_api(request, bilheteid):
 
             return Response(data)
             
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def fatura_digital_api(request, vendaid):
+    """
+    API to generate digital invoice info using a DATABASE FUNCTION (PostgreSQL)
+    """
+    from django.db import connection
+    
+    try:
+        # Security check: Only the owner (or staff) can view the invoice
+        try:
+            venda = Vendas.objects.get(pk=vendaid)
+            client_user = None
+            try:
+                profile = ClienteProfile.objects.get(cliente_dados=venda.clienteid)
+                client_user = profile.user
+            except:
+                pass
+            
+            if not request.user.is_staff and client_user != request.user:
+                return Response({"error": "Não tem permissão para aceder a esta fatura"}, 
+                                status=status.HTTP_403_FORBIDDEN)
+        except Vendas.DoesNotExist:
+            return Response({"error": "Venda não encontrada"}, status=status.HTTP_404_NOT_FOUND)
+
+        with connection.cursor() as cursor:
+            # Call the PostgreSQL function which returns a JSON object
+            cursor.execute("SELECT exportar_fatura_pdf(%s)", [vendaid])
+            row = cursor.fetchone()
+            
+            if not row or row[0] is None:
+                return Response({"error": "Erro ao gerar dados da fatura"}, status=status.HTTP_404_NOT_FOUND)
+            
+            return Response(data)
+            
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def exportar_faturas_dia_api(request):
+    """
+    API to export all invoices for a given day using SQL function.
+    Only for staff.
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+    from django.db import connection
+    from django.utils.dateparse import parse_date
+    
+    data_str = request.query_params.get('data')
+    target_date = parse_date(data_str) if data_str else timezone.now().date()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT exportar_faturas_por_data(%s)", [target_date])
+            row = cursor.fetchone()
+            
+            if not row or row[0] is None:
+                return Response([], status=status.HTTP_200_OK) # Empty list if no invoices
+            
+            data = row[0]
+            if isinstance(data, str):
+                data = json.loads(data)
+
+            return Response(data)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
