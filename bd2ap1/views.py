@@ -115,12 +115,14 @@ def signup_api(request):
     username = request.data.get('username')
     password = request.data.get('password')
     email = request.data.get('email', '')
+    dob = request.data.get('datanascimento', '2000-01-01')
 
     dto = NovoClienteDTO(
         username=username,
         password=password,
         email=email,
-        nome_completo=username  # Usa username como nome inicial
+        nome_completo=username,  # Usa username como nome inicial
+        data_nascimento=dob
     )
 
     service = ClienteService()

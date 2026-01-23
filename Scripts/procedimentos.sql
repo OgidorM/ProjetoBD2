@@ -225,7 +225,12 @@ CREATE OR REPLACE PROCEDURE inserir_cliente(
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF p_email IS NULL OR LENGTH(TRIM(p_email)) = 0 THEN
+        RAISE EXCEPTION 'Email obrigatório.';
+    END IF;
+
     IF EXISTS (SELECT 1 FROM clientes WHERE emailcliente = p_email) THEN
+
         RAISE EXCEPTION 'Email duplicado.';
     END IF;
 

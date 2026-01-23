@@ -171,8 +171,8 @@ SELECT
     f.datalancamento,
     c.nomecinema
 FROM filmes f
-JOIN cinemas c ON c.cinemaid = f.cinemaid
-WHERE f.fimexebicao >= CURRENT_DATE
+LEFT JOIN cinemas c ON c.cinemaid = f.cinemaid
+WHERE (f.fimexebicao >= CURRENT_DATE OR f.fimexebicao IS NULL)
 ORDER BY f.titulo;
 
 -- ==============================================================

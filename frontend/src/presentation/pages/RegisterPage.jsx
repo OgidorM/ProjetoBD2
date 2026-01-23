@@ -7,7 +7,8 @@ const RegisterPage = () => {
         username: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        datanascimento: ''
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -41,7 +42,8 @@ const RegisterPage = () => {
                 body: JSON.stringify({
                     username: formData.username,
                     email: formData.email,
-                    password: formData.password
+                    password: formData.password,
+                    datanascimento: formData.datanascimento
                 }),
                 credentials: 'include',
             });
@@ -101,6 +103,21 @@ const RegisterPage = () => {
                             className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/30 focus:border-yellow focus:outline-none focus:ring-1 focus:ring-yellow transition-colors"
                             value={formData.email}
                             onChange={handleChange}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-yellow/80" htmlFor="datanascimento">
+                            Data de Nascimento
+                        </label>
+                        <input
+                            id="datanascimento"
+                            name="datanascimento"
+                            type="date"
+                            className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/30 focus:border-yellow focus:outline-none focus:ring-1 focus:ring-yellow transition-colors"
+                            value={formData.datanascimento}
+                            onChange={handleChange}
+                            required
                         />
                     </div>
                     
