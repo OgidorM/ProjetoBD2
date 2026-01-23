@@ -578,15 +578,18 @@ def criar_avaliacao_api(request):
             return Response({"error": "Sale already rated"}, status=status.HTTP_400_BAD_REQUEST)
 
         from django.db import connection
-        with connection.cursor() as cursor:
-            cursor.execute("CALL inserir_avaliacao(%s, %s, %s, %s, %s, %s)", [
-                venda.vendaid,
-                titulo,
-                nota_cinema,
-                nota_filme,
-                nota_funcionario,
-                comentario
-            ])
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("CALL inserir_avaliacao(%s, %s, %s, %s, %s, %s)", [
+                    venda.vendaid,
+                    titulo,
+                    int(nota_cinema) if nota_cinema is not None else None,
+                    int(nota_filme) if nota_filme is not None else None,
+                    int(nota_funcionario) if nota_funcionario is not None else None,
+                    comentario
+                ])
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
         avaliacao = Avaliacoes.objects.get(venda=venda)
 

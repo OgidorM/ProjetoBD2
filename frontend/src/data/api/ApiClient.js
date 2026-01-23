@@ -11,6 +11,7 @@ export const API_CONFIG = {
         SEATS_BY_SESSION: (id) => `/api/sessoes/${id}/lugares/`,
         CREATE_SALE: '/api/vendas/criar/',
         MY_SALES: '/api/vendas/minhas/',
+        CREATE_REVIEW: '/api/avaliacoes/criar/',
         CREATE_SESSION: '/api/sessoes/criar/',
         ALL_SESSIONS: '/api/sessoes/',
         DELETE_SESSION: (id) => `/api/sessoes/${id}/deletar/`,
