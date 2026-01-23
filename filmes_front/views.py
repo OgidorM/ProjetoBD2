@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import user_passes_test, login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
+from django.db import connection
 
 from bd2ap1.models import Filmes
 from .forms import FilmeForm
@@ -28,7 +29,21 @@ def adicionar_filme(request):
     if request.method == 'POST':
         form = FilmeForm(request.POST)
         if form.is_valid():
-            form.save()
+            data = form.cleaned_data
+            with connection.cursor() as cursor:
+                cursor.execute("CALL inserir_filme(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [
+                    data['categoriaid'].categoriaid,
+                    data['cinemaid'].cinemaid,
+                    data['titulo'],
+                    data['datalancamento'],
+                    data['duracao'],
+                    data['produtora'],
+                    data['fimexebicao'],
+                    data['idioma'],
+                    data['sinopse'],
+                    data['classificacaoetaria'].classificacaoid if hasattr(data['classificacaoetaria'], 'classificacaoid') else data['classificacaoetaria'].pk,
+                    0.0
+                ])
             return redirect('lista_filmes')
     else:
         form = FilmeForm()

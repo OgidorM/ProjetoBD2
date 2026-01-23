@@ -390,6 +390,9 @@ const AdminSessionPage = () => {
                                                     <span className="px-2 py-0.5 bg-white/10 text-white/70 rounded">
                                                         {session.sala?.nomesala}
                                                     </span>
+                                                    <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded">
+                                                        {session.ocupacao || 0}% Ocupado
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div className="text-right">

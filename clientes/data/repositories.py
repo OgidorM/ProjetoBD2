@@ -44,4 +44,16 @@ class ClienteRepository:
         return cliente
 
     def create_dados(self, **data: Any) -> TabelaClientes:
-        return TabelaClientes.objects.create(**data)
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("CALL inserir_cliente(%s, %s, %s, %s, %s, %s, %s, %s)", [
+                data.get('nomecliente'),
+                data.get('emailcliente'),
+                data.get('telefonecliente'),
+                data.get('datanascimento'),
+                data.get('moradacliente'),
+                data.get('codigopostalcliente'),
+                data.get('localidadecliente'),
+                data.get('nif')
+            ])
+        return TabelaClientes.objects.get(emailcliente=data.get('emailcliente'))

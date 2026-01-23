@@ -340,9 +340,13 @@ def salas_api(request):
 @api_view(['GET'])
 def sessoes_por_filme_api(request, filmeid):
     try:
-        now = timezone.now()
-        sessoes = Sessoes.objects.filter(filmeid=filmeid, inicio__gte=now).select_related('salaid__cinemaid').order_by(
-            'inicio')
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT sessaoid FROM fn_obter_sessoes_ativas_por_filme(%s)", [filmeid])
+            rows = cursor.fetchall()
+            ids = [row[0] for row in rows]
+            
+        sessoes = Sessoes.objects.filter(pk__in=ids).select_related('salaid__cinemaid').order_by('inicio')
         serializer = SessoesSerializer(sessoes, many=True)
         return Response(serializer.data)
     except Exception as e:
@@ -423,12 +427,31 @@ def criar_venda_api(request):
             # 3. Process Tickets
             if sessaoid and lugares_ids:
                 sessao = Sessoes.objects.get(pk=sessaoid)
+                
+                # Verify age using SQL function
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT fn_verificar_idade_minima_filme(%s, %s)", [
+                        cliente.clienteid, 
+                        sessao.filmeid.filmeid
+                    ])
+                    allowed = cursor.fetchone()[0]
+                
+                if not allowed:
+                     raise Exception("Cliente não tem idade suficiente para este filme.")
+
                 price = sessao.precosessao or 10.00
 
                 for ls_id in lugares_ids:
                     # Lock row
                     ls = LugaresSessao.objects.select_for_update().get(pk=ls_id)
-                    if ls.estado != 'Livre':
+                    
+                    # Verify availability using SQL function
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT fn_verificar_disponibilidade_lugar(%s, %s)", [sessao.sessaoid, ls_id])
+                        is_free = cursor.fetchone()[0]
+
+                    if not is_free:
                         lugar_info = f"{ls.lugarid.fila}{ls.lugarid.numero}" if ls.lugarid else "Unknown"
                         raise Exception(f"Lugar {lugar_info} is no longer available")
 
@@ -514,7 +537,13 @@ def minhas_vendas_api(request):
                         "preco": l.precolinha
                     })
 
-            calc_total = v.totalvenda or sum(l.precolinha for l in v.linhas.all())
+            calc_total = v.totalvenda
+            if not calc_total:
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT fn_calcular_total_venda(%s)", [v.vendaid])
+                    result = cursor.fetchone()
+                    calc_total = result[0] if result else 0
 
             data.append({
                 "id": v.vendaid,
@@ -837,7 +866,11 @@ def admin_vendas_api(request):
             # Calculate total from lines if totalvenda is 0 or None
             calc_total = v.totalvenda
             if not calc_total or calc_total == 0:
-                calc_total = sum(l.precolinha for l in v.linhas.all())
+                from django.db import connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT fn_calcular_total_venda(%s)", [v.vendaid])
+                    result = cursor.fetchone()
+                    calc_total = result[0] if result else 0
 
             data.append({
                 "id": v.vendaid,

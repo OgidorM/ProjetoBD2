@@ -1,7 +1,16 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.db.models import Avg
+from django.db import connection
 from .models import Avaliacoes, Filmes, Cinemas, Funcionarios, VendaLinhas
+
+def call_db_function(func_name, *args):
+    with connection.cursor() as cursor:
+        # Construct the SQL query dynamically based on the number of arguments
+        placeholders = ', '.join(['%s'] * len(args))
+        sql = f"SELECT {func_name}({placeholders})"
+        cursor.execute(sql, args)
+        return cursor.fetchone()[0]
 
 @receiver([post_save, post_delete], sender=Avaliacoes)
 def update_rankings(sender, instance, **kwargs):
@@ -19,27 +28,23 @@ def update_rankings(sender, instance, **kwargs):
             cinema = linha.bilheteid.sessaoid.salaid.cinemaid
 
     if cinema:
-        avg_cinema = Avaliacoes.objects.filter(
-            venda__linhas__bilheteid__sessaoid__salaid__cinemaid=cinema
-        ).aggregate(Avg('avaliacaocinema'))['avaliacaocinema__avg'] or 0.0
-        cinema.ranking = round(float(avg_cinema), 1)
+        avg_cinema = call_db_function('fn_calcular_media_avaliacao_cinema', cinema.cinemaid)
+        cinema.ranking = float(avg_cinema)
         cinema.save()
 
     # 2. Update Employee Ranking
     if venda.funcionarioid:
         emp = venda.funcionarioid
-        avg_emp = Avaliacoes.objects.filter(venda__funcionarioid=emp).aggregate(Avg('avaliacaofuncionario'))['avaliacaofuncionario__avg'] or 0.0
-        emp.ranking = round(float(avg_emp), 1)
+        avg_emp = call_db_function('fn_calcular_media_avaliacao_funcionario', emp.funcionarioid)
+        emp.ranking = float(avg_emp)
         emp.save()
 
     # 3. Update Movie Ranking(s)
     # A sale can have multiple movies. We update all movies involved in this sale.
     movies_in_sale = Filmes.objects.filter(sessoes__bilhetes__linhas_venda__vendaid=venda).distinct()
     for movie in movies_in_sale:
-        avg_movie = Avaliacoes.objects.filter(
-            venda__linhas__bilheteid__sessaoid__filmeid=movie
-        ).aggregate(Avg('avaliacaofilme'))['avaliacaofilme__avg'] or 0.0
-        movie.ranking = round(float(avg_movie), 1)
+        avg_movie = call_db_function('fn_calcular_media_avaliacao_filme', movie.filmeid)
+        movie.ranking = float(avg_movie)
         movie.save()
 
 

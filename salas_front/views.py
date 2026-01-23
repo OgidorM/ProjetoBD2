@@ -21,7 +21,15 @@ def adicionar_sala(request):
     if request.method == 'POST':
         form = SalaForm(request.POST)
         if form.is_valid():
-            form.save()
+            data = form.cleaned_data
+            with connection.cursor() as cursor:
+                cursor.execute("CALL inserir_sala(%s, %s, %s, %s, %s)", [
+                    data['cinemaid'].cinemaid,
+                    data['nomesala'],
+                    data['filas'],
+                    data['colunas'],
+                    data['tiposala']
+                ])
             return redirect('lista_salas')
     else:
         form = SalaForm()

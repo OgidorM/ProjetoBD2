@@ -1,3 +1,4 @@
+from datetime import datetime, date
 from django.contrib.auth.decorators import user_passes_test
 
 from django.shortcuts import render, redirect
@@ -14,6 +15,15 @@ def index(request):
 
 def lista_sessoes(request):
     sessoes = Sessoes.objects.select_related('filmeid', 'salaid').order_by('sessaoid')
+    
+    # Calculate occupation for each session
+    # Note: Ideally this should be done via annotation or in bulk, but we are mandated to use the specific function
+    for s in sessoes:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT fn_verificar_capacidade_sessao(%s)", [s.sessaoid])
+            result = cursor.fetchone()
+            s.ocupacao = result[0] if result else 0
+
     return render(request, 'sessoes_front/lista_sessoes.html', {'sessoes': sessoes})
 
 
@@ -28,17 +38,17 @@ def adicionar_sessao(request):
         if form.is_valid():
             # Get the cleaned data
             data = form.cleaned_data
+            
+            # Construct full datetime
+            inicio_dt = datetime.combine(date.today(), data['inicio'])
+            fim_dt = datetime.combine(date.today(), data['fim'])
 
-            # Insert using raw SQL to handle time -> timestamp conversion
             with connection.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO sessoes (salaid, filmeid, inicio, fim, versao, estadosessao, precosessao)
-                    VALUES (%s, %s, CURRENT_DATE + %s::time, CURRENT_DATE + %s::time, %s, %s, %s)
-                """, [
+                cursor.execute("CALL inserir_sessao(%s, %s, %s, %s, %s, %s, %s)", [
                     data['salaid'].salaid if data['salaid'] else None,
                     data['filmeid'].filmeid if data['filmeid'] else None,
-                    str(data['inicio']),
-                    str(data['fim']),
+                    inicio_dt,
+                    fim_dt,
                     data['versao'],
                     data['estadosessao'],
                     data['precosessao']
