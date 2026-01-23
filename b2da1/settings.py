@@ -93,8 +93,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'cinemaDB',
-        'USER': '',
-        'PASSWORD': '',
+        'USER': 'app_user',
+        'PASSWORD': 'app123',
         'HOST': 'localhost',
         'PORT': '5432',
     }

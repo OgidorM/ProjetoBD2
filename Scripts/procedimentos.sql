@@ -311,3 +311,106 @@ BEGIN
     VALUES (v_lugar, p_sessaoid, p_preco, NOW());
 END;
 $$;
+
+----------------------------------------------------------------------------------------------
+-- 9. REALIZAR VENDA UNIFICADA (Transação completa)
+----------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE realizar_venda_unificada(
+    p_clienteid INT,
+    p_funcionarioid INT,
+    p_sessaoid INT,
+    p_lugares_ids JSONB, -- Ex: '[1, 2, 3]'
+    p_produtos JSONB,    -- Ex: '[{"id": 1, "qtd": 2}, ...]'
+    INOUT p_vendaid INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_item JSONB;
+    v_lugar_sessao_id INT;
+    v_prod_id INT;
+    v_qtd INT;
+    v_preco NUMERIC;
+    v_stock_atual INT;
+    v_filmeid INT;
+    v_idade_ok BOOLEAN;
+    v_livre BOOLEAN;
+    v_bilheteid INT;
+    v_total NUMERIC := 0;
+BEGIN
+    -- 1. Criar Venda
+    INSERT INTO vendas (clienteid, funcionarioid, data, estadovenda, totalvenda)
+    VALUES (p_clienteid, p_funcionarioid, CURRENT_DATE, 'Concluída', 0)
+    RETURNING vendaid INTO p_vendaid;
+
+    -- 2. Processar Bilhetes (se houver sessão e lugares)
+    IF p_sessaoid IS NOT NULL AND p_lugares_ids IS NOT NULL AND jsonb_array_length(p_lugares_ids) > 0 THEN
+        -- Obter dados da sessão/filme
+        SELECT filmeid, precosessao INTO v_filmeid, v_preco
+        FROM sessoes WHERE sessaoid = p_sessaoid;
+
+        IF v_filmeid IS NULL THEN
+            RAISE EXCEPTION 'Sessão % não encontrada.', p_sessaoid;
+        END IF;
+
+        -- Verificar Idade
+        v_idade_ok := fn_verificar_idade_minima_filme(p_clienteid, v_filmeid);
+        IF NOT v_idade_ok THEN
+            RAISE EXCEPTION 'Cliente não tem idade suficiente para este filme.';
+        END IF;
+
+        -- Loop Lugares
+        FOR v_item IN SELECT * FROM jsonb_array_elements(p_lugares_ids)
+        LOOP
+            v_lugar_sessao_id := (v_item::TEXT)::INT;
+
+            -- Verificar disponibilidade
+            v_livre := fn_verificar_disponibilidade_lugar(p_sessaoid, v_lugar_sessao_id);
+            IF NOT v_livre THEN
+                RAISE EXCEPTION 'Lugar % já está ocupado.', v_lugar_sessao_id;
+            END IF;
+
+            -- Ocupar lugar
+            UPDATE lugaresSessao SET estado = 'OCUPADO' WHERE lugarsessaoid = v_lugar_sessao_id;
+
+            -- Criar Bilhete
+            INSERT INTO bilhetes (lugarid, sessaoid, precobilhete, emissao)
+            VALUES (v_lugar_sessao_id, p_sessaoid, v_preco, NOW())
+            RETURNING bilheteid INTO v_bilheteid;
+
+            -- Criar Linha de Venda
+            INSERT INTO vendalinhas (vendaid, bilheteid, quantidade, precolinha, total_linha_)
+            VALUES (p_vendaid, v_bilheteid, 1, v_preco, v_preco);
+        END LOOP;
+    END IF;
+
+    -- 3. Processar Produtos
+    IF p_produtos IS NOT NULL AND jsonb_array_length(p_produtos) > 0 THEN
+        FOR v_item IN SELECT * FROM jsonb_array_elements(p_produtos)
+        LOOP
+            v_prod_id := (v_item->>'id')::INT;
+            v_qtd := (v_item->>'qtd')::INT;
+
+            -- Obter preço e stock
+            SELECT precoproduto, stock INTO v_preco, v_stock_atual
+            FROM produtos WHERE produtoid = v_prod_id;
+
+            IF v_preco IS NULL THEN
+                RAISE EXCEPTION 'Produto % não encontrado.', v_prod_id;
+            END IF;
+
+            IF v_stock_atual < v_qtd THEN
+                RAISE EXCEPTION 'Stock insuficiente para o produto %.', v_prod_id;
+            END IF;
+
+            -- O trigger trg_atualizar_stock_produtos vai descontar o stock automaticamente
+            -- quando inserirmos na vendalinhas.
+
+            INSERT INTO vendalinhas (vendaid, produtoid, quantidade, precolinha, total_linha_)
+            VALUES (p_vendaid, v_prod_id, v_qtd, v_preco, v_preco * v_qtd);
+        END LOOP;
+    END IF;
+
+    -- O total da venda é atualizado automaticamente pelo trigger trg_calcular_total_venda
+END;
+$$;

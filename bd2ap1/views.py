@@ -249,7 +249,7 @@ def produtos_api(request):
 @permission_classes([IsAuthenticated])
 def comprar_produtos_api(request):
     """
-    API to process a purchase of concession items
+    API to process a purchase of concession items using Stored Procedure
     """
     try:
         user = request.user
@@ -258,52 +258,44 @@ def comprar_produtos_api(request):
         if not items:
             return Response({"error": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-        with transaction.atomic():
-            # --- CORREÇÃO DE ARQUITETURA ---
-            try:
-                profile = ClienteProfile.objects.select_related('cliente_dados').get(user=user)
-                cliente = profile.cliente_dados
-            except ClienteProfile.DoesNotExist:
-                # Fallback para admin ou users antigos
-                cliente = Clientes.objects.filter(nomecliente=user.username).first()
-                if not cliente:
-                    cliente = Clientes.objects.create(nomecliente=user.username, emailcliente=user.email)
-            # -------------------------------
+        # 1. Client ID
+        try:
+            profile = ClienteProfile.objects.select_related('cliente_dados').get(user=user)
+            cliente_id = profile.cliente_dados.clienteid
+        except ClienteProfile.DoesNotExist:
+            cliente = Clientes.objects.filter(nomecliente=user.username).first()
+            if not cliente:
+                cliente = Clientes.objects.create(nomecliente=user.username, emailcliente=user.email)
+            cliente_id = cliente.clienteid
 
-            venda = Vendas.objects.create(
-                clienteid=cliente,
-                data=timezone.now().date(),
-                estadovenda='Concluída',
-                totalvenda=0
+        # 2. Products JSON
+        products_list = []
+        for item in items:
+            products_list.append({"id": item['produtoid'], "qtd": int(item['quantidade'])})
+        
+        products_json = json.dumps(products_list)
+
+        # 3. Call Procedure
+        from django.db import connection
+        with connection.cursor() as cursor:
+            params = [
+                cliente_id, 
+                None, 
+                None, # No session
+                None, # No seats
+                products_json, 
+                0 # Placeholder for INOUT p_vendaid
+            ]
+            cursor.execute(
+                "CALL realizar_venda_unificada(%s, %s, %s, %s, %s, %s)", 
+                params
             )
+            result = cursor.fetchone()
+            venda_id = result[0]
 
-            total = 0
-            for item in items:
-                produto = Produtos.objects.select_for_update().get(pk=item['produtoid'])
-                qty = int(item['quantidade'])
+            log_action(user, 'buy_concessions_proc', 'Vendas', venda_id, {"proc": True})
 
-                if produto.stock < qty:
-                    raise Exception(f"Insufficient stock for {produto.nomeproduto}")
-
-                produto.stock -= qty
-                produto.save()
-
-                line_total = produto.precoproduto * qty
-                VendaLinhas.objects.create(
-                    vendaid=venda,
-                    produtoid=produto,
-                    quantidade=qty,
-                    precolinha=produto.precoproduto,
-                    total_linha=line_total
-                )
-                total += line_total
-
-            venda.totalvenda = total
-            venda.save()
-
-            log_action(user, 'buy_concessions', 'Vendas', venda.vendaid, {"total": float(total)})
-
-            return Response({"message": "Purchase successful", "venda_id": venda.vendaid},
+            return Response({"message": "Purchase successful", "venda_id": venda_id},
                             status=status.HTTP_201_CREATED)
 
     except Exception as e:
@@ -425,108 +417,65 @@ def lugares_sessao_api(request, sessaoid):
 @permission_classes([IsAuthenticated])
 def criar_venda_api(request):
     """
-    API to process a unified purchase (tickets and/or concessions)
+    API to process a unified purchase (tickets and/or concessions) using Stored Procedure
     """
     try:
         user = request.user
         data = request.data
         sessaoid = data.get('sessaoid')
         lugares_ids = data.get('lugares_ids', [])
-        products = data.get('products', [])
+        products_raw = data.get('products', [])
 
-        if not lugares_ids and not products:
+        if not lugares_ids and not products_raw:
             return Response({"error": "Empty cart"}, status=status.HTTP_400_BAD_REQUEST)
 
-        with transaction.atomic():
-            # --- CORREÇÃO DE ARQUITETURA ---
-            try:
-                profile = ClienteProfile.objects.select_related('cliente_dados').get(user=user)
-                cliente = profile.cliente_dados
-            except ClienteProfile.DoesNotExist:
-                # Fallback para admin ou users antigos
-                cliente = Clientes.objects.filter(nomecliente=user.username).first()
-                if not cliente:
-                    cliente = Clientes.objects.create(nomecliente=user.username, emailcliente=user.email)
-            # -------------------------------
+        # Prepare data for Procedure
+        # 1. Client ID
+        try:
+            profile = ClienteProfile.objects.select_related('cliente_dados').get(user=user)
+            cliente_id = profile.cliente_dados.clienteid
+        except ClienteProfile.DoesNotExist:
+            # Fallback for admin/legacy
+            cliente = Clientes.objects.filter(nomecliente=user.username).first()
+            if not cliente:
+                # Need to create it? Or fail. Ideally create.
+                # Use procedure `inserir_cliente`? Or ORM.
+                # For simplicity in this specific "Get ID" block, ORM is fine or call existing logic.
+                # But let's assume valid user for now or quick create.
+                cliente = Clientes.objects.create(nomecliente=user.username, emailcliente=user.email)
+            cliente_id = cliente.clienteid
 
-            venda = Vendas.objects.create(
-                clienteid=cliente,
-                data=timezone.now().date(),
-                estadovenda='Concluída',
-                totalvenda=0
+        # 2. Products JSON
+        products_list = []
+        for p in products_raw:
+            products_list.append({"id": p['produtoid'], "qtd": int(p['quantidade'])})
+        
+        products_json = json.dumps(products_list)
+        lugares_json = json.dumps(lugares_ids)
+
+        # 3. Call Procedure
+        from django.db import connection
+        with connection.cursor() as cursor:
+            params = [
+                cliente_id, 
+                None, # Funcionario ID (optional/null for online sales)
+                sessaoid if sessaoid else None, 
+                lugares_json, 
+                products_json, 
+                0 # Placeholder for INOUT p_vendaid
+            ]
+            
+            # Use CALL explicitly for Procedures
+            cursor.execute(
+                "CALL realizar_venda_unificada(%s, %s, %s, %s, %s, %s)", 
+                params
             )
+            result = cursor.fetchone()
+            venda_id = result[0]
 
-            total = 0
+            log_action(user, 'unified_purchase_proc', 'Vendas', venda_id, {"proc": True})
 
-            # 3. Process Tickets
-            if sessaoid and lugares_ids:
-                sessao = Sessoes.objects.get(pk=sessaoid)
-                
-                # Verify age using SQL function
-                from django.db import connection
-                with connection.cursor() as cursor:
-                    cursor.execute("SELECT fn_verificar_idade_minima_filme(%s, %s)", [
-                        cliente.clienteid, 
-                        sessao.filmeid.filmeid
-                    ])
-                    allowed = cursor.fetchone()[0]
-                
-                if not allowed:
-                     raise Exception("Cliente não tem idade suficiente para este filme.")
-
-                price = sessao.precosessao or 10.00
-
-                for ls_id in lugares_ids:
-                    # Lock row
-                    ls = LugaresSessao.objects.select_for_update().get(pk=ls_id)
-                    
-                    # Verify availability using SQL function
-                    with connection.cursor() as cursor:
-                        cursor.execute("SELECT fn_verificar_disponibilidade_lugar(%s, %s)", [sessao.sessaoid, ls_id])
-                        is_free = cursor.fetchone()[0]
-
-                    if not is_free:
-                        lugar_info = f"{ls.lugarid.fila}{ls.lugarid.numero}" if ls.lugarid else "Unknown"
-                        raise Exception(f"Lugar {lugar_info} is no longer available")
-
-                    ls.estado = 'Ocupado'
-                    ls.save()
-
-                    bilhete = Bilhetes.objects.create(
-                        lugarid=ls.lugarid, sessaoid=sessao,
-                        precobilhete=price, emissao=timezone.now()
-                    )
-
-                    VendaLinhas.objects.create(
-                        vendaid=venda, bilheteid=bilhete, quantidade=1,
-                        precolinha=price, total_linha=price
-                    )
-                    total += price
-
-            # 4. Process Concessions
-            for item in products:
-                produto = Produtos.objects.select_for_update().get(pk=item['produtoid'])
-                qty = int(item['quantidade'])
-
-                if produto.stock < qty:
-                    raise Exception(f"Insufficient stock for {produto.nomeproduto}")
-
-                produto.stock -= qty
-                produto.save()
-
-                line_total = produto.precoproduto * qty
-                VendaLinhas.objects.create(
-                    vendaid=venda, produtoid=produto, quantidade=qty,
-                    precolinha=produto.precoproduto, total_linha=line_total
-                )
-                total += line_total
-
-            venda.totalvenda = total
-            venda.save()
-
-            log_action(user, 'unified_purchase', 'Vendas', venda.vendaid, {"total": float(total)})
-
-            return Response({"message": "Purchase successful", "venda_id": venda.vendaid},
+            return Response({"message": "Purchase successful", "venda_id": venda_id},
                             status=status.HTTP_201_CREATED)
 
     except Exception as e:
@@ -1295,6 +1244,10 @@ def fatura_digital_api(request, vendaid):
             if not row or row[0] is None:
                 return Response({"error": "Erro ao gerar dados da fatura"}, status=status.HTTP_404_NOT_FOUND)
             
+            data = row[0]
+            if isinstance(data, str):
+                data = json.loads(data)
+
             return Response(data)
             
     except Exception as e:
