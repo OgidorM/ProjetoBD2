@@ -49,7 +49,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 GRANT SELECT ON TABLES TO analista;
 --------------------------------------------------------------
 
-SELECT rolname, rolsuper, rolcanlogin, 
+SELECT rolname, rolsuper, rolcanlogin
 FROM pg_roles
 WHERE rolname IN ('admin_bd', 'app_user', 'analista');
 
