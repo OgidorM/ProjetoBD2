@@ -265,7 +265,11 @@ def comprar_produtos_api(request):
         except ClienteProfile.DoesNotExist:
             cliente = Clientes.objects.filter(nomecliente=user.username).first()
             if not cliente:
-                cliente = Clientes.objects.create(nomecliente=user.username, emailcliente=user.email)
+                cliente = Clientes.objects.create(
+                    nomecliente=user.username, 
+                    emailcliente=user.email,
+                    datanascimento='2000-01-01'
+                )
             cliente_id = cliente.clienteid
 
         # 2. Products JSON
@@ -442,7 +446,11 @@ def criar_venda_api(request):
                 # Use procedure `inserir_cliente`? Or ORM.
                 # For simplicity in this specific "Get ID" block, ORM is fine or call existing logic.
                 # But let's assume valid user for now or quick create.
-                cliente = Clientes.objects.create(nomecliente=user.username, emailcliente=user.email)
+                cliente = Clientes.objects.create(
+                    nomecliente=user.username, 
+                    emailcliente=user.email,
+                    datanascimento='2000-01-01'
+                )
             cliente_id = cliente.clienteid
 
         # 2. Products JSON
@@ -663,8 +671,8 @@ def admin_create_produto_api(request):
         with connection.cursor() as cursor:
             cursor.execute("CALL inserir_produto(%s, %s, %s, %s)", [
                 request.data.get('nome'),
-                request.data.get('preco'),
-                request.data.get('stock', 0),
+                float(request.data.get('preco')),
+                int(request.data.get('stock', 0)),
                 True
             ])
         
@@ -941,8 +949,8 @@ def admin_create_room_api(request, cinema_id):
             cursor.execute("CALL inserir_sala(%s, %s, %s, %s, %s)", [
                 cinema.cinemaid,
                 request.data.get('nome'),
-                request.data.get('filas', 0),
-                request.data.get('colunas', 0),
+                int(request.data.get('filas', 0)),
+                int(request.data.get('colunas', 0)),
                 request.data.get('tipo', 'Normal')
             ])
             
@@ -1002,17 +1010,20 @@ def criar_sessao_api(request):
         # But wait, in `AdminSessionPage.jsx` payload sends ISO string. Serializer parses it.
         # `Sessoes` model has `inicio` as DateTimeField.
         
-        from django.db import connection
-        with connection.cursor() as cursor:
-            cursor.execute("CALL inserir_sessao(%s, %s, %s, %s, %s, %s, %s)", [
-                data['salaid'].salaid if data.get('salaid') else None,
-                data['filmeid'].filmeid if data.get('filmeid') else None,
-                data['inicio'],
-                data['fim'],
-                data.get('versao', '2D'),
-                data.get('estadosessao', 'Agendada'),
-                data.get('precosessao', 0)
-            ])
+        try:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("CALL inserir_sessao(%s, %s, %s::timestamp, %s::timestamp, %s, %s, %s)", [
+                    data['salaid'].salaid if data.get('salaid') else None,
+                    data['filmeid'].filmeid if data.get('filmeid') else None,
+                    data['inicio'],
+                    data['fim'],
+                    data.get('versao', '2D'),
+                    data.get('estadosessao', 'Agendada'),
+                    data.get('precosessao', 0)
+                ])
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         # Logic: If the movie was "global" (no cinema), assign it to this session's cinema
         # This was in the old code. We can keep it if we fetch the session or movie back.
@@ -1062,6 +1073,30 @@ def deletar_sessao_api(request, sessaoid):
         return Response({"message": "Session deleted successfully"}, status=status.HTTP_200_OK)
     except Sessoes.DoesNotExist:
         return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def atualizar_sessao_api(request, sessaoid):
+    """
+    API endpoint to update session state (Admin only)
+    """
+    if not request.user.is_staff:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+    novo_estado = request.data.get('estadosessao')
+    if not novo_estado:
+        return Response({"error": "State is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("CALL alterar_estado_sessao(%s, %s)", [sessaoid, novo_estado])
+            
+        return Response({"message": "Session updated successfully"})
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

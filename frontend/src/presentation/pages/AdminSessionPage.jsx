@@ -15,7 +15,7 @@ const AdminSessionPage = () => {
         endTime: '',
         versao: '2D',
         precosessao: '10.00',
-        estadosessao: 'Agendada'
+        estadosessao: 'Ativa'
     });
     const [sessions, setSessions] = useState([]);
     const [tickets, setTickets] = useState([]);
@@ -101,6 +101,17 @@ const AdminSessionPage = () => {
             }
         } catch (error) {
             setMessage({ type: 'error', text: error.message || 'Falha ao cancelar bilhete' });
+        }
+    };
+
+    const handleUpdateState = async (sessionId, newState) => {
+        try {
+            const client = new ApiClient();
+            await client.post(API_CONFIG.ENDPOINTS.UPDATE_SESSION(sessionId), { estadosessao: newState });
+            setMessage({ type: 'success', text: 'Estado da sessão atualizado' });
+            fetchSessions();
+        } catch (error) {
+            setMessage({ type: 'error', text: error.message || 'Falha ao atualizar estado' });
         }
     };
 
@@ -339,6 +350,7 @@ const AdminSessionPage = () => {
                                         onChange={handleChange}
                                         className="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white focus:border-yellow outline-none"
                                     >
+                                        <option value="Ativa">Ativa</option>
                                         <option value="Agendada">Agendada</option>
                                         <option value="Cancelada">Cancelada</option>
                                         <option value="Concluida">Concluída</option>
@@ -407,6 +419,18 @@ const AdminSessionPage = () => {
                                         
                                         <div className="flex justify-between items-center mt-4 pt-3 border-t border-white/10 gap-2">
                                             <span className="text-sm text-white/50">ID: {session.sessaoid}</span>
+                                            
+                                            <select
+                                                value={session.estadosessao}
+                                                onChange={(e) => handleUpdateState(session.sessaoid, e.target.value)}
+                                                className="bg-black/50 border border-white/20 rounded text-xs text-white p-1 outline-none focus:border-yellow"
+                                            >
+                                                <option value="Ativa">Ativa</option>
+                                                <option value="Agendada">Agendada</option>
+                                                <option value="Concluída">Concluída</option>
+                                                <option value="Cancelada">Cancelada</option>
+                                            </select>
+
                                             <div className="flex gap-2">
                                                 <button 
                                                     onClick={() => handleViewDetails(session)}

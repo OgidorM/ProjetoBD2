@@ -14,6 +14,7 @@ export const API_CONFIG = {
         CREATE_SESSION: '/api/sessoes/criar/',
         ALL_SESSIONS: '/api/sessoes/',
         DELETE_SESSION: (id) => `/api/sessoes/${id}/deletar/`,
+        UPDATE_SESSION: (id) => `/api/sessoes/${id}/atualizar/`,
         SESSION_TICKETS: (id) => `/api/sessoes/${id}/bilhetes/`,
         CANCEL_TICKET: (id) => `/api/bilhetes/${id}/cancelar/`,
         ROOMS: '/api/salas/',

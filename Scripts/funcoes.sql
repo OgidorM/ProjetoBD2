@@ -39,7 +39,7 @@ BEGIN
         RAISE EXCEPTION 'LugarSessao % não existe na sessão %', p_lugarsessao, p_sessaoid;
     END IF;
 
-    RETURN v_estado = 'LIVRE';
+    RETURN v_estado = 'Livre';
 END;
 $$ LANGUAGE plpgsql;
 
@@ -117,7 +117,7 @@ BEGIN
     SELECT COUNT(*) INTO v_ocupados
     FROM lugaresSessao
     WHERE sessaoid = p_sessaoid
-      AND estado = 'OCUPADO';
+      AND estado = 'Ocupado';
 
     IF v_total = 0 THEN
         RETURN 0;
@@ -193,7 +193,7 @@ BEGIN
 
     -- Determinar idade mínima a partir da classificação
     CASE v_classificacao
-        WHEN 'LIVRE' THEN v_idade_min := 0;
+        WHEN 'Livre' THEN v_idade_min := 0;
         WHEN 'M/6'  THEN v_idade_min := 6;
         WHEN 'M/12' THEN v_idade_min := 12;
         WHEN 'M/16' THEN v_idade_min := 16;

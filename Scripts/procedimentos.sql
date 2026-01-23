@@ -370,9 +370,6 @@ BEGIN
                 RAISE EXCEPTION 'Lugar % já está ocupado.', v_lugar_sessao_id;
             END IF;
 
-            -- Ocupar lugar
-            UPDATE lugaresSessao SET estado = 'OCUPADO' WHERE lugarsessaoid = v_lugar_sessao_id;
-
             -- Criar Bilhete
             INSERT INTO bilhetes (lugarid, sessaoid, precobilhete, emissao)
             VALUES (v_lugar_sessao_id, p_sessaoid, v_preco, NOW())
@@ -412,5 +409,25 @@ BEGIN
     END IF;
 
     -- O total da venda é atualizado automaticamente pelo trigger trg_calcular_total_venda
+END;
+$$;
+
+----------------------------------------------------------------------------------------------
+-- 10. ALTERAR ESTADO SESSÃO
+----------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE alterar_estado_sessao(
+    p_sessaoid INT,
+    p_novo_estado VARCHAR
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    UPDATE sessoes
+    SET estadosessao = p_novo_estado
+    WHERE sessaoid = p_sessaoid;
+    
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Sessão % não encontrada.', p_sessaoid;
+    END IF;
 END;
 $$;

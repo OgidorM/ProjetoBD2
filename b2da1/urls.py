@@ -36,6 +36,7 @@ urlpatterns = [
     path('api/avaliacoes/criar/', api_views.criar_avaliacao_api, name='criar_avaliacao_api'),
     path('api/sessoes/', api_views.lista_sessoes_api, name='lista_sessoes_api'),
     path('api/sessoes/<int:sessaoid>/deletar/', api_views.deletar_sessao_api, name='deletar_sessao_api'),
+    path('api/sessoes/<int:sessaoid>/atualizar/', api_views.atualizar_sessao_api, name='atualizar_sessao_api'),
     path('api/sessoes/<int:sessaoid>/bilhetes/', api_views.bilhetes_sessao_api, name='bilhetes_sessao_api'),
     path('api/bilhetes/<int:bilheteid>/digital/', api_views.bilhete_digital_api, name='bilhete_digital_api'),
     path('api/bilhetes/<int:bilheteid>/cancelar/', api_views.cancelar_bilhete_api, name='cancelar_bilhete_api'),

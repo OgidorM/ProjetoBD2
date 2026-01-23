@@ -10,7 +10,7 @@ SELECT
     s.fim,
     sa.nomesala,
     c.nomecinema,
-    COUNT(ls.lugarsessaoid) FILTER (WHERE ls.estado = 'LIVRE') AS lugares_livres,
+    COUNT(ls.lugarsessaoid) FILTER (WHERE ls.estado = 'Livre') AS lugares_livres,
     COUNT(ls.lugarsessaoid) AS lugares_totais
 FROM filmes f
 JOIN sessoes s ON s.filmeid = f.filmeid
@@ -120,7 +120,7 @@ JOIN salas sa ON sa.salaid = s.salaid
 JOIN cinemas c ON c.cinemaid = sa.cinemaid
 JOIN lugares l ON l.salaid = sa.salaid
 JOIN lugaresSessao ls ON ls.lugarid = l.lugarid AND ls.sessaoid = s.sessaoid
-WHERE ls.estado = 'LIVRE'
+WHERE ls.estado = 'Livre'
 ORDER BY s.sessaoid, l.fila, l.numero;
 
 -- ==============================================================
@@ -151,8 +151,8 @@ SELECT
     sa.nomesala,
     s.sessaoid,
     COUNT(ls.lugarSessaoid) AS total_lugares,
-    COUNT(ls.lugarSessaoid) FILTER (WHERE ls.estado = 'OCUPADO') AS lugares_ocupados,
-    COUNT(ls.lugarSessaoid) FILTER (WHERE ls.estado = 'LIVRE') AS lugares_livres
+    COUNT(ls.lugarSessaoid) FILTER (WHERE ls.estado = 'Ocupado') AS lugares_ocupados,
+    COUNT(ls.lugarSessaoid) FILTER (WHERE ls.estado = 'Livre') AS lugares_livres
 FROM sessoes s
 JOIN salas sa ON sa.salaid = s.salaid
 JOIN lugares l ON l.salaid = sa.salaid

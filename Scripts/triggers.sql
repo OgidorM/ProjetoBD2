@@ -100,7 +100,7 @@ EXECUTE FUNCTION trg_validar_valores_avaliacoes();
 /*==============================================================
     3 - TOTALVENDA sempre atualizado                             
     O total da venda atualiza sempre que são adicionadas coisas
-/*==============================================================*/
+==============================================================*/
 CREATE OR REPLACE FUNCTION trg_calcular_total_venda()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -124,7 +124,7 @@ EXECUTE FUNCTION trg_calcular_total_venda();
 
 /*==============================================================
     4 - Reduz stock quando e vendido um produto                     
-/*==============================================================*/
+==============================================================*/
 CREATE OR REPLACE FUNCTION trg_atualizar_stock_produtos()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -147,7 +147,7 @@ EXECUTE FUNCTION trg_atualizar_stock_produtos();
 /*==============================================================
     5 - Verifica limites de exibicao do filme                    
     Nao abrir sessoes para filmes que nao estão em exibição ou já passaram
-/*==============================================================*/
+==============================================================*/
 CREATE OR REPLACE FUNCTION trg_confirmar_limites_exibicao_filme()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -180,7 +180,7 @@ EXECUTE FUNCTION trg_confirmar_limites_exibicao_filme();
 /*==============================================================
     6 - Verifica inicio < fim do filme                            
     o filme nao pode acabar antes de comecar                
-/*==============================================================*/
+==============================================================*/
 CREATE OR REPLACE FUNCTION trg_confirmar_inicio_menor_que_fim()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -201,7 +201,7 @@ EXECUTE FUNCTION trg_confirmar_inicio_menor_que_fim();
 /*==============================================================
     7 - Impede sessoes sobrepostas na mesma sala                 
     Se a sala ja tem filme aquela hora, nao deixa marcar outro em cima        
-/*==============================================================*/
+==============================================================*/
 CREATE OR REPLACE FUNCTION trg_verificar_datas_sessao()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -260,7 +260,7 @@ EXECUTE FUNCTION trg_verificar_capacidade_sala();
 /*==============================================================
     9 - Criar lugares globais por sala                        
     mediante o numero de filas e colunas cria a mtriz de lugares
-/*==============================================================*/
+==============================================================*/
 CREATE OR REPLACE FUNCTION gerar_lugares_automatica()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -320,12 +320,12 @@ EXECUTE FUNCTION atualizar_capacidade_sala();
     11 - Copiar lugares para a sessao (estado LIVRE)             
     Isto prepara a sala para o filme. Copia o mapa da sala 
     para os lugares a sessao com o estado LIVRE 
-/*==============================================================*/
+==============================================================*/
 CREATE OR REPLACE FUNCTION gerar_lugares_sessao()
 RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO lugaresSessao (sessaoid, lugarid, estado)
-    SELECT NEW.sessaoid, lugarid, 'LIVRE'
+    SELECT NEW.sessaoid, lugarid, 'Livre'
     FROM lugares
     WHERE salaid = NEW.salaid;
 
@@ -352,7 +352,7 @@ BEGIN
     FROM lugaresSessao
     WHERE lugarSessaoid = NEW.lugarid;
 
-    IF estado_atual <> 'LIVRE' THEN
+    IF estado_atual <> 'Livre' THEN
         RAISE EXCEPTION 'Lugar da sessão % não está livre.', NEW.lugarid;
     END IF;
 
@@ -373,7 +373,7 @@ CREATE OR REPLACE FUNCTION trg_ocupar_lugar_apos_bilhete()
 RETURNS TRIGGER AS $$
 BEGIN
     UPDATE lugaresSessao
-    SET estado = 'OCUPADO'
+    SET estado = 'Ocupado'
     WHERE lugarSessaoid = NEW.lugarid;
 
     RETURN NEW;
@@ -388,12 +388,12 @@ EXECUTE FUNCTION trg_ocupar_lugar_apos_bilhete();
 
 /*==============================================================
     14 - Liberta o lugar ao eliminar bilhete                     
-/*==============================================================*/
+==============================================================*/
 CREATE OR REPLACE FUNCTION trg_libertar_lugar_apos_cancelamento_bilhete()
 RETURNS TRIGGER AS $$
 BEGIN
     UPDATE lugaresSessao
-    SET estado = 'LIVRE'
+    SET estado = Livre
     WHERE lugarSessaoid = OLD.lugarid;
 
     RETURN OLD;
@@ -408,7 +408,7 @@ EXECUTE FUNCTION trg_libertar_lugar_apos_cancelamento_bilhete();
 
 /*==============================================================
     15 - Impedir bilhetes em sessoes terminadas ou nao ativas    
-/*==============================================================*/
+==============================================================*/
 CREATE OR REPLACE FUNCTION trg_impedir_bilhete_para_sessao_terminada()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -436,7 +436,7 @@ EXECUTE FUNCTION trg_impedir_bilhete_para_sessao_terminada();
 /*==============================================================
     16 - Verificar idade minima para comprar bilhete             
     Mediante a data de nascimento verifica se encaixa na classificação do filme
-/*==============================================================*/
+==============================================================*/
 CREATE OR REPLACE FUNCTION trg_verificar_idade_para_filme()
 RETURNS TRIGGER AS $$
 DECLARE
