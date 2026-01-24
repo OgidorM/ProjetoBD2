@@ -131,6 +131,7 @@ SELECT
     f.funcionarioid,
     f.nomefuncionario,
     f.cargo,
+    f.salario,
     c.nomecinema,
     ROUND(AVG(a.avaliacaofuncionario)::NUMERIC, 2) AS media_avaliacao,
     COUNT(v.vendaid) AS total_vendas,
@@ -139,7 +140,7 @@ FROM funcionarios f
 JOIN cinemas c ON c.cinemaid = f.cinemaid
 LEFT JOIN vendas v ON v.funcionarioid = f.funcionarioid
 LEFT JOIN avaliacoes a ON a.vendaid = v.vendaid
-GROUP BY f.funcionarioid, f.nomefuncionario, f.cargo, c.nomecinema
+GROUP BY f.funcionarioid, f.nomefuncionario, f.cargo, f.salario, c.nomecinema
 ORDER BY media_avaliacao DESC, total_faturado DESC;
 
 -- ==============================================================

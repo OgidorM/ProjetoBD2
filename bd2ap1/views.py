@@ -654,10 +654,25 @@ def admin_funcionarios_api(request):
         with connections['admin'].cursor() as cursor:
             cursor.execute("SELECT * FROM mv_funcionarios_top")
             columns = [col[0] for col in cursor.description]
-            data = [
+            raw_data = [
                 dict(zip(columns, row))
                 for row in cursor.fetchall()
             ]
+            
+            # Map to frontend expected format
+            data = []
+            for item in raw_data:
+                data.append({
+                    "id": item['funcionarioid'],
+                    "nome": item['nomefuncionario'],
+                    "cargo": item['cargo'],
+                    "cinema": item['nomecinema'],
+                    "salario": item.get('salario', 0), # Added to MV
+                    "media_avaliacao": item.get('media_avaliacao'),
+                    "total_vendas": item.get('total_vendas'),
+                    "total_faturado": item.get('total_faturado')
+                })
+                
         return Response(data)
 
     if request.method == 'POST':

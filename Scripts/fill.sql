@@ -110,3 +110,9 @@ INSERT INTO avaliacoes (vendaid,tituloavaliacao,avaliacaocinema,avaliacaofilme,a
 (1,'Ótima Experiência',5,5,5,'Cinema confortável e bom atendimento.'),
 (2,'Filme Muito Bom',4,5,5,'A qualidade da imagem foi excelente.'),
 (3,'Som Poderia Melhorar',3,4,4,'Achei o som um pouco baixo.');
+
+--Refresh inicial
+REFRESH MATERIALIZED VIEW mv_funcionarios_top;
+REFRESH MATERIALIZED VIEW mv_ocupacao_salas;
+REFRESH MATERIALIZED VIEW mv_vendas_diarias;
+REFRESH MATERIALIZED VIEW mv_historico_clientes;
