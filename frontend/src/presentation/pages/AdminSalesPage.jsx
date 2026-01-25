@@ -33,7 +33,7 @@ const AdminSalesPage = () => {
         return true;
     });
 
-    const totalRevenue = filteredSales.reduce((acc, sale) => acc + parseFloat(sale.total), 0).toFixed(2);
+    const totalRevenue = filteredSales.reduce((acc, sale) => acc + (parseFloat(sale.total) || 0), 0).toFixed(2);
 
     const handleExportCsv = () => {
         let url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.EXPORT_SALES_CSV}`;

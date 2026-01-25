@@ -213,7 +213,7 @@ $$ LANGUAGE plpgsql;
 ------------------------------------------------------------------------------------------------
 -- 9. HISTORICO DE VENDAS
 ------------------------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION api_obter_historico_vendas(p_clienteid INT)
+CREATE OR REPLACE FUNCTION fn_obter_historico_vendas_cliente(p_clienteid INT)
 RETURNS JSON
 LANGUAGE plpgsql
 AS $$
@@ -271,6 +271,65 @@ BEGIN
 
     -- Se não encontrar vendas, v_resultado será NULL.
     -- Retornamos '[]' (array vazio) nesse caso.
+    RETURN COALESCE(v_resultado, '[]'::json);
+END;
+$$;
+
+------------------------------------------------------------------------------------------------
+-- 10. LISTAR TODAS AS VENDAS
+------------------------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_listar_todas_vendas()
+RETURNS JSON
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    v_resultado JSON;
+BEGIN
+    SELECT 
+        json_agg(
+            json_build_object(
+                'id', v.vendaid,
+                'cliente', COALESCE(c.nomecliente, 'Desconhecido'),
+                'data', v.data,
+                'total', COALESCE(v.totalvenda, 0),
+                'items', (
+                    SELECT COALESCE(json_agg(
+                        CASE 
+                            -- CASO SEJA BILHETE
+                            WHEN vl.bilheteid IS NOT NULL THEN json_build_object(
+                                'tipo', 'ticket',
+                                'filme', f.titulo,
+                                'sala', COALESCE(s.nomesala, 'Sala N/A'),
+                                'data', sess.inicio,
+                                'lugar', CONCAT(lug.fila, lug.numero),
+                                'quantidade', vl.quantidade,
+                                'preco', vl.precolinha
+                            )
+                            -- CASO SEJA PRODUTO
+                            ELSE json_build_object(
+                                'tipo', 'produto',
+                                'nome', prod.nomeproduto,
+                                'quantidade', vl.quantidade,
+                                'preco', vl.precolinha
+                            )
+                        END
+                    ), '[]'::json)
+                    FROM vendalinhas vl
+                    LEFT JOIN bilhetes b ON vl.bilheteid = b.bilheteid
+                    LEFT JOIN sessoes sess ON b.sessaoid = sess.sessaoid
+                    LEFT JOIN filmes f ON sess.filmeid = f.filmeid
+                    LEFT JOIN salas s ON sess.salaid = s.salaid
+                    LEFT JOIN lugares lug ON b.lugarid = lug.lugarid
+                    LEFT JOIN produtos prod ON vl.produtoid = prod.produtoid
+                    WHERE vl.vendaid = v.vendaid
+                )
+            ) ORDER BY v.data DESC, v.vendaid DESC
+        )
+    INTO v_resultado
+    FROM vendas v
+    LEFT JOIN clientes c ON v.clienteid = c.clienteid;
+
     RETURN COALESCE(v_resultado, '[]'::json);
 END;
 $$;

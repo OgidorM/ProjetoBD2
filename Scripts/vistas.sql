@@ -126,7 +126,7 @@ ORDER BY s.sessaoid, l.fila, l.numero;
 -- ==============================================================
 -- Vista materializada: Ranking de funcionários com vendas e avaliações
 -- ==============================================================
-CREATE MATERIALIZED VIEW mv_funcionarios_top AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_funcionarios_top AS
 SELECT
     f.funcionarioid,
     f.nomefuncionario,
@@ -142,11 +142,12 @@ LEFT JOIN vendas v ON v.funcionarioid = f.funcionarioid
 LEFT JOIN avaliacoes a ON a.vendaid = v.vendaid
 GROUP BY f.funcionarioid, f.nomefuncionario, f.cargo, f.salario, c.nomecinema
 ORDER BY media_avaliacao DESC, total_faturado DESC;
+REFRESH MATERIALIZED VIEW mv_funcionarios_top;
 
 -- ==============================================================
 -- Vista materializada: Ocupação total das salas por sessão
 -- ==============================================================
-CREATE MATERIALIZED VIEW mv_ocupacao_salas AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_ocupacao_salas AS
 SELECT
     s.salaid,
     sa.nomesala,
@@ -160,6 +161,7 @@ JOIN lugares l ON l.salaid = sa.salaid
 JOIN lugaresSessao ls ON ls.lugarid = l.lugarid AND ls.sessaoid = s.sessaoid
 GROUP BY s.sessaoid, s.salaid, sa.nomesala
 ORDER BY sa.nomesala, s.sessaoid;
+REFRESH MATERIALIZED VIEW mv_ocupacao_salas;
 
 -- ==============================================================
 -- Vista simples: Filmes em exibição atualmente
@@ -179,7 +181,7 @@ ORDER BY f.titulo;
 -- ==============================================================
 -- Vista materializada: Total de vendas por dia
 -- ==============================================================
-CREATE MATERIALIZED VIEW mv_vendas_diarias AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_vendas_diarias AS
 SELECT
     data,
     COUNT(vendaid) AS total_transacoes,
@@ -187,12 +189,13 @@ SELECT
 FROM vendas
 GROUP BY data
 ORDER BY data;
+REFRESH MATERIALIZED VIEW mv_vendas_diarias;
 
 -- ==============================================================
 -- Vista Materializada: Histórico de compras por cliente
 -- Mostra total gasto, num de compras e datas da primeira/ultima compra
 -- ==============================================================
-CREATE MATERIALIZED VIEW mv_historico_clientes AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_historico_clientes AS
 SELECT
     c.clienteid,
     c.nomecliente,
@@ -213,6 +216,7 @@ GROUP BY
     c.localidadecliente,
     c.codigopostalcliente
 ORDER BY total_gasto DESC;
+REFRESH MATERIALIZED VIEW mv_historico_clientes;
 
 -- ==============================================================
 -- Vista simples: Avaliações por cliente
@@ -246,3 +250,19 @@ SELECT
     localidadecliente
 FROM clientes
 ORDER BY nomecliente;
+
+-- ==============================================================
+-- Vista simples: Mostra apenas os lugares ocupados e detalhes
+-- ==============================================================
+CREATE OR REPLACE VIEW v_lugares_sessao_detalhado AS
+SELECT
+    ls.sessaoid,
+    ls.lugarsessaoid,
+    ls.estado,
+    l.lugarid,
+    l.fila,
+    l.numero,
+    l.tipolugar
+FROM lugaresSessao ls
+JOIN lugares l ON l.lugarid = ls.lugarid
+ORDER BY ls.sessaoid, l.fila, l.numero;

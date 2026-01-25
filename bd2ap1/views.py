@@ -300,12 +300,10 @@ def comprar_produtos_api(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-#------------------------------------------------------------------------------------------------------------------------
 @api_view(['GET'])
 def filmes_api(request):
     cinema_id = request.query_params.get('cinema')
     
-    # If admin/staff, return all movies. Otherwise, only movies with future sessions.
     if request.user.is_staff:
         queryset = Filmes.objects.select_related('categoriaid', 'classificacaoetaria', 'cinemaid')
         if cinema_id:
@@ -333,7 +331,7 @@ def filmes_api(request):
         filmes = queryset.all()
         serializer = FilmesSerializer(filmes, many=True)
         return Response(serializer.data)
-#------------------------------------------------------------------------------------------------------------------------
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -376,7 +374,7 @@ def sessoes_por_filme_api(request, filmeid):
 @api_view(['GET'])
 def lista_sessoes_api(request):
     now = timezone.now()
-    sessoes = Sessoes.objects.filter(inicio__gte=now).select_related('filmeid', 'salaid').order_by('inicio')
+    sessoes = Sessoes.objects.select_related('filmeid', 'salaid').order_by('fim')
     serializer = SessoesSerializer(sessoes, many=True)
     return Response(serializer.data)
 
@@ -858,58 +856,24 @@ def admin_create_movie_api(request):
 @permission_classes([IsAuthenticated])
 def admin_vendas_api(request):
     """
-    API to list every sale in the system (Admin only)
+    API to list every sale in the system (Admin only) - Otimizado
     """
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        vendas = Vendas.objects.using('admin').all().select_related('clienteid').order_by('-data', '-vendaid')
-        data = []
-        for v in vendas:
-            # Reusing the same detailed logic from minhas_vendas but for all sales
-            linhas = v.linhas.all().select_related('bilheteid__sessaoid__filmeid', 'bilheteid__sessaoid__salaid',
-                                                   'bilheteid__lugarid', 'produtoid')
-            items = []
-            for l in linhas:
-                if l.bilheteid:
-                    items.append({
-                        "tipo": "ticket",
-                        "filme": l.bilheteid.sessaoid.filmeid.titulo,
-                        "sala": l.bilheteid.sessaoid.salaid.nomesala,
-                        "data": l.bilheteid.sessaoid.inicio,
-                        "lugar": f"{l.bilheteid.lugarid.fila}{l.bilheteid.lugarid.numero}",
-                        "quantidade": l.quantidade,
-                        "preco": l.precolinha
-                    })
-                elif l.produtoid:
-                    items.append({
-                        "tipo": "produto",
-                        "nome": l.produtoid.nomeproduto,
-                        "quantidade": l.quantidade,
-                        "preco": l.precolinha
-                    })
-
-            # Calculate total from lines if totalvenda is 0 or None
-            calc_total = v.totalvenda
-            if not calc_total or calc_total == 0:
-                from django.db import connections
-                with connections['admin'].cursor() as cursor:
-                    cursor.execute("SELECT fn_calcular_total_venda(%s)", [v.vendaid])
-                    result = cursor.fetchone()
-                    calc_total = result[0] if result else 0
-
-            data.append({
-                "id": v.vendaid,
-                "cliente": v.clienteid.nomecliente if v.clienteid else "Unknown",
-                "data": v.data,
-                "total": calc_total,
-                "items": items
-            })
-
+        with connections['admin'].cursor() as cursor:
+            cursor.execute("SELECT fn_listar_todas_vendas()")
+            data = cursor.fetchone()[0]
+            
+        # Garantir que se vier como string (comum em setups raw SQL), fazemos parse
+        if isinstance(data, str):
+            data = json.loads(data)
+            
         return Response(data)
+
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
@@ -932,7 +896,7 @@ def admin_create_cinema_api(request):
                 request.data.get('morada', ''),
                 request.data.get('codigo_postal', ''),
                 request.data.get('localidade'),
-                0.0,
+        0.0,
                 None # Placeholder for OUT p_novo_id
             ])
             cinema_id = cursor.fetchone()[0]
@@ -1005,61 +969,50 @@ def admin_delete_movie_api(request, movie_id):
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def criar_sessao_api(request):
-    """
-    API endpoint to create a new session (Admin only)
-    """
+    # 1. Check permissions (Admin only)
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
-    if request.method == 'GET':
-        return Response({"message": "Use POST to create a session", "user": request.user.username})
-
-    serializer = SessaoCreateSerializer(data=request.data)
-    if serializer.is_valid():
-        data = serializer.validated_data
+    try:
+        data = request.data
         
-        # Construct start/end timestamps
-        # Data comes as validated data. 'inicio' and 'fim' are already datetime objects from serializer if model field is DateTimeField.
-        # But wait, in `AdminSessionPage.jsx` payload sends ISO string. Serializer parses it.
-        # `Sessoes` model has `inicio` as DateTimeField.
-        
-        try:
-            from django.db import connections
-            with connections['admin'].cursor() as cursor:
-                cursor.execute("CALL inserir_sessao(%s, %s, %s::timestamp, %s::timestamp, %s, %s, %s)", [
-                    data['salaid'].salaid if data.get('salaid') else None,
-                    data['filmeid'].filmeid if data.get('filmeid') else None,
-                    data['inicio'],
-                    data['fim'],
-                    data.get('versao', '2D'),
-                    data.get('estadosessao', 'Agendada'),
-                    data.get('precosessao', 0)
-                ])
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # 2. Basic validation for required fields
+        required_fields = ['salaid', 'filmeid', 'inicio', 'fim']
+        if not all(field in data for field in required_fields):
+            return Response({"error": "Missing required fields (salaid, filmeid, inicio, fim)."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Logic: If the movie was "global" (no cinema), assign it to this session's cinema
-        # This was in the old code. We can keep it if we fetch the session or movie back.
-        # For simplicity and sticking to "use procedures", I'll skip the side-effect update unless crucial. 
-        # But let's keep the return response consistent.
-        
-        # Fetch the session we just created (assuming unique enough constraints or just last one)
-        sessao = Sessoes.objects.using('admin').filter(
-            salaid=data['salaid'], 
-            inicio=data['inicio']
-        ).last()
+        # 3. Prepare parameters (Order must match SQL Procedure)
+        params = [
+            data['salaid'],
+            data['filmeid'],
+            data['inicio'],               # Format: 'YYYY-MM-DD HH:MM:SS'
+            data['fim'],
+            data.get('versao', '2D'),     # Default value
+            data.get('estadosessao', 'Agendada'),
+            data.get('precosessao', 0),
+            None                          # Placeholder for OUT parameter (p_novo_id)
+        ]
 
-        # Update movie cinema if needed
-        movie = sessao.filmeid
-        room = sessao.salaid
-        if movie and room and not movie.cinemaid:
-            movie.cinemaid = room.cinemaid
-            movie.save(using='admin')
+        # 4. Execute Stored Procedure
+        with connections['admin'].cursor() as cursor:
+            # 8 parameters: 7 IN + 1 OUT
+            cursor.execute("CALL inserir_sessao(%s, %s, %s, %s, %s, %s, %s, %s)", params)
+            
+            # Fetch the generated ID from the OUT parameter
+            new_id = cursor.fetchone()[0]
 
-        # Re-serialize to return full object
-        from .serializers import SessoesSerializer
-        return Response(SessoesSerializer(sessao).data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "message": "Session created successfully.", 
+            "id": new_id
+        }, status=status.HTTP_201_CREATED)
+
+    except DatabaseError as e:
+        # 5. Handle DB errors (Trigger validations like overlaps or capacity)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        # Handle generic server errors
+        return Response({"error": "Internal Error: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['DELETE'])
@@ -1353,21 +1306,33 @@ def categorias_api(request):
 @permission_classes([IsAuthenticated])
 def admin_create_categoria_api(request):
     """
-    API to create a category (Admin only)
+    API to create a category using Stored Procedure.
     """
+    # 1. Check permissions
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
         nome = request.data.get('nome')
-        if not nome:
-            return Response({"error": "Name is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        cat = Categorias.objects.db_manager('admin').create(nomecategoria=nome)
-        log_action(request.user, 'create_category', 'Categorias', cat.categoriaid, {"nome": nome})
-        return Response({"message": "Category created", "id": cat.categoriaid}, status=status.HTTP_201_CREATED)
-    except Exception as e:
+        # 2. Call Stored Procedure
+        with connections['admin'].cursor() as cursor:
+            cursor.execute("CALL inserir_categoria(%s, %s)", [nome, None])
+            new_id = cursor.fetchone()[0]
+
+        # 3. Log action
+        log_action(request.user, 'create_category', 'Categorias', new_id, {"nome": nome})
+        return Response({
+            "message": "Category created successfully", 
+            "id": new_id
+        }, status=status.HTTP_201_CREATED)
+
+    except DatabaseError as e:
+        # Handles "Name required" or "Duplicate category" errors from SQL
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({"error": "Internal Error: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['DELETE'])

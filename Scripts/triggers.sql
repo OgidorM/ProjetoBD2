@@ -67,6 +67,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_atualizar_rankings_avaliacoes ON avaliacoes;
 CREATE TRIGGER trg_atualizar_rankings_avaliacoes
 AFTER INSERT OR UPDATE OR DELETE ON avaliacoes
 FOR EACH STATEMENT
@@ -91,6 +92,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_validar_valores_avaliacoes ON avaliacoes;
 CREATE TRIGGER trg_validar_valores_avaliacoes
 BEFORE INSERT OR UPDATE ON avaliacoes
 FOR EACH ROW
@@ -102,20 +104,30 @@ EXECUTE FUNCTION trg_validar_valores_avaliacoes();
     O total da venda atualiza sempre que são adicionadas coisas
 ==============================================================*/
 CREATE OR REPLACE FUNCTION trg_calcular_total_venda()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+AS $$
 BEGIN
-    UPDATE vendas
-    SET totalvenda = (
-        SELECT COALESCE(SUM(total_linha_),0)
-        FROM vendalinhas
-        WHERE vendaid = COALESCE(NEW.vendaid, OLD.vendaid)
-    )
-    WHERE vendaid = COALESCE(NEW.vendaid, OLD.vendaid);
+    -- Se inseriu ou alterou uma linha, atualiza a venda correspondente
+    IF (NEW.vendaid IS NOT NULL) THEN
+        UPDATE vendas
+        SET totalvenda = fn_calcular_total_venda(NEW.vendaid)
+        WHERE vendaid = NEW.vendaid;
+    END IF;
+
+    -- Se apagou ou moveu uma linha, atualiza a venda antiga
+    IF (OLD.vendaid IS NOT NULL) AND 
+       (NEW.vendaid IS NULL OR OLD.vendaid != NEW.vendaid) THEN
+        UPDATE vendas
+        SET totalvenda = fn_calcular_total_venda(OLD.vendaid)
+        WHERE vendaid = OLD.vendaid;
+    END IF;
 
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
+DROP TRIGGER IF EXISTS trg_calcular_total_venda ON vendalinhas;
 CREATE TRIGGER trg_calcular_total_venda
 AFTER INSERT OR UPDATE OR DELETE ON vendalinhas
 FOR EACH ROW
@@ -138,6 +150,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_atualizar_stock_produtos ON vendalinhas;
 CREATE TRIGGER trg_atualizar_stock_produtos
 AFTER INSERT ON vendalinhas
 FOR EACH ROW
@@ -171,6 +184,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_confirmar_limites_exibicao_filme ON sessoes;
 CREATE TRIGGER trg_confirmar_limites_exibicao_filme
 BEFORE INSERT OR UPDATE ON sessoes
 FOR EACH ROW
@@ -192,6 +206,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_confirmar_inicio_menor_que_fim ON sessoes;
 CREATE TRIGGER trg_confirmar_inicio_menor_que_fim
 BEFORE INSERT OR UPDATE ON sessoes
 FOR EACH ROW
@@ -223,6 +238,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_verificar_datas_sessao ON sessoes;
 CREATE TRIGGER trg_verificar_datas_sessao
 BEFORE INSERT OR UPDATE ON sessoes
 FOR EACH ROW
@@ -250,7 +266,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+DROP TRIGGER IF EXISTS trg_verificar_capacidade_sala ON sessoes;
 CREATE TRIGGER trg_verificar_capacidade_sala
 BEFORE INSERT ON sessoes
 FOR EACH ROW
@@ -282,6 +298,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_gerar_lugares_automatica ON salas;
 CREATE TRIGGER trg_gerar_lugares_automatica
 AFTER INSERT ON salas
 FOR EACH ROW
@@ -310,6 +327,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_atualizar_capacidade_sala ON lugares;
 CREATE TRIGGER trg_atualizar_capacidade_sala
 AFTER INSERT ON lugares
 FOR EACH ROW
@@ -333,6 +351,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_gerar_lugares_sessao ON sessoes;
 CREATE TRIGGER trg_gerar_lugares_sessao
 AFTER INSERT ON sessoes
 FOR EACH ROW
@@ -360,6 +379,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_verificar_lugar_disponivel ON bilhetes;
 CREATE TRIGGER trg_verificar_lugar_disponivel
 BEFORE INSERT ON bilhetes
 FOR EACH ROW
@@ -380,6 +400,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_ocupar_lugar_apos_bilhete ON bilhetes;
 CREATE TRIGGER trg_ocupar_lugar_apos_bilhete
 AFTER INSERT ON bilhetes
 FOR EACH ROW
@@ -400,6 +421,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_libertar_lugar_apos_cancelamento_bilhete ON bilhetes;
 CREATE TRIGGER trg_libertar_lugar_apos_cancelamento_bilhete
 AFTER DELETE ON bilhetes
 FOR EACH ROW
@@ -427,6 +449,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_impedir_bilhete_para_sessao_terminada ON bilhetes;
 CREATE TRIGGER trg_impedir_bilhete_para_sessao_terminada
 BEFORE INSERT ON bilhetes
 FOR EACH ROW
@@ -479,6 +502,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_verificar_idade_para_filme ON vendalinhas;
 CREATE TRIGGER trg_verificar_idade_para_filme
 BEFORE INSERT ON vendalinhas
 FOR EACH ROW
@@ -498,18 +522,21 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Atualizar quando mudam dados dos funcionários
+DROP TRIGGER IF EXISTS trg_refresh_mv_funcionarios_top_funcionarios ON funcionarios;
 CREATE TRIGGER trg_refresh_mv_funcionarios_top_funcionarios
 AFTER INSERT OR UPDATE OR DELETE ON funcionarios
 FOR EACH STATEMENT
 EXECUTE FUNCTION trg_refresh_mv_funcionarios_top();
 
 -- Atualizar quando há novas avaliações
+DROP TRIGGER IF EXISTS trg_refresh_mv_funcionarios_top_avaliacoes ON avaliacoes;
 CREATE TRIGGER trg_refresh_mv_funcionarios_top_avaliacoes
 AFTER INSERT OR UPDATE OR DELETE ON avaliacoes
 FOR EACH STATEMENT
 EXECUTE FUNCTION trg_refresh_mv_funcionarios_top();
 
 -- Atualizar quando há novas vendas (afeta valores faturados)
+DROP TRIGGER IF EXISTS trg_refresh_mv_funcionarios_top_vendas ON vendas;
 CREATE TRIGGER trg_refresh_mv_funcionarios_top_vendas
 AFTER INSERT OR UPDATE OR DELETE ON vendas
 FOR EACH STATEMENT

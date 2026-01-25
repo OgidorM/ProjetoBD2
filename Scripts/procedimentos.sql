@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------------------
 -- 1. INSERIR FILME
 ----------------------------------------------------------------------------------------------
-DROP PROCEDURE inserir_filme
+DROP PROCEDURE IF EXISTS inserir_filme;
 CREATE OR REPLACE PROCEDURE inserir_filme(
     p_categoriaid INT,
     p_cinemaid INT,
@@ -14,7 +14,7 @@ CREATE OR REPLACE PROCEDURE inserir_filme(
     p_sinopse TEXT,
     p_classificacaoid INT,
     p_ranking NUMERIC(2,1),
-    p_cartaz_url VARCHAR NULL,
+    p_cartaz_url VARCHAR,
     OUT p_novo_id INT
 )
 LANGUAGE plpgsql
@@ -55,14 +55,16 @@ $$;
 ----------------------------------------------------------------------------------------------
 -- 2. INSERIR SESSÃO (gera automaticamente LUGARESSESSAO via trigger)
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS inserir_sessao;
 CREATE OR REPLACE PROCEDURE inserir_sessao(
-    p_salaid INT,
-    p_filmeid INT,
-    p_inicio TIMESTAMP,
-    p_fim TIMESTAMP,
-    p_versao VARCHAR,
-    p_estado VARCHAR,
-    p_preco NUMERIC
+    IN p_salaid INT,
+    IN p_filmeid INT,
+    IN p_inicio TIMESTAMP,
+    IN p_fim TIMESTAMP,
+    IN p_versao VARCHAR,
+    IN p_estado VARCHAR,
+    IN p_preco NUMERIC,
+    OUT p_novo_id INT
 )
 LANGUAGE plpgsql
 AS $$
@@ -70,39 +72,38 @@ DECLARE
     v_cin_sala INT;
     v_cin_filme INT;
 BEGIN
-    -- Validar sala
-    PERFORM 1 FROM salas WHERE salaid = p_salaid;
+    -- 1. Validar existência e obter IDs de Cinema
+    SELECT cinemaid INTO v_cin_sala FROM salas WHERE salaid = p_salaid;
     IF NOT FOUND THEN RAISE EXCEPTION 'Sala não existe.'; END IF;
 
-    -- Validar filme
-    PERFORM 1 FROM filmes WHERE filmeid = p_filmeid;
+    SELECT cinemaid INTO v_cin_filme FROM filmes WHERE filmeid = p_filmeid;
     IF NOT FOUND THEN RAISE EXCEPTION 'Filme não existe.'; END IF;
 
-    -- Verificar cinemas
-    SELECT cinemaid INTO v_cin_sala FROM salas WHERE salaid = p_salaid;
-    SELECT cinemaid INTO v_cin_filme FROM filmes WHERE filmeid = p_filmeid;
-
-    IF v_cin_sala <> v_cin_filme THEN
-        RAISE EXCEPTION 'Filme e sala pertencem a cinemas diferentes.';
+    -- 2. Lógica de Atribuição de Cinema (Regra de Negócio)
+    -- Se o filme não tem cinema, ganha o da sala.
+    IF v_cin_filme IS NULL THEN
+        UPDATE filmes SET cinemaid = v_cin_sala WHERE filmeid = p_filmeid;
+    
+    -- Se já tem, garantimos que não há mistura de cinemas
+    ELSIF v_cin_sala <> v_cin_filme THEN
+        RAISE EXCEPTION 'Conflito: O Filme pertence a um cinema diferente da Sala.';
     END IF;
 
-    -- Validar horário
-    IF p_inicio >= p_fim THEN
-        RAISE EXCEPTION 'Início >= fim.';
-    END IF;
-
+    -- 3. Inserir (Os Triggers 5, 6 e 7 vão disparar AQUI)
     INSERT INTO sessoes (
         salaid, filmeid, inicio, fim, versao, estadosessao, precosessao
     )
     VALUES (
         p_salaid, p_filmeid, p_inicio, p_fim, p_versao, p_estado, p_preco
-    );
+    )
+    RETURNING sessaoid INTO p_novo_id;
 END;
 $$;
 
 ----------------------------------------------------------------------------------------------
 -- 3. INSERIR PRODUTO
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS inserir_produto;
 CREATE OR REPLACE PROCEDURE inserir_produto(
     p_nome VARCHAR,
     p_preco NUMERIC,
@@ -143,6 +144,7 @@ $$;
 ----------------------------------------------------------------------------------------------
 -- 4. INSERIR AVALIAÇÃO
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS inserir_avaliacao;
 CREATE OR REPLACE PROCEDURE inserir_avaliacao(
     p_vendaid INT,
     p_titulo VARCHAR,
@@ -182,6 +184,7 @@ $$;
 ----------------------------------------------------------------------------------------------
 -- 5. INSERIR CINEMA
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS inserir_cinema;
 CREATE OR REPLACE PROCEDURE inserir_cinema(
     p_nome VARCHAR,
     p_email VARCHAR,
@@ -213,12 +216,12 @@ BEGIN
     )
     RETURNING cinemaid INTO p_novo_id;
 END;
-END;
 $$;
 
 ----------------------------------------------------------------------------------------------
 -- 6. INSERIR CLIENTE
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS inserir_cliente;
 CREATE OR REPLACE PROCEDURE inserir_cliente(
     p_nome VARCHAR,
     p_email VARCHAR,
@@ -259,6 +262,7 @@ $$;
 ----------------------------------------------------------------------------------------------
 -- 7. INSERIR SALA (corrigido e simplificado)
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS inserir_sala;
 CREATE OR REPLACE PROCEDURE inserir_sala(
     p_cinemaid INT,
     p_nome VARCHAR,
@@ -293,6 +297,7 @@ $$;
 ----------------------------------------------------------------------------------------------
 -- 8. INSERIR BILHETE (corrigido de forma definitiva)
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS inserir_bilhete;
 CREATE OR REPLACE PROCEDURE inserir_bilhete(
     p_lugarsessao INT,
     p_sessaoid INT,
@@ -327,6 +332,7 @@ $$;
 ----------------------------------------------------------------------------------------------
 -- 9. INSERIR FUNCIONÁRIO
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS inserir_funcionario;
 CREATE OR REPLACE PROCEDURE inserir_funcionario(
     IN p_nome VARCHAR,
     IN p_email VARCHAR,
@@ -387,6 +393,7 @@ $$;
 ----------------------------------------------------------------------------------------------
 -- 9. REALIZAR VENDA UNIFICADA (Transação completa)
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS realizar_venda_unificada;
 CREATE OR REPLACE PROCEDURE realizar_venda_unificada(
     p_clienteid INT,
     p_funcionarioid INT,
@@ -487,6 +494,7 @@ $$;
 ----------------------------------------------------------------------------------------------
 -- 10. ALTERAR ESTADO SESSÃO
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS alterar_estado_sessao;
 CREATE OR REPLACE PROCEDURE alterar_estado_sessao(
     p_sessaoid INT,
     p_novo_estado VARCHAR
@@ -501,5 +509,33 @@ BEGIN
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Sessão % não encontrada.', p_sessaoid;
     END IF;
+END;
+$$;
+
+----------------------------------------------------------------------------------------------
+-- 11. INSERIR CATEGORIA
+----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS inserir_categoria;
+CREATE OR REPLACE PROCEDURE inserir_categoria(
+    IN p_nome VARCHAR,
+    OUT p_novo_id INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- 1. Validar input vazio
+    IF p_nome IS NULL OR LENGTH(TRIM(p_nome)) = 0 THEN
+        RAISE EXCEPTION 'O nome da categoria é obrigatório.';
+    END IF;
+
+    -- 2. Validar duplicados (Case insensitive opcional, aqui fiz exato)
+    IF EXISTS (SELECT 1 FROM categorias WHERE nomecategoria = p_nome) THEN
+        RAISE EXCEPTION 'Já existe uma categoria com esse nome.';
+    END IF;
+
+    -- 3. Inserir e Retornar ID
+    INSERT INTO categorias (nomecategoria)
+    VALUES (p_nome)
+    RETURNING categoriaid INTO p_novo_id;
 END;
 $$;
