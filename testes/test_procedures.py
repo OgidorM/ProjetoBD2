@@ -14,7 +14,6 @@ def test_inserir_filme():
     try:
         titulo = f"Filme Teste {datetime.now().strftime('%H%M%S')}"
 
-        # CORREÇÃO: Adicionados os casts explícitos (::tipo)
         cur.execute("""
             CALL inserir_filme(
                 %s::integer,    -- Categoria
@@ -58,7 +57,6 @@ def test_inserir_sessao():
         inicio = '2025-11-10 15:00:00'
         fim = '2025-11-10 17:00:00'
 
-        # CORREÇÃO: Casts para timestamp e numeric
         cur.execute("""
             CALL inserir_sessao(
                 %s::integer, 
@@ -112,7 +110,6 @@ def test_inserir_produto():
 def test_inserir_avaliacao():
     cur = connections['admin'].cursor()
     try:
-        # CORREÇÃO: Casts
         cur.execute("""
             CALL inserir_avaliacao(
                 %s::integer, 
@@ -143,7 +140,6 @@ def test_inserir_cinema():
     try:
         nome = f"Cine {datetime.now().strftime('%H%M%S')}"
         
-        # CORREÇÃO: Casts e parametro OUT
         cur.execute("""
             CALL inserir_cinema(
                 %s::varchar, 
@@ -174,7 +170,6 @@ def test_inserir_cliente():
         nif = f"{datetime.now().strftime('%H%M%S')}123"
         email = f"cli{datetime.now().strftime('%H%M%S')}@teste.pt"
         
-        # CORREÇÃO: Casts
         cur.execute("""
             CALL inserir_cliente(
                 %s::varchar, 
@@ -204,7 +199,6 @@ def test_inserir_sala():
     try:
         nome = f"Sala {datetime.now().strftime('%H%M%S')}"
         
-        # CORREÇÃO: Casts
         cur.execute("""
             CALL inserir_sala(
                 %s::integer, 
@@ -229,7 +223,6 @@ def test_inserir_sala():
 def test_inserir_bilhete():
     cur = connections['admin'].cursor()
     try:
-        # 1. CRIAR SESSÃO PRIMEIRO (Obrigatório para ter onde vender)
         inicio = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         fim = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')     
 
@@ -240,7 +233,6 @@ def test_inserir_bilhete():
         """, [inicio, fim])
         sessaoid = cur.fetchone()[0]
 
-        # 2. CHAMAR O PROCEDIMENTO
         cur.execute("""
             CALL inserir_bilhete(
                 %s::integer, 
@@ -249,7 +241,6 @@ def test_inserir_bilhete():
             );
         """, [3, sessaoid, 8.50])
 
-        # 3. VALIDAR
         cur.execute("SELECT COUNT(*) FROM bilhetes WHERE sessaoid = %s AND lugarid = 3;", [sessaoid])
         count = cur.fetchone()[0]
         assert count == 1, "O bilhete não foi criado corretamente."
