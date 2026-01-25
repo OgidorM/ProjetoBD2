@@ -97,6 +97,9 @@ DATABASES = {
         'PASSWORD': 'app123',
         'HOST': 'localhost',
         'PORT': '5434',
+        'TEST': {
+           'MIRROR': 'default', 
+        },
     },
     'admin': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -105,6 +108,9 @@ DATABASES = {
         'PASSWORD': 'admin123',
         'HOST': 'localhost',
         'PORT': '5434',
+        'TEST': {
+            'MIRROR': 'default', 
+        }
     }
 }
 
