@@ -12,7 +12,7 @@ INSERT INTO cinemas (nomecinema,emailcinema,telefonecinema,moradacinema,codigopo
 
 -- Classificações Etárias
 INSERT INTO classificacoesetarias (nomeclassificacao) VALUES
-('LIVRE'),('M/6'),('M/12'),('M/16'),('M/18');
+('Livre'),('M/6'),('M/12'),('M/16'),('M/18');
 
 -- Salas
 INSERT INTO salas (cinemaid, nomesala, filas, colunas, tiposala) VALUES

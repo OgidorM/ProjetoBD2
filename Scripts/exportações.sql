@@ -160,3 +160,57 @@ BEGIN
     );
 END;
 $BODY$;
+
+
+-- ==============================================================
+-- Relatório p/ CSV (Tabela plana com filtro de intervalo)
+-- ==============================================================
+CREATE OR REPLACE FUNCTION fn_relatorio_vendas_csv(p_inicio DATE, p_fim DATE)
+RETURNS TABLE (
+    vendaid INT,
+    data TIMESTAMPTZ,
+    nomecliente VARCHAR,
+    nif VARCHAR,
+    tipo TEXT,
+    descricao TEXT,
+    local TEXT,
+    quantidade INT,
+    precolinha NUMERIC,
+    total_linha_ NUMERIC
+)
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT 
+        v.vendaid,
+        v.data,
+        c.nomecliente,
+        c.nif,
+        CASE 
+            WHEN vl.bilheteid IS NOT NULL THEN 'Bilhete'
+            ELSE 'Produto'
+        END,
+        CASE 
+            WHEN vl.bilheteid IS NOT NULL THEN f.titulo
+            ELSE p.nomeproduto
+        END,
+        CASE 
+            WHEN vl.bilheteid IS NOT NULL THEN CONCAT(cine.nomecinema, ' - ', s.nomesala)
+            ELSE '-'
+        END,
+        vl.quantidade,
+        vl.precolinha,
+        vl.total_linha_
+    FROM vendas v
+    JOIN vendalinhas vl ON v.vendaid = vl.vendaid
+    LEFT JOIN clientes c ON v.clienteid = c.clienteid
+    LEFT JOIN produtos p ON vl.produtoid = p.produtoid
+    LEFT JOIN bilhetes b ON vl.bilheteid = b.bilheteid
+    LEFT JOIN sessoes sess ON b.sessaoid = sess.sessaoid
+    LEFT JOIN filmes f ON sess.filmeid = f.filmeid
+    LEFT JOIN salas s ON sess.salaid = s.salaid
+    LEFT JOIN cinemas cine ON s.cinemaid = cine.cinemaid
+    WHERE (p_inicio IS NULL OR DATE(v.data) >= p_inicio)
+      AND (p_fim IS NULL OR DATE(v.data) <= p_fim)
+    ORDER BY v.data DESC, v.vendaid DESC;
+$$;

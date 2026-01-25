@@ -34,6 +34,7 @@ from clientes.core.services import ClienteService
 from clientes.core.dtos import NovoClienteDTO
 from clientes.core.exceptions import ClienteServiceException
 
+from django.db import connections
 
 # ==============================================================================
 #  ÁREA 1: FRONTEND LEGADO (DJANGO TEMPLATES / HTML)
@@ -373,10 +374,20 @@ def sessoes_por_filme_api(request, filmeid):
 
 @api_view(['GET'])
 def lista_sessoes_api(request):
-    now = timezone.now()
-    sessoes = Sessoes.objects.select_related('filmeid', 'salaid').order_by('fim')
-    serializer = SessoesSerializer(sessoes, many=True)
-    return Response(serializer.data)
+    """
+    List sessions grouped by 'ativas' and 'terminadas'.
+    High performance using JSON aggregation in PostgreSQL.
+    """
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT fn_listar_sessoes_agrupadas()")
+            data = cursor.fetchone()[0]
+
+        return Response(data)
+
+    except Exception as e:
+        return Response({"error": "Erro interno: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -431,9 +442,6 @@ def criar_venda_api(request):
             cliente = Clientes.objects.filter(nomecliente=user.username).first()
             if not cliente:
                 # Need to create it? Or fail. Ideally create.
-                # Use procedure `inserir_cliente`? Or ORM.
-                # For simplicity in this specific "Get ID" block, ORM is fine or call existing logic.
-                # But let's assume valid user for now or quick create.
                 cliente = Clientes.objects.create(
                     nomecliente=user.username, 
                     emailcliente=user.email,
@@ -566,7 +574,6 @@ def admin_avaliacoes_api(request):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        from django.db import connections
         with connections['admin'].cursor() as cursor:
             # Uses the simplified view created in SQL
             cursor.execute("SELECT * FROM v_avaliacoes_cliente")
@@ -601,7 +608,6 @@ def admin_funcionarios_api(request):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     if request.method == 'GET':
-        from django.db import connections
         with connections['admin'].cursor() as cursor:
             cursor.execute("SELECT * FROM mv_funcionarios_top")
             columns = [col[0] for col in cursor.description]
@@ -665,7 +671,6 @@ def admin_create_produto_api(request):
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
     try:
-        from django.db import connections
         with connections['admin'].cursor() as cursor:
             cursor.execute("CALL inserir_produto(%s, %s, %s, %s)", [
                 request.data.get('nome'),
@@ -713,7 +718,6 @@ def admin_clientes_api(request):
     # GET: Listar Clientes (usando View)
     if request.method == 'GET':
         try:
-            from django.db import connections
             with connections['admin'].cursor() as cursor:
                 cursor.execute("SELECT clienteid, nomecliente, emailcliente, telefonecliente, nif FROM v_clientes_global")
                 rows = cursor.fetchall()
@@ -733,7 +737,6 @@ def admin_clientes_api(request):
     if request.method == 'POST':
         try:
             data = request.data
-            from django.db import connections
             with connections['admin'].cursor() as cursor:
                 cursor.execute("CALL inserir_cliente(%s, %s, %s, %s, %s, %s, %s, %s)", [
                     data.get('nome'),
@@ -824,7 +827,6 @@ def admin_create_movie_api(request):
         cinema_id = request.data.get('cinemaid')
         cinema = Cinemas.objects.get(pk=cinema_id) if cinema_id else None
 
-        from django.db import connections
         with connections['admin'].cursor() as cursor:
             cursor.execute("CALL inserir_filme(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [
                 categoria.categoriaid,
@@ -865,11 +867,6 @@ def admin_vendas_api(request):
         with connections['admin'].cursor() as cursor:
             cursor.execute("SELECT fn_listar_todas_vendas()")
             data = cursor.fetchone()[0]
-            
-        # Garantir que se vier como string (comum em setups raw SQL), fazemos parse
-        if isinstance(data, str):
-            data = json.loads(data)
-            
         return Response(data)
 
     except Exception as e:
@@ -887,7 +884,6 @@ def admin_create_cinema_api(request):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        from django.db import connections
         with connections['admin'].cursor() as cursor:
             cursor.execute("CALL inserir_cinema(%s, %s, %s, %s, %s, %s, %s, %s)", [
                 request.data.get('nome'),
@@ -921,7 +917,6 @@ def admin_create_room_api(request, cinema_id):
     try:
         cinema = Cinemas.objects.using('admin').get(pk=cinema_id)
         
-        from django.db import connections
         with connections['admin'].cursor() as cursor:
             cursor.execute("CALL inserir_sala(%s, %s, %s, %s, %s)", [
                 cinema.cinemaid,
@@ -1058,7 +1053,6 @@ def atualizar_sessao_api(request, sessaoid):
         return Response({"error": "State is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        from django.db import connections
         with connections['admin'].cursor() as cursor:
             cursor.execute("CALL alterar_estado_sessao(%s, %s)", [sessaoid, novo_estado])
             

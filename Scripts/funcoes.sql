@@ -334,5 +334,62 @@ BEGIN
 END;
 $$;
 
+------------------------------------------------------------------------------------------------
+-- 11. LISTAR SESSOES AGREGADAS
+------------------------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_listar_sessoes_agrupadas()
+RETURNS JSON
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    v_resultado JSON;
+BEGIN
+    SELECT json_build_object(
+        -- Grupo 1: Sessões Ativas (Que ainda não acabaram)
+        'ativas', COALESCE(
+            json_agg(dados ORDER BY (dados->>'inicio')::TIMESTAMP ASC) 
+            FILTER (WHERE (dados->>'terminada')::boolean = false), 
+            '[]'::json
+        ),
+        -- Grupo 2: Sessões Terminadas (Histórico)
+        'terminadas', COALESCE(
+            json_agg(dados ORDER BY (dados->>'fim')::TIMESTAMP DESC) 
+            FILTER (WHERE (dados->>'terminada')::boolean = true), 
+            '[]'::json
+        )
+    )
+    INTO v_resultado
+    FROM (
+        SELECT json_build_object(
+            'id', s.sessaoid,
+            'filme', f.titulo,
+            'cartaz', f.cartaz_url,
+            'sala', sa.nomesala,
+            'cinema', c.nomecinema,
+            'inicio', s.inicio,
+            'fim', s.fim,
+            'preco', s.precosessao,
+            'versao', s.versao,
+            -- Cálculo direto da ocupação (Número de ocupados / Total * 100)
+            'ocupacao', (
+                SELECT CASE WHEN COUNT(*) = 0 THEN 0
+                       ELSE ROUND((COUNT(*) FILTER (WHERE ls.estado = 'Ocupado')::NUMERIC / COUNT(*)::NUMERIC) * 100, 0)
+                       END
+                FROM lugaresSessao ls
+                WHERE ls.sessaoid = s.sessaoid
+            ),
+            -- Flag auxiliar para separar os grupos
+            'terminada', (s.fim < CURRENT_TIMESTAMP)
+        ) AS dados
+        FROM sessoes s
+        JOIN filmes f ON s.filmeid = f.filmeid
+        JOIN salas sa ON s.salaid = sa.salaid
+        JOIN cinemas c ON sa.cinemaid = c.cinemaid
+    ) sub;
+
+    RETURN v_resultado;
+END;
+$$;
 
 
