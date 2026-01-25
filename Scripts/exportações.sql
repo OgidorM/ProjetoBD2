@@ -163,8 +163,9 @@ $BODY$;
 
 
 -- ==============================================================
--- Relatório p/ CSV (Tabela plana com filtro de intervalo)
+-- Relatório p/ CSV 
 -- ==============================================================
+DROP FUNCTION IF EXISTS fn_relatorio_vendas_csv(DATE, DATE);
 CREATE OR REPLACE FUNCTION fn_relatorio_vendas_csv(p_inicio DATE, p_fim DATE)
 RETURNS TABLE (
     vendaid INT,
@@ -202,7 +203,7 @@ AS $$
         vl.precolinha,
         vl.total_linha_
     FROM vendas v
-    JOIN vendalinhas vl ON v.vendaid = vl.vendaid
+    LEFT JOIN vendalinhas vl ON v.vendaid = vl.vendaid
     LEFT JOIN clientes c ON v.clienteid = c.clienteid
     LEFT JOIN produtos p ON vl.produtoid = p.produtoid
     LEFT JOIN bilhetes b ON vl.bilheteid = b.bilheteid

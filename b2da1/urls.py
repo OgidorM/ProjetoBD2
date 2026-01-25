@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/vendas/criar/', api_views.criar_venda_api, name='criar_venda_api'),
     path('api/vendas/minhas/', api_views.minhas_vendas_api, name='minhas_vendas_api'),
     path('api/vendas/<int:vendaid>/digital/', api_views.fatura_digital_api, name='fatura_digital_api'),
+    path('api/admin/vendas/exportar/', api_views.exportar_faturas_dia_api, name='exportar_faturas_dia_api'),
     path('api/avaliacoes/criar/', api_views.criar_avaliacao_api, name='criar_avaliacao_api'),
     path('api/sessoes/', api_views.lista_sessoes_api, name='lista_sessoes_api'),
     path('api/sessoes/<int:sessaoid>/deletar/', api_views.deletar_sessao_api, name='deletar_sessao_api'),

@@ -97,24 +97,22 @@ def remover_venda(request, vendaid):
 @user_passes_test(eh_admin)
 def export_mv_vendas_diarias_csv(request):
     """
-    Exporta relatótio detalhado de vendas.
-    Substitui a antiga exportação da MV para fornecer dados granulares.
+    Exports detailed sales report.
     """
-
     start_raw = request.GET.get('start')
     end_raw = request.GET.get('end')
 
     start = parse_date(start_raw) if start_raw else None
     end = parse_date(end_raw) if end_raw else None
 
-    # Se o usuário passou valor inválido, falha de forma explícita
+    # If the user passed an invalid value, fail explicitly
     if start_raw and start is None:
-        raise Http404("Parâmetro 'start' inválido. Use YYYY-MM-DD.")
+        raise Http404("Invalid parameter 'start'. Use YYYY-MM-DD.")
     if end_raw and end is None:
-        raise Http404("Parâmetro 'end' inválido. Use YYYY-MM-DD.")
+        raise Http404("Invalid parameter 'end'. Use YYYY-MM-DD.")
 
     try:
         return build_detailed_sales_csv_response(start=start, end=end)
     except Exception as exc:
-        # Em caso de erro na query SQL
-        raise Http404("Erro ao gerar relatório detalhado.") from exc
+        # In case of SQL query error
+        raise Http404("Error generating detailed report.") from exc
