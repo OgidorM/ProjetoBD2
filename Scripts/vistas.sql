@@ -232,3 +232,17 @@ FROM avaliacoes a
 JOIN vendas v ON a.vendaid = v.vendaid
 JOIN clientes c ON v.clienteid = c.clienteid
 ORDER BY a.avaliacaoid DESC;
+
+-- ==============================================================
+-- Vista simples: Lista Global de Clientes
+-- ==============================================================
+CREATE OR REPLACE VIEW v_clientes_global AS
+SELECT 
+    clienteid,
+    nomecliente,
+    emailcliente,
+    telefonecliente,
+    nif,
+    localidadecliente
+FROM clientes
+ORDER BY nomecliente;

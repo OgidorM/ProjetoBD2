@@ -1,6 +1,7 @@
 ----------------------------------------------------------------------------------------------
 -- 1. INSERIR FILME
 ----------------------------------------------------------------------------------------------
+DROP PROCEDURE inserir_filme
 CREATE OR REPLACE PROCEDURE inserir_filme(
     p_categoriaid INT,
     p_cinemaid INT,
@@ -12,7 +13,9 @@ CREATE OR REPLACE PROCEDURE inserir_filme(
     p_idioma CHAR(4),
     p_sinopse TEXT,
     p_classificacaoid INT,
-    p_ranking NUMERIC(2,1)
+    p_ranking NUMERIC(2,1),
+    p_cartaz_url VARCHAR NULL,
+    OUT p_novo_id INT
 )
 LANGUAGE plpgsql
 AS $$
@@ -39,12 +42,13 @@ BEGIN
 
     INSERT INTO filmes (
         categoriaid, cinemaid, titulo, datalancamento, duracao,
-        produtora, fimexebicao, idioma, sinopse, classificacaoetaria, ranking
+        produtora, fimexebicao, idioma, sinopse, classificacaoetaria, ranking, cartaz_url
     )
     VALUES (
         p_categoriaid, p_cinemaid, p_titulo, p_datalanc, p_duracao,
-        p_produtora, p_fim, p_idioma, p_sinopse, p_classificacaoid, p_ranking
-    );
+        p_produtora, p_fim, p_idioma, p_sinopse, p_classificacaoid, p_ranking, p_cartaz_url
+    )
+    RETURNING filmeid INTO p_novo_id;
 END;
 $$;
 
@@ -185,7 +189,8 @@ CREATE OR REPLACE PROCEDURE inserir_cinema(
     p_morada VARCHAR,
     p_codpostal CHAR(8),
     p_localidade VARCHAR,
-    p_ranking NUMERIC
+    p_ranking NUMERIC,
+    OUT p_novo_id INT
 )
 LANGUAGE plpgsql
 AS $$
@@ -205,7 +210,9 @@ BEGIN
     VALUES (
         p_nome, p_email, p_telefone, p_morada,
         p_codpostal, p_localidade, p_ranking
-    );
+    )
+    RETURNING cinemaid INTO p_novo_id;
+END;
 END;
 $$;
 
@@ -314,6 +321,66 @@ BEGIN
 
     INSERT INTO bilhetes (lugarid, sessaoid, precobilhete, emissao)
     VALUES (v_lugar, p_sessaoid, p_preco, NOW());
+END;
+$$;
+
+----------------------------------------------------------------------------------------------
+-- 9. INSERIR FUNCIONÁRIO
+----------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE inserir_funcionario(
+    IN p_nome VARCHAR,
+    IN p_email VARCHAR,
+    IN p_telefone VARCHAR,
+    IN p_cargo VARCHAR,
+    IN p_salario NUMERIC(10, 2), -- Numeric é melhor para dinheiro que Float
+    IN p_cinemaid INT,
+    OUT p_novo_id INT -- Retorna o ID gerado
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- 1. Validação: Email Obrigatório e Único
+    IF p_email IS NULL OR LENGTH(TRIM(p_email)) = 0 THEN
+        RAISE EXCEPTION 'O email é obrigatório.';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM funcionarios WHERE emailfuncionario = p_email) THEN
+        RAISE EXCEPTION 'Este email já está registado num funcionário.';
+    END IF;
+
+    -- 2. Validação: Cinema (apenas se for fornecido ID)
+    IF p_cinemaid IS NOT NULL THEN
+        PERFORM 1 FROM cinemas WHERE cinemaid = p_cinemaid;
+        IF NOT FOUND THEN 
+            RAISE EXCEPTION 'O Cinema indicado não existe.'; 
+        END IF;
+    END IF;
+
+    -- 3. Validação: Salário
+    IF p_salario < 0 THEN
+        RAISE EXCEPTION 'O salário não pode ser negativo.';
+    END IF;
+
+    -- 4. Inserção
+    INSERT INTO funcionarios (
+        nomefuncionario, 
+        emailfuncionario, 
+        telefonefuncionario, 
+        cargo, 
+        admissao, -- Automático
+        salario, 
+        cinemaid
+    )
+    VALUES (
+        p_nome, 
+        p_email, 
+        p_telefone, 
+        p_cargo, 
+        CURRENT_DATE, -- Data de hoje no servidor SQL
+        p_salario, 
+        p_cinemaid
+    )
+    RETURNING funcionarioid INTO p_novo_id; -- Guarda o ID na variável de saída
 END;
 $$;
 

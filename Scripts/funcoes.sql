@@ -130,11 +130,12 @@ $$ LANGUAGE plpgsql;
 ------------------------------------------------------------------------------------------------
 -- 7. OBTER LISTA DE SESSÕES ATIVAS PARA UM FILME
 ------------------------------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS fn_obter_sessoes_ativas_por_filme(INT);
 CREATE OR REPLACE FUNCTION fn_obter_sessoes_ativas_por_filme(p_filmeid INT)
 RETURNS TABLE(
     sessaoid INT,
-    inicio TIMESTAMP,
-    fim TIMESTAMP,
+    inicio TIMESTAMPTZ,
+    fim TIMESTAMPTZ,
     nomesala VARCHAR,
     nomecinema VARCHAR,
     precosessao NUMERIC
@@ -208,3 +209,71 @@ BEGIN
     RETURN v_idade_cliente >= v_idade_min;
 END;
 $$ LANGUAGE plpgsql;
+
+------------------------------------------------------------------------------------------------
+-- 9. HISTORICO DE VENDAS
+------------------------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION api_obter_historico_vendas(p_clienteid INT)
+RETURNS JSON
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_resultado JSON;
+BEGIN
+    SELECT 
+        json_agg(
+            json_build_object(
+                'id', v.vendaid,
+                'data', v.data,
+                -- Usa o total da tabela, se for nulo chama a função
+                'total', COALESCE(v.totalvenda, fn_calcular_total_venda(v.vendaid)),
+                'rated', (v.avaliacao IS NOT NULL),
+                'items', (
+                    SELECT COALESCE(json_agg(
+                        CASE 
+                            -- CASO SEJA BILHETE
+                            WHEN l.bilheteid IS NOT NULL THEN json_build_object(
+                                'id', b.bilheteid,
+                                'tipo', 'ticket',
+                                'filme', f.titulo,
+                                'sala', COALESCE(s.nomesala, 'Sala N/A'),
+                                'data', sess.inicio,
+                                'lugar', CONCAT(lug.fila, lug.numero),
+                                'preco', l.precolinha
+                            )
+                            -- CASO SEJA PRODUTO
+                            ELSE json_build_object(
+                                'tipo', 'produto',
+                                'nome', prod.nomeproduto,
+                                'quantidade', l.quantidade,
+                                'preco', l.precolinha
+                            )
+                        END
+                    ), '[]'::json)
+                    FROM linhavendas l
+                    -- Joins para Bilhetes
+                    LEFT JOIN bilhetes b ON l.bilheteid = b.bilheteid
+                    LEFT JOIN sessoes sess ON b.sessaoid = sess.sessaoid
+                    LEFT JOIN filmes f ON sess.filmeid = f.filmeid
+                    LEFT JOIN salas s ON sess.salaid = s.salaid
+                    LEFT JOIN lugares lug ON b.lugarid = lug.lugarid
+                    -- Joins para Produtos
+                    LEFT JOIN produtos prod ON l.produtoid = prod.produtoid
+                    WHERE l.vendaid = v.vendaid
+                )
+            ) ORDER BY v.data DESC, v.vendaid DESC
+        )
+    INTO v_resultado
+    FROM 
+        vendas v
+    WHERE 
+        v.clienteid = p_clienteid;
+
+    -- Se não encontrar vendas, v_resultado será NULL.
+    -- Retornamos '[]' (array vazio) nesse caso.
+    RETURN COALESCE(v_resultado, '[]'::json);
+END;
+$$;
+
+
+

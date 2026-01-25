@@ -38,14 +38,11 @@ from clientes.core.exceptions import ClienteServiceException
 # ==============================================================================
 #  ÁREA 1: FRONTEND LEGADO (DJANGO TEMPLATES / HTML)
 # ==============================================================================
-
 def index(request):
     return render(request, 'core/index.html')
 
-
 def home(request):
     return render(request, 'core/index.html')
-
 
 class SignUpView(generic.CreateView):
     form_class = UserCreationForm
@@ -80,7 +77,6 @@ class SignUpView(generic.CreateView):
 # ==============================================================================
 #  ÁREA 2: API PARA O REACT (AUTH & PERFIL) - AGORA COMPLETA
 # ==============================================================================
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_api(request):
@@ -229,7 +225,6 @@ def update_profile_api(request):
 # ==============================================================================
 #  ÁREA 3: API ENDPOINTS DE NEGÓCIO (VENDAS, FILMES, ETC)
 # ==============================================================================
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def produtos_api(request):
@@ -239,8 +234,6 @@ def produtos_api(request):
         cursor.execute("SELECT produtoid FROM v_produtos_vendidos")
         ids = [row[0] for row in cursor.fetchall()]
     
-    # We still need to filter by active=True and stock > 0 as per original logic, 
-    # or assume the view is for statistics and we want the objects.
     produtos = Produtos.objects.filter(pk__in=ids, ativo=True, stock__gt=0)
     serializer = ProdutosSerializer(produtos, many=True)
     return Response(serializer.data)
@@ -307,7 +300,7 @@ def comprar_produtos_api(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
+#------------------------------------------------------------------------------------------------------------------------
 @api_view(['GET'])
 def filmes_api(request):
     cinema_id = request.query_params.get('cinema')
@@ -328,11 +321,6 @@ def filmes_api(request):
             params = []
             if cinema_id:
                 sql += " WHERE cinemaid = %s" # Note: check if cinemaid is in the view
-                # I read vistas.sql: v_filmes_em_exibicao does NOT have cinemaid, it has nomecinema.
-                # Wait, let me check again.
-                # SELECT f.filmeid, f.titulo, f.fimexebicao, f.datalancamento, c.nomecinema FROM filmes f ...
-                # It doesn't have cinemaid. I should probably use Filmes model but filtered by view IDs if I want to be strict.
-                # Or just use the view if I can.
                 pass
             
             cursor.execute("SELECT filmeid FROM v_filmes_em_exibicao")
@@ -345,7 +333,7 @@ def filmes_api(request):
         filmes = queryset.all()
         serializer = FilmesSerializer(filmes, many=True)
         return Response(serializer.data)
-
+#------------------------------------------------------------------------------------------------------------------------
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -497,56 +485,21 @@ def criar_venda_api(request):
 @permission_classes([IsAuthenticated])
 def minhas_vendas_api(request):
     try:
-        # --- CORREÇÃO DE ARQUITETURA ---
+        # 1. Get client ID
         try:
             profile = ClienteProfile.objects.select_related('cliente_dados').get(user=request.user)
-            cliente = profile.cliente_dados
+            cliente_id = profile.cliente_dados.clienteid
         except ClienteProfile.DoesNotExist:
+            # If no client profile, return empty list
             return Response([])
-        # -------------------------------
 
-        vendas = Vendas.objects.filter(clienteid=cliente).order_by('-data', '-vendaid')
+        # 2. Execute function in database
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT api_obter_historico_vendas(%s)", [cliente_id])
+            result = cursor.fetchone()[0]
 
-        data = []
-        for v in vendas:
-            linhas = v.linhas.all().select_related('bilheteid__sessaoid__filmeid', 'bilheteid__lugarid', 'produtoid')
-            items = []
-            for l in linhas:
-                if l.bilheteid:
-                    items.append({
-                        "id": l.bilheteid.bilheteid,
-                        "tipo": "ticket",
-                        "filme": l.bilheteid.sessaoid.filmeid.titulo,
-                        "sala": l.bilheteid.sessaoid.salaid.nomesala if l.bilheteid.sessaoid.salaid else "Sala N/A",
-                        "data": l.bilheteid.sessaoid.inicio.isoformat() if l.bilheteid.sessaoid.inicio else None,
-                        "lugar": f"{l.bilheteid.lugarid.fila}{l.bilheteid.lugarid.numero}",
-                        "preco": l.precolinha
-                    })
-                elif l.produtoid:
-                    items.append({
-                        "tipo": "produto",
-                        "nome": l.produtoid.nomeproduto,
-                        "quantidade": l.quantidade,
-                        "preco": l.precolinha
-                    })
+        return Response(result)
 
-            calc_total = v.totalvenda
-            if not calc_total:
-                from django.db import connection
-                with connection.cursor() as cursor:
-                    cursor.execute("SELECT fn_calcular_total_venda(%s)", [v.vendaid])
-                    result = cursor.fetchone()
-                    calc_total = result[0] if result else 0
-
-            data.append({
-                "id": v.vendaid,
-                "data": v.data,
-                "total": calc_total,
-                "items": items,
-                "rated": hasattr(v, 'avaliacao')
-            })
-
-        return Response(data)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -677,19 +630,34 @@ def admin_funcionarios_api(request):
 
     if request.method == 'POST':
         try:
-            cinema = Cinemas.objects.get(pk=request.data.get('cinemaid')) if request.data.get('cinemaid') else None
-            f = Funcionarios.objects.db_manager('admin').create(
-                nomefuncionario=request.data.get('nome'),
-                emailfuncionario=request.data.get('email'),
-                telefonefuncionario=request.data.get('telefone', ''),
-                cargo=request.data.get('cargo'),
-                admissao=timezone.now().date(),
-                salario=request.data.get('salario', 0),
-                cinemaid=cinema
-            )
-            return Response({"message": "Funcionário criado", "id": f.funcionarioid}, status=status.HTTP_201_CREATED)
-        except Exception as e:
+            data = request.data
+
+            cinema_id = data.get('cinemaid') if data.get('cinemaid') else None
+            salario = data.get('salario') if data.get('salario') else 0
+
+            with connections['admin'].cursor() as cursor:
+                cursor.execute("CALL inserir_funcionario(%s, %s, %s, %s, %s, %s, %s)", [
+                    data.get('nome'),
+                    data.get('email'),
+                    data.get('telefone', ''),
+                    data.get('cargo'),
+                    salario,
+                    cinema_id,
+                    None
+                ])
+                
+                novo_id = cursor.fetchone()[0]
+
+            return Response({
+                "message": "Funcionário criado com sucesso", 
+                "id": novo_id
+            }, status=status.HTTP_201_CREATED)
+
+        except DatabaseError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"error": "Erro interno: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
@@ -744,33 +712,48 @@ def admin_clientes_api(request):
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
+    # GET: Listar Clientes (usando View)
     if request.method == 'GET':
-        clientes = Clientes.objects.using('admin').all()
-        data = [{
-            "id": c.clienteid,
-            "nome": c.nomecliente,
-            "email": c.emailcliente,
-            "telefone": c.telefonecliente,
-            "nif": c.nif
-        } for c in clientes]
-        return Response(data)
+        try:
+            from django.db import connections
+            with connections['admin'].cursor() as cursor:
+                cursor.execute("SELECT clienteid, nomecliente, emailcliente, telefonecliente, nif FROM v_clientes_global")
+                rows = cursor.fetchall()
+                
+            data = [{
+                "id": row[0],
+                "nome": row[1],
+                "email": row[2],
+                "telefone": row[3],
+                "nif": row[4]
+            } for row in rows]
+            return Response(data)
+        except Exception as e:
+             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    # POST: Criar Cliente (usando Procedure)
     if request.method == 'POST':
-        from django.db import connections
-        with connections['admin'].cursor() as cursor:
-            cursor.execute("CALL inserir_cliente(%s, %s, %s, %s, %s, %s, %s, %s)", [
-                request.data.get('nome'),
-                request.data.get('email'),
-                request.data.get('telefone', ''),
-                request.data.get('datanascimento', None),
-                request.data.get('morada', ''),
-                request.data.get('codigo_postal', ''),
-                request.data.get('localidade', ''),
-                request.data.get('nif', '')
-            ])
+        try:
+            data = request.data
+            from django.db import connections
+            with connections['admin'].cursor() as cursor:
+                cursor.execute("CALL inserir_cliente(%s, %s, %s, %s, %s, %s, %s, %s)", [
+                    data.get('nome'),
+                    data.get('email'),
+                    data.get('telefone', ''),
+                    data.get('datanascimento') if data.get('datanascimento') else None,
+                    data.get('morada', ''),
+                    data.get('codigopostal', ''),
+                    data.get('localidade', ''),
+                    data.get('nif')
+                ])
             
-        c = Clientes.objects.using('admin').get(emailcliente=request.data.get('email'))
-        return Response({"id": c.clienteid})
+            # Fetch back to return ID (Optional but good for frontend)
+            c = Clientes.objects.using('admin').filter(emailcliente=data.get('email')).first()
+            return Response({"id": c.clienteid if c else None, "message": "Cliente criado"}, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST', 'DELETE'])
@@ -801,11 +784,11 @@ def admin_produto_detail_api(request, pk):
     try:
         produto = Produtos.objects.using('admin').get(pk=pk)
         if request.method == 'DELETE':
-            produto.ativo = False  # Soft delete
+            produto.ativo = False
             produto.save(using='admin')
             return Response({"message": "Desativado"})
 
-        # New: support relative stock update if 'stock_change' is provided
+        # Support relative stock update if 'stock_change' is provided
         stock_change = request.data.get('stock_change')
         if stock_change is not None:
             new_stock = produto.stock + int(stock_change)
@@ -845,7 +828,7 @@ def admin_create_movie_api(request):
 
         from django.db import connections
         with connections['admin'].cursor() as cursor:
-            cursor.execute("CALL inserir_filme(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [
+            cursor.execute("CALL inserir_filme(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [
                 categoria.categoriaid,
                 cinema.cinemaid if cinema else None,
                 request.data.get('titulo'),
@@ -856,18 +839,16 @@ def admin_create_movie_api(request):
                 request.data.get('idioma', 'PT'),
                 request.data.get('sinopse', ''),
                 classificacao.classificacaoid,
-                request.data.get('ranking', 0.0)
+                request.data.get('ranking', 0.0),
+                request.data.get('cartaz_url'),
+                None # Placeholder for OUT p_novo_id
             ])
+            movie_id = cursor.fetchone()[0]
         
-        # Fetch the movie to return ID and update cartaz_url which isn't in the procedure
-        movie = Filmes.objects.using('admin').get(titulo=request.data.get('titulo'), duracao=request.data.get('duracao'))
-        if request.data.get('cartaz_url'):
-            movie.cartaz_url = request.data.get('cartaz_url')
-            movie.save(using='admin')
+        # Log action using the returned ID
+        log_action(request.user, 'create_movie', 'Filmes', movie_id, {"titulo": request.data.get('titulo')})
 
-        log_action(request.user, 'create_movie', 'Filmes', movie.filmeid, {"titulo": movie.titulo})
-
-        return Response({"message": "Movie created successfully", "id": movie.filmeid}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Movie created successfully", "id": movie_id}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -944,20 +925,20 @@ def admin_create_cinema_api(request):
     try:
         from django.db import connections
         with connections['admin'].cursor() as cursor:
-            cursor.execute("CALL inserir_cinema(%s, %s, %s, %s, %s, %s, %s)", [
+            cursor.execute("CALL inserir_cinema(%s, %s, %s, %s, %s, %s, %s, %s)", [
                 request.data.get('nome'),
                 request.data.get('email', ''),
                 request.data.get('telefone', ''),
                 request.data.get('morada', ''),
                 request.data.get('codigo_postal', ''),
                 request.data.get('localidade'),
-                0.0
+                0.0,
+                None # Placeholder for OUT p_novo_id
             ])
+            cinema_id = cursor.fetchone()[0]
         
-        cinema = Cinemas.objects.using('admin').get(nomecinema=request.data.get('nome'), localidadecinema=request.data.get('localidade'))
-        
-        log_action(request.user, 'create_cinema', 'Cinemas', cinema.cinemaid, {"nome": cinema.nomecinema})
-        return Response({"message": "Cinema created successfully", "id": cinema.cinemaid},
+        log_action(request.user, 'create_cinema', 'Cinemas', cinema_id, {"nome": request.data.get('nome')})
+        return Response({"message": "Cinema created successfully", "id": cinema_id},
                         status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

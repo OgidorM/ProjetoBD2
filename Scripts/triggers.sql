@@ -393,7 +393,7 @@ CREATE OR REPLACE FUNCTION trg_libertar_lugar_apos_cancelamento_bilhete()
 RETURNS TRIGGER AS $$
 BEGIN
     UPDATE lugaresSessao
-    SET estado = Livre
+    SET estado = 'Livre'
     WHERE lugarSessaoid = OLD.lugarid;
 
     RETURN OLD;
@@ -483,3 +483,34 @@ CREATE TRIGGER trg_verificar_idade_para_filme
 BEFORE INSERT ON vendalinhas
 FOR EACH ROW
 EXECUTE FUNCTION trg_verificar_idade_para_filme();
+
+
+/*==============================================================
+    17 - Refresh automatico de mv_funcionarios_top
+    Mantem a vista materializada atualizada
+==============================================================*/
+CREATE OR REPLACE FUNCTION trg_refresh_mv_funcionarios_top()
+RETURNS TRIGGER AS $$
+BEGIN
+    REFRESH MATERIALIZED VIEW mv_funcionarios_top;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Atualizar quando mudam dados dos funcionários
+CREATE TRIGGER trg_refresh_mv_funcionarios_top_funcionarios
+AFTER INSERT OR UPDATE OR DELETE ON funcionarios
+FOR EACH STATEMENT
+EXECUTE FUNCTION trg_refresh_mv_funcionarios_top();
+
+-- Atualizar quando há novas avaliações
+CREATE TRIGGER trg_refresh_mv_funcionarios_top_avaliacoes
+AFTER INSERT OR UPDATE OR DELETE ON avaliacoes
+FOR EACH STATEMENT
+EXECUTE FUNCTION trg_refresh_mv_funcionarios_top();
+
+-- Atualizar quando há novas vendas (afeta valores faturados)
+CREATE TRIGGER trg_refresh_mv_funcionarios_top_vendas
+AFTER INSERT OR UPDATE OR DELETE ON vendas
+FOR EACH STATEMENT
+EXECUTE FUNCTION trg_refresh_mv_funcionarios_top();

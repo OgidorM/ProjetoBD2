@@ -96,7 +96,7 @@ DATABASES = {
         'USER': 'app_user',
         'PASSWORD': 'app123',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5434',
     },
     'admin': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -104,7 +104,7 @@ DATABASES = {
         'USER': 'admin_bd',
         'PASSWORD': 'admin123',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5434',
     }
 }
 
