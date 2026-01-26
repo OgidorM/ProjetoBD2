@@ -82,6 +82,7 @@ ALTER MATERIALIZED VIEW mv_funcionarios_top OWNER TO admin_bd;
 ALTER MATERIALIZED VIEW mv_ocupacao_salas OWNER TO admin_bd;
 ALTER MATERIALIZED VIEW mv_vendas_diarias OWNER TO admin_bd;
 ALTER MATERIALIZED VIEW mv_historico_clientes OWNER TO admin_bd;
+ALTER FUNCTION trg_refresh_mv_funcionarios_top() OWNER TO admin_bd;
 
 
 SELECT rolname, rolsuper, rolcanlogin

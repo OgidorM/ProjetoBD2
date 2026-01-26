@@ -359,16 +359,18 @@ def salas_api(request):
 @api_view(['GET'])
 def sessoes_por_filme_api(request, filmeid):
     try:
-        from django.db import connection
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT sessaoid FROM fn_obter_sessoes_ativas_por_filme(%s)", [filmeid])
-            rows = cursor.fetchall()
-            ids = [row[0] for row in rows]
-            
-        sessoes = Sessoes.objects.filter(pk__in=ids).select_related('salaid__cinemaid').order_by('inicio')
+        # O segredo está no select_related para seguir a chave estrangeira
+        sessoes = Sessoes.objects.filter(
+            filmeid=filmeid, 
+            estadosessao='Ativa'
+        ).select_related('salaid', 'salaid__cinemaid').order_by('inicio')
+
         serializer = SessoesSerializer(sessoes, many=True)
         return Response(serializer.data)
     except Exception as e:
+        # Isso vai imprimir o erro exato no seu terminal para sabermos se é no Serializer
+        import traceback
+        print(traceback.format_exc()) 
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -500,8 +502,9 @@ def minhas_vendas_api(request):
             return Response([])
 
         # 2. Execute function in database
+        from django.db import connection
         with connection.cursor() as cursor:
-            cursor.execute("SELECT api_obter_historico_vendas(%s)", [cliente_id])
+            cursor.execute("SELECT fn_obter_historico_vendas_cliente(%s)", [cliente_id])
             result = cursor.fetchone()[0]
 
         return Response(result)

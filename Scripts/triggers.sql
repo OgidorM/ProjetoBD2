@@ -513,8 +513,11 @@ EXECUTE FUNCTION trg_verificar_idade_para_filme();
     17 - Refresh automatico de mv_funcionarios_top
     Mantem a vista materializada atualizada
 ==============================================================*/
+
 CREATE OR REPLACE FUNCTION trg_refresh_mv_funcionarios_top()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+SECURITY DEFINER
+AS $$
 BEGIN
     REFRESH MATERIALIZED VIEW mv_funcionarios_top;
     RETURN NULL;

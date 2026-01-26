@@ -223,58 +223,69 @@ BEGIN
     SELECT 
         json_agg(
             json_build_object(
-                'id', v.vendaid,
-                'data', v.data,
-                -- Usa o total da tabela, se for nulo chama a função
-                'total', COALESCE(v.totalvenda, fn_calcular_total_venda(v.vendaid)),
-                'rated', (v.avaliacao IS NOT NULL),
+                'id', v.VENDAID,
+                'data', v.DATA,
+                'total', COALESCE(v.TOTALVENDA, 0),
+                
+                -- CORREÇÃO 1: Verifica se existe registo na tabela AVALIACOES
+                'rated', (a.AVALIACAOID IS NOT NULL),
+                
                 'items', (
                     SELECT COALESCE(json_agg(
                         CASE 
-                            -- CASO SEJA BILHETE
-                            WHEN l.bilheteid IS NOT NULL THEN json_build_object(
-                                'id', b.bilheteid,
+                            -- SE FOR BILHETE
+                            WHEN l.BILHETEID IS NOT NULL THEN json_build_object(
+                                'id', b.BILHETEID,
                                 'tipo', 'ticket',
-                                'filme', f.titulo,
-                                'sala', COALESCE(s.nomesala, 'Sala N/A'),
-                                'data', sess.inicio,
-                                'lugar', CONCAT(lug.fila, lug.numero),
-                                'preco', l.precolinha
+                                'filme', f.TITULO,
+                                'sala', COALESCE(s.NOMESALA, 'Sala N/A'),
+                                'data', sess.INICIO,
+                                -- CORREÇÃO 2: Caminho correto para chegar à Fila/Número
+                                -- Bilhete -> LugaresSessao -> Lugares
+                                'lugar', CONCAT(lug.FILA, lug.NUMERO), 
+                                'preco', l.PRECOLINHA
                             )
-                            -- CASO SEJA PRODUTO
+                            -- SE FOR PRODUTO
                             ELSE json_build_object(
                                 'tipo', 'produto',
-                                'nome', prod.nomeproduto,
-                                'quantidade', l.quantidade,
-                                'preco', l.precolinha
+                                'nome', prod.NOMEPRODUTO,
+                                'quantidade', l.QUANTIDADE,
+                                'preco', l.PRECOLINHA
                             )
                         END
                     ), '[]'::json)
-                    FROM linhavendas l
-                    -- Joins para Bilhetes
-                    LEFT JOIN bilhetes b ON l.bilheteid = b.bilheteid
-                    LEFT JOIN sessoes sess ON b.sessaoid = sess.sessaoid
-                    LEFT JOIN filmes f ON sess.filmeid = f.filmeid
-                    LEFT JOIN salas s ON sess.salaid = s.salaid
-                    LEFT JOIN lugares lug ON b.lugarid = lug.lugarid
-                    -- Joins para Produtos
-                    LEFT JOIN produtos prod ON l.produtoid = prod.produtoid
-                    WHERE l.vendaid = v.vendaid
+                    -- CORREÇÃO 3: Nome da tabela ajustado para VENDALINHAS
+                    FROM VENDALINHAS l
+                    
+                    -- JOINS PARA BILHETES
+                    LEFT JOIN BILHETES b ON l.BILHETEID = b.BILHETEID
+                    LEFT JOIN SESSOES sess ON b.SESSAOID = sess.SESSAOID
+                    LEFT JOIN FILMES f ON sess.FILMEID = f.FILMEID
+                    LEFT JOIN SALAS s ON sess.SALAID = s.SALAID
+                    
+                    -- CORREÇÃO 4: Join Crítico para a nova tabela intermédia
+                    LEFT JOIN LUGARESSESSAO ls ON b.LUGARID = ls.LUGARSESSAOID
+                    LEFT JOIN LUGARES lug ON ls.LUGARID = lug.LUGARID
+                    
+                    -- JOIN PARA PRODUTOS
+                    LEFT JOIN PRODUTOS prod ON l.PRODUTOID = prod.PRODUTOID
+                    
+                    WHERE l.VENDAID = v.VENDAID
                 )
-            ) ORDER BY v.data DESC, v.vendaid DESC
+            ) ORDER BY v.DATA DESC, v.VENDAID DESC
         )
     INTO v_resultado
     FROM 
-        vendas v
+        VENDAS v
+    -- CORREÇÃO 5: Left Join com a tabela separada de avaliações
+    LEFT JOIN AVALIACOES a ON v.VENDAID = a.VENDAID
     WHERE 
-        v.clienteid = p_clienteid;
+        v.CLIENTEID = p_clienteid;
 
-    -- Se não encontrar vendas, v_resultado será NULL.
-    -- Retornamos '[]' (array vazio) nesse caso.
+    -- Se não houver resultados, devolve array vazio
     RETURN COALESCE(v_resultado, '[]'::json);
 END;
 $$;
-
 ------------------------------------------------------------------------------------------------
 -- 10. LISTAR TODAS AS VENDAS
 ------------------------------------------------------------------------------------------------
