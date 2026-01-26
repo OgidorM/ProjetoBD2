@@ -15,7 +15,7 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from rest_framework.response import Response
 from rest_framework import status
 
-# Imports dos Models
+# Model Imports
 from .models import (
     Filmes, Sessoes, LugaresSessao, Vendas, VendaLinhas,
     Bilhetes, Clientes, Funcionarios, Lugares, Salas,
@@ -28,7 +28,6 @@ from .serializers import (
 from .mongo_logger import log_action
 from .omdb_service import fetch_movie_data
 
-# --- ARQUITETURA NOVA (Imports) ---
 from clientes.models import ClienteProfile
 from clientes.core.services import ClienteService
 from clientes.core.dtos import NovoClienteDTO
@@ -69,17 +68,20 @@ class SignUpView(generic.CreateView):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_api(request):
-    """ Endpoint para Login via React (Retorna JSON + Cookie de Sessão) """
+    """
+    Endpoint for React Login.
+    Returns JSON response and sets the Session Cookie.
+    """
     username = request.data.get('username')
     password = request.data.get('password')
 
     user = authenticate(request, username=username, password=password)
 
     if user is not None:
-        login(request, user)  # Cria o cookie sessionid
+        login(request, user)  # Creates the sessionid cookie
         log_action(user, 'login_api', 'User', user.id, {"status": "success"})
 
-        # Verifica se é staff para o frontend saber se mostra o painel admin
+        # Check if user is staff to determine if the admin panel should be shown on frontend
         return Response({
             "message": "Login successful",
             "username": user.username,
@@ -95,7 +97,7 @@ def login_api(request):
 @permission_classes([AllowAny])
 def signup_api(request):
     """
-    Endpoint para Registo via React (USA A ARQUITETURA LIMPA)
+    Endpoint for Registration via React (Uses Clean Architecture)
     """
     username = request.data.get('username')
     password = request.data.get('password')
@@ -106,18 +108,18 @@ def signup_api(request):
         username=username,
         password=password,
         email=email,
-        nome_completo=username,  # Usa username como nome inicial
+        nome_completo=username,  # Uses username as default name
         data_nascimento=dob
     )
 
     service = ClienteService()
     try:
-        # Service cria User + Cliente + Profile numa transação segura
+        # Service creates User + Client + Profile in a secure transaction
         profile = service.registrar_novo_cliente(dto)
 
         log_action(profile.user, 'signup_api', 'User', profile.user.id, {"email": email})
 
-        # Auto-login após registo
+        # Auto-login after registration
         login(request, profile.user)
 
         return Response({
@@ -141,7 +143,7 @@ def logout_api(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def whoami_api(request):
-    """ Endpoint para o React validar a sessão atual """
+    """ Endpoint for React to validate the current session """
     if not request.user.is_authenticated:
         return Response({"is_authenticated": False})
 
@@ -165,17 +167,17 @@ def update_profile_api(request):
     try:
         user_id = request.user.id
         
-        # 1. Capturar todos os campos
+        # 1. Capture all input fields
         email = request.data.get('email')
         nif = request.data.get('nif')
         telefone = request.data.get('telefone')
         codigo_postal = request.data.get('codigo_postal')
 
-        # Validação simples
+        # Simple validation
         if not email:
             return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2. Executar a função SQL com 4 parâmetros
+        # 2. Execute SQL function with the provided parameters
         with connections['admin'].cursor() as cursor:
             cursor.execute(
                 "SELECT fn_atualizar_perfil_user(%s, %s, %s, %s, %s)", 
@@ -193,8 +195,9 @@ def update_profile_api(request):
 
 
 # ==============================================================================
-#  ÁREA 3: API ENDPOINTS DE NEGÓCIO (VENDAS, FILMES, ETC)
+#  Business Logic API Endpoints (Sales, Movies, etc.)
 # ==============================================================================
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def produtos_api(request):
@@ -277,7 +280,7 @@ def lista_sessoes_api(request):
 
     except Exception as e:
         return Response(
-            {"error": "Erro interno: " + str(e)}, 
+            {"error": "Internal Error: " + str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -308,7 +311,7 @@ def comprar_produtos_api(request):
         user = request.user
         items = request.data.get('items', []) 
         if not items:
-            return Response({"error": "O carrinho de snacks está vazio."}, status=400)
+            return Response({"error": "The snack cart is empty."}, status=400)
 
         products_list = [{"id": int(i['produtoid']), "qtd": int(i['quantidade'])} for i in items]
         products_json = json.dumps(products_list)
@@ -316,19 +319,19 @@ def comprar_produtos_api(request):
         with connections['admin'].cursor() as cursor:
             cursor.execute("""
                 SELECT fn_realizar_venda_unificada(
-                    %s, %s, %s,   -- User ID, Nome, Email
-                    NULL,         -- Sessão (NULL)
-                    NULL,         -- Lugares (NULL)
-                    %s::jsonb     -- Produtos JSON
+                    %s, %s, %s,   -- User ID, Name, Email
+                    NULL,         -- Session (NULL)
+                    NULL,         -- Seats (NULL)
+                    %s::jsonb     -- Products JSON
                 )
             """, [user.id, user.username, user.email, products_json])
             
             venda_id = cursor.fetchone()[0]
 
-        return Response({"message": "Compra de bar realizada!", "venda_id": venda_id}, status=201)
+        return Response({"message": "Snack purchase successful!", "venda_id": venda_id}, status=201)
 
     except Exception as e:
-        print(f"ERRO BAR: {e}")
+        print(f"BAR ERROR: {e}")
         return Response({"error": str(e)}, status=500)
 
 @api_view(['POST'])
@@ -344,7 +347,7 @@ def criar_venda_api(request):
         products_raw = data.get('items') or data.get('products') or []
 
         if not lugares_ids and not products_raw:
-            return Response({"error": "O carrinho está vazio. Selecione bilhetes ou snacks."}, status=400)
+            return Response({"error": "The cart is empty. Please select tickets or snacks."}, status=400)
 
         lugares_json = json.dumps(lugares_ids)
         
@@ -354,10 +357,10 @@ def criar_venda_api(request):
         with connections['admin'].cursor() as cursor:
             cursor.execute("""
                 SELECT fn_realizar_venda_unificada(
-                    %s, %s, %s,   -- User ID, Nome, Email
-                    %s,           -- Sessão ID
-                    %s::jsonb,    -- Lugares JSON
-                    %s::jsonb     -- Produtos JSON
+                    %s, %s, %s,   -- User ID, Name, Email
+                    %s,           -- Session ID
+                    %s::jsonb,    -- Seats JSON
+                    %s::jsonb     -- Products JSON
                 )
             """, [
                 user.id, user.username, user.email,
@@ -368,10 +371,10 @@ def criar_venda_api(request):
             
             venda_id = cursor.fetchone()[0]
 
-        return Response({"message": "Bilhetes emitidos com sucesso!", "venda_id": venda_id}, status=201)
+        return Response({"message": "Tickets issued successfully!", "venda_id": venda_id}, status=201)
 
     except Exception as e:
-        print(f"ERRO BILHETEIRA: {e}")
+        print(f"TICKETING ERROR: {e}")
         return Response({"error": str(e)}, status=500)
 
 
@@ -406,8 +409,8 @@ def criar_avaliacao_api(request):
         venda_id = request.data.get('venda_id')
         
         with connections['default'].cursor() as cursor:
-            # 1. VERIFICAÇÃO DE PROPRIEDADE (Direto no SQL)
-            # Verificamos se a venda pertence ao username do request.user
+            # 1. Ownership Verification (Directly in SQL)
+            # Check if the sale belongs to the request.user username
             cursor.execute("""
                 SELECT 1 FROM vendas v 
                 JOIN clientes c ON v.clienteid = c.clienteid 
@@ -415,27 +418,27 @@ def criar_avaliacao_api(request):
             """, [venda_id, request.user.username])
             
             if not cursor.fetchone():
-                return Response({"error": "Não tem permissão para avaliar esta venda"}, status=403)
+                return Response({"error": "You do not have permission to rate this sale"}, status=403)
 
-            # 2. CHAMADA DA PROCEDURE
+            # 2. Call Stored Procedure
             cursor.execute("CALL inserir_avaliacao(%s, %s, %s, %s, %s, %s)", [
                 venda_id,
-                request.data.get('titulo', 'Avaliação de Compra'),
+                request.data.get('titulo', 'Purchase Review'),
                 request.data.get('nota_cinema'),
                 request.data.get('nota_filme'),
                 request.data.get('nota_funcionario'),
                 request.data.get('comentario', '')
             ])
 
-        return Response({"message": "Avaliação submetida com sucesso"}, status=201)
+        return Response({"message": "Review submitted successfully"}, status=201)
 
     except Exception as e:
-        # Captura os RAISE EXCEPTION da Procedure (ex: 'Venda não está concluída')
+        # Catch Procedure exceptions (e.g. 'Sale not finished')
         return Response({"error": str(e)}, status=400)
 
 
 # ==============================================================================
-#  ÁREA 4: ADMIN API (STAFF ONLY)
+#  Admin API (Staff Only)
 # ==============================================================================
 
 @api_view(['GET'])
@@ -496,7 +499,7 @@ def admin_funcionarios_api(request):
                     "nome": item['nomefuncionario'],
                     "cargo": item['cargo'],
                     "cinema": item['nomecinema'],
-                    "salario": item.get('salario', 0), # Added to MV
+                    "salario": item.get('salario', 0), # Added to Materialized View
                     "media_avaliacao": item.get('media_avaliacao'),
                     "total_vendas": item.get('total_vendas'),
                     "total_faturado": item.get('total_faturado')
@@ -525,7 +528,7 @@ def admin_funcionarios_api(request):
                 novo_id = cursor.fetchone()[0]
 
             return Response({
-                "message": "Funcionário criado com sucesso", 
+                "message": "Employee created successfully", 
                 "id": novo_id
             }, status=status.HTTP_201_CREATED)
 
@@ -533,7 +536,7 @@ def admin_funcionarios_api(request):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            return Response({"error": "Erro interno: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "Internal Error: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
@@ -564,13 +567,13 @@ def admin_funcionario_detail_api(request, pk):
 
     try:
         with connections['admin'].cursor() as cursor:
-            # Ação de Eliminar
+            # Delete Action
             if request.method == 'DELETE':
                 cursor.execute("CALL proc_eliminar_funcionario(%s)", [pk])
-                return Response({"message": "Funcionário eliminado com sucesso"})
+                return Response({"message": "Employee deleted successfully"})
 
-            # Ação de Atualizar
-            # Extraímos os valores do request.data
+            # Update Action
+            # Extract values from request.data
             cursor.execute("CALL proc_editar_funcionario(%s, %s, %s, %s)", [
                 pk,
                 request.data.get('nome'),
@@ -578,7 +581,7 @@ def admin_funcionario_detail_api(request, pk):
                 request.data.get('salario')
             ])
             
-            return Response({"message": "Dados do funcionário atualizados"})
+            return Response({"message": "Employee details updated"})
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -590,7 +593,7 @@ def admin_clientes_api(request):
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
-    # GET: Listar Clientes (usando View)
+    # GET: List Clients (using View)
     if request.method == 'GET':
         try:
             with connections['admin'].cursor() as cursor:
@@ -608,7 +611,7 @@ def admin_clientes_api(request):
         except Exception as e:
              return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    # POST: Criar Cliente (usando Procedure)
+    # POST: Create Client (using Procedure)
     if request.method == 'POST':
         try:
             data = request.data
@@ -624,7 +627,7 @@ def admin_clientes_api(request):
                     data.get('nif')
                 ])
             
-            return Response({"message": "Cliente criado"}, status=status.HTTP_201_CREATED)
+            return Response({"message": "Client created"}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -638,19 +641,19 @@ def admin_cliente_detail_api(request, pk):
     """
     try:
         with connections['admin'].cursor() as cursor:
-            # 1. Eliminate
+            # 1. Delete Client
             if request.method == 'DELETE':
                 cursor.execute("CALL eliminar_cliente(%s)", [pk])
-                return Response({"message": "Eliminado com sucesso"})
+                return Response({"message": "Deleted successfully"})
 
-            # 2. Update
+            # 2. Update Client
             cursor.execute("CALL editar_cliente(%s, %s, %s)", [
                 pk,
                 request.data.get('nome'),
                 request.data.get('email')
             ])
             
-            return Response({"message": "Dados do cliente atualizados"})
+            return Response({"message": "Client details updated"})
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -662,26 +665,26 @@ def admin_cliente_detail_api(request, pk):
 def admin_produto_detail_api(request, pk):
     try:
         with connections['admin'].cursor() as cursor:
-            # Ação 1: Soft Delete
+            # Action 1: Soft Delete
             if request.method == 'DELETE':
                 cursor.execute("CALL desativar_produto(%s)", [pk])
-                return Response({"message": "Produto desativado"})
+                return Response({"message": "Product deactivated"})
 
-            # Ação 2: Ajuste de Stock
+            # Action 2: Stock Adjustment
             stock_change = request.data.get('stock_change')
             if stock_change is not None:
                 cursor.execute("CALL ajustar_stock_produto(%s, %s, %s)", [pk, int(stock_change), None])
                 novo_stock = cursor.fetchone()[0]
-                return Response({"message": "Stock ajustado", "new_stock": novo_stock})
+                return Response({"message": "Stock adjusted", "new_stock": novo_stock})
 
-            # Ação 3: Edição Completa
+            # Action 3: Complete Edit
             cursor.execute("CALL editar_produto(%s, %s, %s, %s)", [
                 pk,
                 request.data.get('nome'),
                 request.data.get('preco'),
                 request.data.get('stock')
             ])
-            return Response({"message": "Dados atualizados com sucesso"})
+            return Response({"message": "Data updated successfully"})
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -721,7 +724,7 @@ def admin_create_movie_api(request):
             movie_id = cursor.fetchone()[0]
         
         return Response({
-            "message": "Filme criado com sucesso", 
+            "message": "Movie created successfully", 
             "id": movie_id
         }, status=status.HTTP_201_CREATED)
 
@@ -734,7 +737,7 @@ def admin_create_movie_api(request):
 @permission_classes([IsAuthenticated])
 def admin_vendas_api(request):
     """
-    API to list every sale in the system (Admin only) - Otimizado
+    API to list every sale in the system (Admin only) - Optimized
     """
     if not request.user.is_staff:
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
@@ -808,7 +811,7 @@ def admin_create_room_api(request, cinema_id):
             nova_sala_id = cursor.fetchone()[0]
 
         return Response({
-            "message": "Sala e lugares criados com sucesso!",
+            "message": "Room and seats created successfully!",
             "id": nova_sala_id
         }, status=status.HTTP_201_CREATED)
 
@@ -836,6 +839,7 @@ def admin_delete_movie_api(request, movie_id):
     except Exception as e:
         erro_msg = str(e)
         
+        # Error mapping from SQL to HTTP Status Codes
         if 'Filme não encontrado' in erro_msg:
             return Response({"error": "Movie not found"}, status=status.HTTP_404_NOT_FOUND)
             
@@ -919,7 +923,7 @@ def deletar_sessao_api(request, sessaoid):
     except Exception as e:
         erro_msg = str(e)
         
-        # Mapeamento de erros para manter a lógica original do teu código
+        # Error mapping to keep the original logic
         if 'Sessão não encontrada' in erro_msg:
             return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
             
@@ -984,10 +988,10 @@ def cancelar_bilhete_api(request, bilheteid):
     """
     try:
         with connections['admin'].cursor() as cursor:
-            # Chama o procedimento simplificado
+            # Call simplified procedure
             cursor.execute("CALL cancelar_bilhete(%s)", [bilheteid])
         
-        return Response({"message": "Cancelamento concluído com sucesso."})
+        return Response({"message": "Cancellation completed successfully."})
     except Exception as e:
         return Response({"error": str(e)}, status=400)
 
@@ -1023,38 +1027,38 @@ def bilhete_digital_api(request, bilheteid):
     """
     try:
         with connections['default'].cursor() as cursor:            
-            # 1. VERIFICAÇÃO DE SEGURANÇA
+            # 1. SECURITY VERIFICATION
             cursor.execute("SELECT user_id FROM v_bilhetes_seguranca WHERE bilheteid = %s", [bilheteid])
             
             row = cursor.fetchone()
             
             if not row:
-                return Response({"error": "Bilhete não encontrado"}, status=404)
+                return Response({"error": "Ticket not found"}, status=404)
             
             owner_user_id = row[0]
 
-            # Verificação de permissão (Staff ou Dono)
+            # Permission Verification (Staff or Owner)
             if not request.user.is_staff and owner_user_id != request.user.id:
-                return Response({"error": "Não tem permissão para aceder a este bilhete"}, status=403)
+                return Response({"error": "You do not have permission to access this ticket"}, status=403)
 
-            # 2. OBTER DADOS DO BILHETE (Chama a função SQL)
+            # 2. RETRIEVE TICKET DATA (Calls SQL function)
             cursor.execute("SELECT exportar_bilhete_pdf(%s)", [bilheteid])
             result = cursor.fetchone()
             
             if not result or result[0] is None:
-                return Response({"error": "Erro ao gerar dados do bilhete"}, status=404)
+                return Response({"error": "Error generating ticket data"}, status=404)
             
             data = result[0]
             
-            # Converter string para dict se necessário (depende do driver do Postgres)
+            # Convert string to dict if necessary (depends on Postgres driver)
             if isinstance(data, str):
                 data = json.loads(data)
 
             return Response(data)
 
     except Exception as e:
-        # Log do erro no terminal para ajudar no debug
-        print(f"Erro no Bilhete Digital: {e}")
+        # Log error in terminal for debugging
+        print(f"Digital Ticket Error: {e}")
         return Response({"error": str(e)}, status=400)
 
 
@@ -1068,32 +1072,32 @@ def fatura_digital_api(request, vendaid):
     try:
         with connections['default'].cursor() as cursor:
             
-            # 1. VERIFICAÇÃO DE SEGURANÇA (Quem é o dono desta venda?)
+            # 1. SECURITY VERIFICATION (Who owns this sale?)
             cursor.execute("SELECT user_id FROM v_vendas_users WHERE vendaid = %s", [vendaid])
             row = cursor.fetchone()
 
             if not row:
-                return Response({"error": "Venda não encontrada"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "Sale not found"}, status=status.HTTP_404_NOT_FOUND)
             
             owner_user_id = row[0]
 
-            # Lógica de Permissão:
+            # Permission Logic:
             if not request.user.is_staff and owner_user_id != request.user.id:
                 return Response(
-                    {"error": "Não tem permissão para ver esta fatura."}, 
+                    {"error": "You do not have permission to view this invoice."}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-            # 2. OBTER DADOS DA FATURA (A tua função SQL)
+            # 2. RETRIEVE INVOICE DATA (SQL Function)
             cursor.execute("SELECT exportar_fatura_pdf(%s)", [vendaid])
             result = cursor.fetchone()
             
             if not result or result[0] is None:
-                return Response({"error": "Detalhes da fatura indisponíveis"}, status=404)
+                return Response({"error": "Invoice details unavailable"}, status=404)
 
             fatura_json = result[0]
 
-            # Garante que é enviado como Objeto JSON e não como String
+            # Ensures it is sent as a JSON Object, not a String
             if isinstance(fatura_json, str):
                 fatura_json = json.loads(fatura_json)
 
@@ -1196,17 +1200,17 @@ def admin_delete_categoria_api(request, pk):
     """
     try:
         with connections['admin'].cursor() as cursor:
-            # Chamamos a Procedure. Se falhar, ela lança erro aqui.
+            # Call Procedure. If it fails, it raises an error here.
             cursor.execute("CALL eliminar_categoria(%s)", [pk])
         
-        # Se chegou aqui, é porque correu tudo bem
+        # If we reached here, everything went well
         log_action(request.user, 'delete_category', 'Categorias', pk, {})
         return Response({"message": "Category deleted successfully"}, status=status.HTTP_200_OK)
 
     except Exception as e:
         erro_msg = str(e)
         
-        # Mapeamento de erros do SQL para HTTP Status Codes
+        # Map SQL errors to HTTP Status Codes
         if 'Categoria não encontrada' in erro_msg:
             return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
             
@@ -1216,5 +1220,5 @@ def admin_delete_categoria_api(request, pk):
                 status=status.HTTP_400_BAD_REQUEST
             )
             
-        # Erro genérico
+        # Generic error
         return Response({"error": erro_msg}, status=status.HTTP_400_BAD_REQUEST)
