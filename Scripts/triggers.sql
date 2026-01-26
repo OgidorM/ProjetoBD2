@@ -6,7 +6,6 @@ CREATE OR REPLACE FUNCTION trg_atualizar_rankings_avaliacoes()
 RETURNS TRIGGER AS $$
 BEGIN
     /* Atualizar ranking dos CINEMAS */
-    -- Vai buscar todas as avaliacoes deste cinema e faz a media
     UPDATE cinemas c
     SET ranking = (
         SELECT ROUND(AVG(a.avaliacaocinema)::numeric,1)
@@ -24,7 +23,6 @@ BEGIN
     );
 
     /* Atualizar ranking dos FUNCIONARIOS */
-    -- Recalcula a nota do funcionario baseada nas vendas dele
     UPDATE funcionarios f
     SET ranking = (
         SELECT ROUND(AVG(a.avaliacaofuncionario)::numeric,1)
@@ -40,8 +38,6 @@ BEGIN
     );
 
     /* Atualizar ranking dos FILMES */
-    -- da venda associada à avaliação
-    -- vai até ao filmes atraves do bilhete
     UPDATE filmes fi
     SET ranking = (
         SELECT ROUND(AVG(a.avaliacaofilme)::numeric,1)
@@ -415,7 +411,8 @@ RETURNS TRIGGER AS $$
 BEGIN
     UPDATE lugaresSessao
     SET estado = 'Livre'
-    WHERE lugarSessaoid = OLD.lugarid;
+    WHERE lugarid = OLD.lugarid 
+      AND sessaoid = OLD.sessaoid;
 
     RETURN OLD;
 END;

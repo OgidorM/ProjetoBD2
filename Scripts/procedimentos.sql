@@ -262,35 +262,33 @@ $$;
 ----------------------------------------------------------------------------------------------
 -- 7. INSERIR SALA (corrigido e simplificado)
 ----------------------------------------------------------------------------------------------
-DROP PROCEDURE IF EXISTS inserir_sala;
 CREATE OR REPLACE PROCEDURE inserir_sala(
     p_cinemaid INT,
     p_nome VARCHAR,
     p_filas INT,
     p_colunas INT,
-    p_tipo VARCHAR
+    p_tipo VARCHAR,
+    INOUT p_salaid INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
-DECLARE
-    v_exists INT;
 BEGIN
-    -- Validar cinema
-    SELECT cinemaid INTO v_exists
-    FROM cinemas
-    WHERE cinemaid = p_cinemaid;
-
-    IF v_exists IS NULL THEN
+    -- 1. Validações Simples
+    IF NOT EXISTS (SELECT 1 FROM cinemas WHERE cinemaid = p_cinemaid) THEN
         RAISE EXCEPTION 'Cinema inexistente.';
     END IF;
 
-    -- Validar dimensões
     IF p_filas <= 0 OR p_colunas <= 0 THEN
-        RAISE EXCEPTION 'Dimensões inválidas (filas e colunas > 0).';
+        RAISE EXCEPTION 'Dimensões inválidas.';
     END IF;
 
+    -- 2. Inserir apenas a Sala
     INSERT INTO salas (cinemaid, nomesala, filas, colunas, tiposala)
-    VALUES (p_cinemaid, p_nome, p_filas, p_colunas, p_tipo);
+    VALUES (p_cinemaid, p_nome, p_filas, p_colunas, p_tipo)
+    RETURNING salaid INTO p_salaid;
+
+    -- 3. Confirmação
+    RAISE NOTICE 'Sala % criada. Os lugares estão a ser gerados automaticamente pelos triggers.', p_salaid;
 END;
 $$;
 
@@ -436,5 +434,199 @@ BEGIN
     INSERT INTO categorias (nomecategoria)
     VALUES (p_nome)
     RETURNING categoriaid INTO p_novo_id;
+END;
+$$;
+
+----------------------------------------------------------------------------------------------
+-- 11. ELIMINAR CATEGORIA
+----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS eliminar_categoria;
+CREATE OR REPLACE PROCEDURE eliminar_categoria(p_categoriaid INT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_exists BOOLEAN;
+    v_has_movies BOOLEAN;
+BEGIN
+    -- 1. Verificar se a categoria existe
+    SELECT EXISTS(SELECT 1 FROM categorias WHERE categoriaid = p_categoriaid) INTO v_exists;
+    
+    IF NOT v_exists THEN
+        RAISE EXCEPTION 'Categoria não encontrada.'; -- Erro 404
+    END IF;
+
+    -- 2. Verificar dependências (Se tem filmes associados)
+    SELECT EXISTS(SELECT 1 FROM filmes WHERE categoriaid = p_categoriaid) INTO v_has_movies;
+
+    IF v_has_movies THEN
+        RAISE EXCEPTION 'Não é possível eliminar: Existem filmes associados a esta categoria.'; -- Erro 400
+    END IF;
+
+    -- 3. Eliminar
+    DELETE FROM categorias WHERE categoriaid = p_categoriaid;
+END;
+$$;
+
+----------------------------------------------------------------------------------------------
+-- 12. CANCELAR BILHETE
+----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS cancelar_bilhete;
+CREATE OR REPLACE PROCEDURE cancelar_bilhete(p_bilheteid INT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- 1. Verificar se o bilhete existe antes de tentar apagar
+    IF NOT EXISTS (SELECT 1 FROM bilhetes WHERE bilheteid = p_bilheteid) THEN
+        RAISE EXCEPTION 'Erro: O bilhete % não existe.', p_bilheteid;
+    END IF;
+
+    -- 2. Apagar primeiro a linha da venda (VendaLinhas) 
+    DELETE FROM vendalinhas WHERE bilheteid = p_bilheteid;
+
+    -- 3. Apagar o Bilhete (ativa o trigger)
+    DELETE FROM bilhetes WHERE bilheteid = p_bilheteid;
+
+    -- Opcional: Log ou mensagem de sucesso
+    RAISE NOTICE 'Bilhete % cancelado e lugar libertado via Trigger.', p_bilheteid;
+END;
+$$;
+
+----------------------------------------------------------------------------------------------
+-- 13. ELIMINAR SESSÃO
+----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS eliminar_sessao;
+CREATE OR REPLACE PROCEDURE eliminar_sessao(p_sessaoid INT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_contagem_bilhetes INT;
+    v_existe BOOLEAN;
+BEGIN
+    -- 1. Verificar se a sessão existe
+    SELECT EXISTS(SELECT 1 FROM sessoes WHERE sessaoid = p_sessaoid) INTO v_existe;
+    IF NOT v_existe THEN
+        RAISE EXCEPTION 'Sessão não encontrada.'; -- Código para 404
+    END IF;
+
+    -- 2. Verificar se existem bilhetes vendidos
+    SELECT COUNT(*) INTO v_contagem_bilhetes FROM bilhetes WHERE sessaoid = p_sessaoid;
+    IF v_contagem_bilhetes > 0 THEN
+        RAISE EXCEPTION 'Não é possível eliminar: existem bilhetes vendidos para esta sessão.'; -- Código para 400
+    END IF;
+
+    -- 3. Limpar LugaresSessao (Dependência obrigatória)
+    DELETE FROM lugaressessao WHERE sessaoid = p_sessaoid;
+
+    -- 4. Eliminar a sessão
+    DELETE FROM sessoes WHERE sessaoid = p_sessaoid;
+END;
+$$;
+
+----------------------------------------------------------------------------------------------
+-- 14. ELIMINAR FILME
+----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS eliminar_filme;
+CREATE OR REPLACE PROCEDURE eliminar_filme(p_filmeid INT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_existe BOOLEAN;
+    v_tem_sessoes BOOLEAN;
+BEGIN
+    -- 1. Verificar se o filme existe
+    SELECT EXISTS(SELECT 1 FROM filmes WHERE filmeid = p_filmeid) INTO v_existe;
+    IF NOT v_existe THEN
+        RAISE EXCEPTION 'Filme não encontrado.';
+    END IF;
+
+    -- 2. Verificar se existem sessões (mesmo que antigas)
+    SELECT EXISTS(SELECT 1 FROM sessoes WHERE filmeid = p_filmeid) INTO v_tem_sessoes;
+    IF v_tem_sessoes THEN
+        RAISE EXCEPTION 'Não é possível eliminar: existem sessões associadas a este filme.';
+    END IF;
+
+    -- 3. Eliminar o filme
+    DELETE FROM filmes WHERE filmeid = p_filmeid;
+END;
+$$;
+
+----------------------------------------------------------------------------------------------
+-- 15. DESATIVAR PRODUTO
+----------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE desativar_produto(p_produtoid INT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE produtos SET ativo = FALSE WHERE produtoid = p_produtoid;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Produto não encontrado.'; END IF;
+END;
+$$;
+
+----------------------------------------------------------------------------------------------
+-- 16. AJUSTAR STOCK PRODUTO
+----------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE ajustar_stock_produto(
+    p_produtoid INT, 
+    p_variacao INT, 
+    INOUT p_novo_stock INT DEFAULT NULL
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE produtos 
+    SET stock = stock + p_variacao 
+    WHERE produtoid = p_produtoid
+    RETURNING stock INTO p_novo_stock;
+
+    IF p_novo_stock < 0 THEN RAISE EXCEPTION 'Stock insuficiente.'; END IF;
+END;
+$$;
+
+----------------------------------------------------------------------------------------------
+-- 17. EDITAR PRODUTO
+----------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE editar_produto(
+    p_produtoid INT, 
+    p_nome VARCHAR, 
+    p_preco NUMERIC, 
+    p_stock_total INT
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE produtos 
+    SET nomeproduto = p_nome, 
+        precoproduto = p_preco, 
+        stock = p_stock_total
+    WHERE produtoid = p_produtoid;
+END;
+$$;
+
+-----------------------------------------------------------------------------------------------
+-- 18. ELIMINAR CLIENTE
+-----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS eliminar_cliente;
+CREATE OR REPLACE PROCEDURE eliminar_cliente(p_clienteid INT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    DELETE FROM clientes WHERE clienteid = p_clienteid;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Cliente não encontrado.'; END IF;
+END;
+$$;
+
+-----------------------------------------------------------------------------------------------
+-- 19. EDITAR CLIENTE
+-----------------------------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS editar_cliente;
+CREATE OR REPLACE PROCEDURE editar_cliente(
+    p_clienteid INT, 
+    p_nome VARCHAR, 
+    p_email VARCHAR
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE clientes 
+    SET nomecliente = COALESCE(p_nome, nomecliente),
+        emailcliente = COALESCE(p_email, emailcliente)
+    WHERE clienteid = p_clienteid;
+    
+    IF NOT FOUND THEN RAISE EXCEPTION 'Cliente não encontrado.'; END IF;
 END;
 $$;

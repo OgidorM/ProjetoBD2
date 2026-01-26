@@ -50,8 +50,8 @@ BEGIN
                 ) AS "itens_compra"
 
             FROM VENDAS v
-            JOIN FUNCIONARIOS func ON v.FUNCIONARIOID = func.FUNCIONARIOID
-            JOIN CINEMAS cin ON func.CINEMAID = cin.CINEMAID
+            LEFT JOIN FUNCIONARIOS func ON v.FUNCIONARIOID = func.FUNCIONARIOID
+            LEFT JOIN CINEMAS cin ON func.CINEMAID = cin.CINEMAID
             LEFT JOIN CLIENTES c ON v.CLIENTEID = c.CLIENTEID
             WHERE v.VENDAID = p_venda_id -- Filtra apenas a fatura pedida
         ) fatura_obj

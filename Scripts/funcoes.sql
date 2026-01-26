@@ -812,3 +812,84 @@ BEGIN
 END;
 $$;
 
+------------------------------------------------------------------------------------------------
+-- 19. RESOLVER ID DO CLIENTE
+------------------------------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS fn_resolver_cliente_id(varchar);
+CREATE OR REPLACE FUNCTION fn_resolver_cliente_id(p_username VARCHAR)
+RETURNS INT
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    v_cliente_id INT;
+BEGIN
+    -- Procura diretamente na tabela Clientes pelo nome (Case Insensitive com ILIKE é mais seguro)
+    SELECT clienteid INTO v_cliente_id
+    FROM clientes
+    WHERE nomecliente = p_username 
+    LIMIT 1;
+
+    -- Se achar retorna o ID, se não achar retorna NULL
+    RETURN v_cliente_id;
+END;
+$$;
+
+------------------------------------------------------------------------------------------------
+-- 20. LISTAR CATEGORIAS (API)
+------------------------------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS fn_listar_categorias();
+CREATE OR REPLACE FUNCTION fn_listar_categorias()
+RETURNS JSON
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_resultado JSON;
+BEGIN
+    SELECT 
+        json_agg(
+            json_build_object(
+                'id', categoriaid,
+                'name', nomecategoria
+            ) ORDER BY categoriaid ASC -- Mantive a ordenação do seu código original
+        )
+    INTO v_resultado
+    FROM categorias;
+
+    -- Se a tabela estiver vazia, retorna array vazio []
+    RETURN COALESCE(v_resultado, '[]'::json);
+END;
+$$;
+
+------------------------------------------------------------------------------------------------
+-- 21. LISTAR BILHETES POR SESSÃO (API)
+------------------------------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS fn_listar_bilhetes_sessao_admin(int);
+CREATE OR REPLACE FUNCTION fn_listar_bilhetes_sessao_admin(p_sessaoid INT)
+RETURNS JSON
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_resultado JSON;
+BEGIN
+    SELECT 
+        json_agg(
+            json_build_object(
+                'bilheteid', b.bilheteid,
+                'lugar', (l.fila || l.numero),
+                'cliente', COALESCE(c.nomecliente, 'N/A'),
+                'venda_id', v.vendaid,
+                'preco', b.precobilhete
+            ) ORDER BY l.fila, l.numero
+        )
+    INTO v_resultado
+    FROM bilhetes b
+    JOIN lugares l ON b.lugarid = l.lugarid
+    LEFT JOIN vendalinhas vl ON b.bilheteid = vl.bilheteid
+    LEFT JOIN vendas v ON vl.vendaid = v.vendaid
+    LEFT JOIN clientes c ON v.clienteid = c.clienteid
+    WHERE b.sessaoid = p_sessaoid;
+
+    RETURN COALESCE(v_resultado, '[]'::json);
+END;
+$$;

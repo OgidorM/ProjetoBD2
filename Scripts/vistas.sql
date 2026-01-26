@@ -283,3 +283,15 @@ WHERE
     ativo = true 
     AND stock > 0
 ORDER BY nomeproduto ASC;
+
+-- ==============================================================
+-- Vista simples: Mostra apenas as vendas e o ID do Django
+-- ==============================================================
+CREATE OR REPLACE VIEW v_vendas_users AS
+SELECT 
+    v.vendaid,
+    v.clienteid,
+    au.id AS user_id 
+FROM vendas v
+JOIN clientes c ON v.clienteid = c.clienteid
+JOIN auth_user au ON au.username = c.nomecliente;
