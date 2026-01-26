@@ -630,3 +630,37 @@ BEGIN
     IF NOT FOUND THEN RAISE EXCEPTION 'Cliente não encontrado.'; END IF;
 END;
 $$;
+
+-----------------------------------------------------------------------------------------------
+-- 20. ELIMINAR FUNCIONÁRIO
+-----------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE proc_eliminar_funcionario(p_id INT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    DELETE FROM funcionarios WHERE funcionarioid = p_id;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Funcionário não encontrado.'; END IF;
+END;
+$$;
+
+-----------------------------------------------------------------------------------------------
+-- 21. EDITAR FUNCIONÁRIO
+-----------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE editar_funcionario(
+    p_id INT, 
+    p_nome VARCHAR, 
+    p_cargo VARCHAR, 
+    p_salario NUMERIC
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF p_salario < 0 THEN RAISE EXCEPTION 'O salário não pode ser negativo.'; END IF;
+
+    UPDATE funcionarios 
+    SET nomefuncionario = COALESCE(p_nome, nomefuncionario),
+        cargo = COALESCE(p_cargo, cargo),
+        salario = COALESCE(p_salario, salario)
+    WHERE funcionarioid = p_id;
+    
+    IF NOT FOUND THEN RAISE EXCEPTION 'Funcionário não encontrado.'; END IF;
+END;
+$$;

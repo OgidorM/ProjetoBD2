@@ -36,9 +36,6 @@ from clientes.core.exceptions import ClienteServiceException
 
 from django.db import connections
 
-# ==============================================================================
-#  ÁREA 1: FRONTEND LEGADO (DJANGO TEMPLATES / HTML)
-# ==============================================================================
 def index(request):
     return render(request, 'core/index.html')
 
@@ -51,33 +48,24 @@ class SignUpView(generic.CreateView):
     template_name = 'registration/signup.html'
 
     def form_valid(self, form):
-        # 1. O Django cria o User padrão
         response = super().form_valid(form)
         user = self.object
 
-        # 2. Sincronização: Criar o vínculo para o sistema novo funcionar
         try:
             if not ClienteProfile.objects.filter(user=user).exists():
                 email = form.cleaned_data.get('email', '')
-                # Cria na tabela legada
                 cliente = Clientes.objects.create(
                     nomecliente=user.username,
                     emailcliente=email
                 )
-                # Cria o vínculo
                 ClienteProfile.objects.create(user=user, cliente_dados=cliente)
 
                 log_action(user, 'signup_legacy', 'User', user.id, {"email": email})
         except Exception:
-            # Se falhar a sincronia, não impedimos o básico
             pass
 
         return response
 
-
-# ==============================================================================
-#  ÁREA 2: API PARA O REACT (AUTH & PERFIL) - AGORA COMPLETA
-# ==============================================================================
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_api(request):
@@ -415,48 +403,35 @@ def criar_avaliacao_api(request):
     API to create a review for a purchase
     """
     try:
-        user = request.user
         venda_id = request.data.get('venda_id')
-        titulo = request.data.get('titulo', 'Avaliação de Compra')
-        nota_cinema = request.data.get('nota_cinema')
-        nota_filme = request.data.get('nota_filme')
-        nota_funcionario = request.data.get('nota_funcionario')
-        comentario = request.data.get('comentario', '')
-
-        venda = Vendas.objects.get(pk=venda_id)
-
-        # Verify ownership
-        if venda.clienteid.nomecliente != user.username:
-            return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
-
-        # Check if already rated
-        if hasattr(venda, 'avaliacao'):
-            return Response({"error": "Sale already rated"}, status=status.HTTP_400_BAD_REQUEST)
-
-        from django.db import connection
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("CALL inserir_avaliacao(%s, %s, %s, %s, %s, %s)", [
-                    venda.vendaid,
-                    titulo,
-                    int(nota_cinema) if nota_cinema is not None else None,
-                    int(nota_filme) if nota_filme is not None else None,
-                    int(nota_funcionario) if nota_funcionario is not None else None,
-                    comentario
-                ])
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        with connections['default'].cursor() as cursor:
+            # 1. VERIFICAÇÃO DE PROPRIEDADE (Direto no SQL)
+            # Verificamos se a venda pertence ao username do request.user
+            cursor.execute("""
+                SELECT 1 FROM vendas v 
+                JOIN clientes c ON v.clienteid = c.clienteid 
+                WHERE v.vendaid = %s AND c.nomecliente = %s
+            """, [venda_id, request.user.username])
             
-        avaliacao = Avaliacoes.objects.get(venda=venda)
+            if not cursor.fetchone():
+                return Response({"error": "Não tem permissão para avaliar esta venda"}, status=403)
 
-        log_action(user, 'create_review', 'Avaliacoes', avaliacao.avaliacaoid, {"venda_id": venda_id})
+            # 2. CHAMADA DA PROCEDURE
+            cursor.execute("CALL inserir_avaliacao(%s, %s, %s, %s, %s, %s)", [
+                venda_id,
+                request.data.get('titulo', 'Avaliação de Compra'),
+                request.data.get('nota_cinema'),
+                request.data.get('nota_filme'),
+                request.data.get('nota_funcionario'),
+                request.data.get('comentario', '')
+            ])
 
-        return Response({"message": "Review submitted successfully"}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Avaliação submetida com sucesso"}, status=201)
 
-    except Vendas.DoesNotExist:
-        return Response({"error": "Sale not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # Captura os RAISE EXCEPTION da Procedure (ex: 'Venda não está concluída')
+        return Response({"error": str(e)}, status=400)
 
 
 # ==============================================================================
@@ -588,17 +563,22 @@ def admin_funcionario_detail_api(request, pk):
         return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
-        funcionario = Funcionarios.objects.using('admin').get(pk=pk)
-        if request.method == 'DELETE':
-            funcionario.delete(using='admin')
-            return Response({"message": "Eliminado"})
+        with connections['admin'].cursor() as cursor:
+            # Ação de Eliminar
+            if request.method == 'DELETE':
+                cursor.execute("CALL proc_eliminar_funcionario(%s)", [pk])
+                return Response({"message": "Funcionário eliminado com sucesso"})
 
-        # Update
-        funcionario.nomefuncionario = request.data.get('nome', funcionario.nomefuncionario)
-        funcionario.cargo = request.data.get('cargo', funcionario.cargo)
-        funcionario.salario = request.data.get('salario', funcionario.salario)
-        funcionario.save(using='admin')
-        return Response({"message": "Atualizado"})
+            # Ação de Atualizar
+            # Extraímos os valores do request.data
+            cursor.execute("CALL proc_editar_funcionario(%s, %s, %s, %s)", [
+                pk,
+                request.data.get('nome'),
+                request.data.get('cargo'),
+                request.data.get('salario')
+            ])
+            
+            return Response({"message": "Dados do funcionário atualizados"})
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
