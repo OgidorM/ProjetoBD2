@@ -173,54 +173,35 @@ def whoami_api(request):
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def update_profile_api(request):
-    """ API to update user profile data """
+    """ API to update Email, NIF and Phone (Username is read-only) """
     try:
-        user = request.user
-        username = request.data.get('username')
+        user_id = request.user.id
+        
+        # 1. Capturar todos os campos
         email = request.data.get('email')
+        nif = request.data.get('nif')
+        telefone = request.data.get('telefone')
+        codigo_postal = request.data.get('codigo_postal')
 
-        if not username:
-            return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+        # Validação simples
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if username is already taken by another user
-        if User.objects.filter(username=username).exclude(pk=user.id).exists():
-            return Response({"error": "Username already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        # 2. Executar a função SQL com 4 parâmetros
+        with connections['admin'].cursor() as cursor:
+            cursor.execute(
+                "SELECT fn_atualizar_perfil_user(%s, %s, %s, %s, %s)", 
+                [user_id, email, nif, telefone, codigo_postal]
+            )
+            result = cursor.fetchone()[0]
 
-        with transaction.atomic():
-            old_username = user.username
+        if result.get('status') == 'error':
+            return Response({"error": result.get('message')}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Update User model
-            user.username = username
-            user.email = email
-            user.save()
-
-            # Update corresponding Cliente record
-            try:
-                # Tenta via arquitetura nova
-                profile = ClienteProfile.objects.get(user=user)
-                cliente = profile.cliente_dados
-                cliente.nomecliente = username
-                cliente.emailcliente = email
-                cliente.save()
-            except ClienteProfile.DoesNotExist:
-                # Fallback antigo
-                cliente = Clientes.objects.filter(nomecliente=old_username).first()
-                if cliente:
-                    cliente.nomecliente = username
-                    cliente.emailcliente = email
-                    cliente.save()
-
-            log_action(user, 'update_profile', 'User', user.id,
-                       {"old_username": old_username, "new_username": username})
-
-            return Response({
-                "message": "Profile updated successfully",
-                "username": user.username,
-                "email": user.email
-            })
+        return Response(result)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ==============================================================================
@@ -229,109 +210,30 @@ def update_profile_api(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def produtos_api(request):
-    """API endpoint to get all active products using v_produtos_vendidos view for ranking/data"""
-    from django.db import connection
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT produtoid FROM v_produtos_vendidos")
-        ids = [row[0] for row in cursor.fetchall()]
-    
-    produtos = Produtos.objects.filter(pk__in=ids, ativo=True, stock__gt=0)
-    serializer = ProdutosSerializer(produtos, many=True)
-    return Response(serializer.data)
-
-
-@api_view(['POST'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def comprar_produtos_api(request):
-    """
-    API to process a purchase of concession items using Stored Procedure
-    """
     try:
-        user = request.user
-        items = request.data.get('items', [])  # List of {produtoid, quantidade}
+        with connections['admin'].cursor() as cursor:
+            cursor.execute("SELECT fn_obter_produtos_api()")
+            result = cursor.fetchone()[0]
 
-        if not items:
-            return Response({"error": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 1. Client ID
-        try:
-            profile = ClienteProfile.objects.select_related('cliente_dados').get(user=user)
-            cliente_id = profile.cliente_dados.clienteid
-        except ClienteProfile.DoesNotExist:
-            cliente = Clientes.objects.filter(nomecliente=user.username).first()
-            if not cliente:
-                cliente = Clientes.objects.create(
-                    nomecliente=user.username, 
-                    emailcliente=user.email,
-                    datanascimento='2000-01-01'
-                )
-            cliente_id = cliente.clienteid
-
-        # 2. Products JSON
-        products_list = []
-        for item in items:
-            products_list.append({"id": item['produtoid'], "qtd": int(item['quantidade'])})
-        
-        products_json = json.dumps(products_list)
-
-        # 3. Call Procedure
-        from django.db import connection
-        with connection.cursor() as cursor:
-            params = [
-                cliente_id, 
-                None, 
-                None, # No session
-                None, # No seats
-                products_json, 
-                0 # Placeholder for INOUT p_vendaid
-            ]
-            cursor.execute(
-                "CALL realizar_venda_unificada(%s, %s, %s, %s, %s, %s)", 
-                params
-            )
-            result = cursor.fetchone()
-            venda_id = result[0]
-
-            log_action(user, 'buy_concessions_proc', 'Vendas', venda_id, {"proc": True})
-
-            return Response({"message": "Purchase successful", "venda_id": venda_id},
-                            status=status.HTTP_201_CREATED)
+        return Response(result)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 def filmes_api(request):
-    cinema_id = request.query_params.get('cinema')
-    
-    if request.user.is_staff:
-        queryset = Filmes.objects.select_related('categoriaid', 'classificacaoetaria', 'cinemaid')
-        if cinema_id:
-            queryset = queryset.filter(cinemaid=cinema_id)
-        filmes = queryset.all()
-        serializer = FilmesSerializer(filmes, many=True)
-        return Response(serializer.data)
-    else:
-        # Use v_filmes_em_exibicao for regular users
-        from django.db import connection
-        with connection.cursor() as cursor:
-            sql = "SELECT * FROM v_filmes_em_exibicao"
-            params = []
-            if cinema_id:
-                sql += " WHERE cinemaid = %s" # Note: check if cinemaid is in the view
-                pass
+    try:
+        cinema_param = request.query_params.get('cinema')
+        cinema_id = int(cinema_param) if cinema_param and cinema_param.isdigit() else None
+
+        with connections['default'].cursor() as cursor:
+            cursor.execute("SELECT fn_listar_filmes_api(%s)", [cinema_id])
+            result = cursor.fetchone()[0]
             
-            cursor.execute("SELECT filmeid FROM v_filmes_em_exibicao")
-            ids = [row[0] for row in cursor.fetchall()]
-            
-        queryset = Filmes.objects.filter(pk__in=ids).select_related('categoriaid', 'classificacaoetaria', 'cinemaid')
-        if cinema_id:
-            queryset = queryset.filter(cinemaid=cinema_id)
-        
-        filmes = queryset.all()
-        serializer = FilmesSerializer(filmes, many=True)
-        return Response(serializer.data)
+        return Response(result)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -339,7 +241,7 @@ def filmes_api(request):
 def cinemas_api(request):
     """API endpoint to get all cinemas using the v_cinemas_resumo view"""
     from django.db import connection
-    with connection.cursor() as cursor:
+    with connections['default'].cursor() as cursor:
         cursor.execute("SELECT * FROM v_cinemas_resumo")
         columns = [col[0] for col in cursor.description]
         results = [
@@ -351,141 +253,138 @@ def cinemas_api(request):
 
 @api_view(['GET'])
 def salas_api(request):
-    salas = Salas.objects.all()
-    serializer = SalasSerializer(salas, many=True)
-    return Response(serializer.data)
+    try:
+        with connections['default'].cursor() as cursor:
+            cursor.execute("SELECT fn_listar_salas_api()")
+            result = cursor.fetchone()[0]
+            
+        return Response(result)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
 def sessoes_por_filme_api(request, filmeid):
     try:
-        # O segredo está no select_related para seguir a chave estrangeira
-        sessoes = Sessoes.objects.filter(
-            filmeid=filmeid, 
-            estadosessao='Ativa'
-        ).select_related('salaid', 'salaid__cinemaid').order_by('inicio')
-
-        serializer = SessoesSerializer(sessoes, many=True)
-        return Response(serializer.data)
+        with connections['default'].cursor() as cursor:
+            cursor.execute("SELECT fn_listar_sessoes_por_filme(%s)", [filmeid])
+            result = cursor.fetchone()[0]
+            
+        return Response(result)
+        
     except Exception as e:
-        # Isso vai imprimir o erro exato no seu terminal para sabermos se é no Serializer
         import traceback
-        print(traceback.format_exc()) 
+        print(traceback.format_exc())
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
 def lista_sessoes_api(request):
-    """
-    List sessions grouped by 'ativas' and 'terminadas'.
-    High performance using JSON aggregation in PostgreSQL.
-    """
     try:
-        from django.db import connection
-        with connection.cursor() as cursor:
+        with connections['admin'].cursor() as cursor:
             cursor.execute("SELECT fn_listar_sessoes_agrupadas()")
             data = cursor.fetchone()[0]
-
-        return Response(data)
+        return Response(data if data else {})
 
     except Exception as e:
-        return Response({"error": "Erro interno: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {"error": "Erro interno: " + str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])
 def lugares_sessao_api(request, sessaoid):
+    """
+    List places of a session. If the places are not created, create them.
+    """
     try:
-        with transaction.atomic():
-            sessao = Sessoes.objects.select_for_update().get(pk=sessaoid)
-            lugares_ocupados = LugaresSessao.objects.filter(sessaoid=sessaoid)
+        with connections['admin'].cursor() as cursor:
+            cursor.execute("SELECT fn_listar_lugares_sessao(%s)", [sessaoid])
+            result = cursor.fetchone()[0]
 
-            if not lugares_ocupados.exists():
-                sala = sessao.salaid
-                if sala:
-                    lugares = Lugares.objects.filter(salaid=sala)
-                    lugares_sessao_novos = [
-                        LugaresSessao(lugarid=lugar, sessaoid=sessao, estado='Livre') for lugar in lugares
-                    ]
-                    LugaresSessao.objects.bulk_create(lugares_sessao_novos)
-                    lugares_ocupados = LugaresSessao.objects.filter(sessaoid=sessaoid)
+        if isinstance(result, dict) and result.get('error'):
+            return Response(result, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = LugaresSessaoSerializer(lugares_ocupados.select_related('lugarid'), many=True)
-        return Response(serializer.data)
-    except Sessoes.DoesNotExist:
-        return Response({"error": "Sessão not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(result)
+
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def comprar_produtos_api(request):
+    try:
+        user = request.user
+        items = request.data.get('items', []) 
+        if not items:
+            return Response({"error": "O carrinho de snacks está vazio."}, status=400)
+
+        products_list = [{"id": int(i['produtoid']), "qtd": int(i['quantidade'])} for i in items]
+        products_json = json.dumps(products_list)
+
+        with connections['admin'].cursor() as cursor:
+            cursor.execute("""
+                SELECT fn_realizar_venda_unificada(
+                    %s, %s, %s,   -- User ID, Nome, Email
+                    NULL,         -- Sessão (NULL)
+                    NULL,         -- Lugares (NULL)
+                    %s::jsonb     -- Produtos JSON
+                )
+            """, [user.id, user.username, user.email, products_json])
+            
+            venda_id = cursor.fetchone()[0]
+
+        return Response({"message": "Compra de bar realizada!", "venda_id": venda_id}, status=201)
+
+    except Exception as e:
+        print(f"ERRO BAR: {e}")
+        return Response({"error": str(e)}, status=500)
 
 @api_view(['POST'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def criar_venda_api(request):
-    """
-    API to process a unified purchase (tickets and/or concessions) using Stored Procedure
-    """
     try:
         user = request.user
         data = request.data
+        
         sessaoid = data.get('sessaoid')
         lugares_ids = data.get('lugares_ids', [])
-        products_raw = data.get('products', [])
+        products_raw = data.get('items') or data.get('products') or []
 
         if not lugares_ids and not products_raw:
-            return Response({"error": "Empty cart"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "O carrinho está vazio. Selecione bilhetes ou snacks."}, status=400)
 
-        # Prepare data for Procedure
-        # 1. Client ID
-        try:
-            profile = ClienteProfile.objects.select_related('cliente_dados').get(user=user)
-            cliente_id = profile.cliente_dados.clienteid
-        except ClienteProfile.DoesNotExist:
-            # Fallback for admin/legacy
-            cliente = Clientes.objects.filter(nomecliente=user.username).first()
-            if not cliente:
-                # Need to create it? Or fail. Ideally create.
-                cliente = Clientes.objects.create(
-                    nomecliente=user.username, 
-                    emailcliente=user.email,
-                    datanascimento='2000-01-01'
-                )
-            cliente_id = cliente.clienteid
-
-        # 2. Products JSON
-        products_list = []
-        for p in products_raw:
-            products_list.append({"id": p['produtoid'], "qtd": int(p['quantidade'])})
-        
-        products_json = json.dumps(products_list)
         lugares_json = json.dumps(lugares_ids)
+        
+        products_list = [{"id": int(p['produtoid']), "qtd": int(p['quantidade'])} for p in products_raw]
+        products_json = json.dumps(products_list)
 
-        # 3. Call Procedure
-        from django.db import connection
-        with connection.cursor() as cursor:
-            params = [
-                cliente_id, 
-                None, # Funcionario ID (optional/null for online sales)
-                sessaoid if sessaoid else None, 
-                lugares_json, 
-                products_json, 
-                0 # Placeholder for INOUT p_vendaid
-            ]
+        with connections['admin'].cursor() as cursor:
+            cursor.execute("""
+                SELECT fn_realizar_venda_unificada(
+                    %s, %s, %s,   -- User ID, Nome, Email
+                    %s,           -- Sessão ID
+                    %s::jsonb,    -- Lugares JSON
+                    %s::jsonb     -- Produtos JSON
+                )
+            """, [
+                user.id, user.username, user.email,
+                sessaoid,
+                lugares_json,
+                products_json
+            ])
             
-            # Use CALL explicitly for Procedures
-            cursor.execute(
-                "CALL realizar_venda_unificada(%s, %s, %s, %s, %s, %s)", 
-                params
-            )
-            result = cursor.fetchone()
-            venda_id = result[0]
+            venda_id = cursor.fetchone()[0]
 
-            log_action(user, 'unified_purchase_proc', 'Vendas', venda_id, {"proc": True})
-
-            return Response({"message": "Purchase successful", "venda_id": venda_id},
-                            status=status.HTTP_201_CREATED)
+        return Response({"message": "Bilhetes emitidos com sucesso!", "venda_id": venda_id}, status=201)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        print(f"ERRO BILHETEIRA: {e}")
+        return Response({"error": str(e)}, status=500)
 
 
 @api_view(['GET'])

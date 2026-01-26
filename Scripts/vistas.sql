@@ -126,6 +126,7 @@ ORDER BY s.sessaoid, l.fila, l.numero;
 -- ==============================================================
 -- Vista materializada: Ranking de funcionários com vendas e avaliações
 -- ==============================================================
+DROP MATERIALIZED VIEW IF EXISTS mv_funcionarios_top;
 CREATE MATERIALIZED VIEW IF NOT EXISTS mv_funcionarios_top AS
 SELECT
     f.funcionarioid,
@@ -266,3 +267,19 @@ SELECT
 FROM lugaresSessao ls
 JOIN lugares l ON l.lugarid = ls.lugarid
 ORDER BY ls.sessaoid, l.fila, l.numero;
+
+-- ==============================================================
+-- Vista simples: Mostra apenas os produtos ativos e disponíveis
+-- ==============================================================
+CREATE OR REPLACE VIEW v_produtos_disponiveis AS
+SELECT 
+    produtoid,
+    nomeproduto,
+    precoproduto,
+    stock,
+    ativo
+FROM produtos
+WHERE 
+    ativo = true 
+    AND stock > 0
+ORDER BY nomeproduto ASC;
