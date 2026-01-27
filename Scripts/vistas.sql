@@ -88,6 +88,12 @@ CREATE OR REPLACE VIEW v_cinemas_resumo AS
 SELECT
     c.cinemaid,
     c.nomecinema,
+    c.emailcinema,
+    c.telefonecinema,
+    c.moradacinema,
+    c.codigopostalcinema,
+    c.localidadecinema,
+    c.ranking,
     COUNT(DISTINCT sa.salaid) AS total_salas,
     COUNT(DISTINCT f.filmeid) AS total_filmes,
     COUNT(DISTINCT v.vendaid) AS total_vendas,
@@ -100,7 +106,7 @@ LEFT JOIN funcionarios fu ON fu.cinemaid = c.cinemaid
 LEFT JOIN vendas v ON v.funcionarioid = fu.funcionarioid
 LEFT JOIN vendalinhas vl ON vl.vendaid = v.vendaid AND vl.bilheteid IS NOT NULL
 LEFT JOIN bilhetes b ON b.bilheteid = vl.bilheteid
-GROUP BY c.cinemaid, c.nomecinema
+GROUP BY c.cinemaid, c.nomecinema, c.emailcinema, c.telefonecinema, c.moradacinema, c.codigopostalcinema, c.localidadecinema, c.ranking
 ORDER BY total_faturado DESC;
 
 -- ==============================================================
