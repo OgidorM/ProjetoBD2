@@ -592,12 +592,9 @@ BEGIN
                 RAISE EXCEPTION 'O lugar % já foi ocupado por outra pessoa.', v_lugar_sessao_id;
             END IF;
 
-            -- Marcar como Ocupado
-            UPDATE lugaressessao SET estado = 'Ocupado' WHERE lugarsessaoid = v_lugar_sessao_id;
-
             -- Gerar Bilhete
             INSERT INTO bilhetes (lugarid, sessaoid, precobilhete, emissao)
-            VALUES (v_lugar_fisico_id, p_sessaoid, v_preco, NOW())
+            VALUES (v_lugar_sessao_id, p_sessaoid, v_preco, NOW())
             RETURNING bilheteid INTO v_bilhete_id;
 
             -- Adicionar à Venda
@@ -896,6 +893,7 @@ $$;
 ------------------------------------------------------------------------------------------------
 -- 22. EXPORTAR BILHETE PDF (API)
 ------------------------------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS exportar_bilhete_pdf(INT);
 CREATE OR REPLACE FUNCTION exportar_bilhete_pdf(p_bilheteid INT)
 RETURNS JSON
 LANGUAGE plpgsql
@@ -904,23 +902,28 @@ DECLARE
     v_result JSON;
 BEGIN
     SELECT json_build_object(
-        'bilhete_id', b.bilheteid,
+        'id_bilhete', b.bilheteid,
         'filme', f.titulo,
         'cinema', cin.nomecinema,
         'sala', sa.nomesala,
-        'data_sessao', TO_CHAR(s.inicio, 'YYYY-MM-DD HH24:MI'),
-        'lugar_fila', l.fila,
-        'lugar_numero', l.numero,
+        'data_sessao', TO_CHAR(s.inicio, 'YYYY-MM-DD'),
+        'hora_sessao', TO_CHAR(s.inicio, 'HH24:MI'),
+        'fila', l.fila,
+        'cadeira', l.numero,
         'preco', b.precobilhete,
+        'classificacao_etaria', ce.nomeclassificacao,
+        'duracao', CONCAT(f.duracao, ' min'),
         'cliente_nome', c.nomecliente,
-        'data_emissao', TO_CHAR(b.emissao, 'YYYY-MM-DD HH24:MI:SS')
+        'data_compra', TO_CHAR(b.emissao, 'YYYY-MM-DD HH24:MI:SS')
     ) INTO v_result
     FROM bilhetes b
     JOIN sessoes s ON b.sessaoid = s.sessaoid
     JOIN filmes f ON s.filmeid = f.filmeid
+    JOIN classificacoesetarias ce ON f.classificacaoetaria = ce.classificacaoid
     JOIN salas sa ON s.salaid = sa.salaid
     JOIN cinemas cin ON sa.cinemaid = cin.cinemaid
-    JOIN lugares l ON b.lugarid = l.lugarid
+    JOIN lugaresSessao ls ON b.lugarid = ls.lugarsessaoid
+    JOIN lugares l ON ls.lugarid = l.lugarid
     LEFT JOIN vendalinhas vl ON b.bilheteid = vl.bilheteid
     LEFT JOIN vendas v ON vl.vendaid = v.vendaid
     LEFT JOIN clientes c ON v.clienteid = c.clienteid

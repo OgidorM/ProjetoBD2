@@ -323,7 +323,7 @@ BEGIN
     END IF;
 
     INSERT INTO bilhetes (lugarid, sessaoid, precobilhete, emissao)
-    VALUES (v_lugar, p_sessaoid, p_preco, NOW());
+    VALUES (p_lugarsessao, p_sessaoid, p_preco, NOW());
 END;
 $$;
 

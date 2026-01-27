@@ -189,8 +189,15 @@ const AdminSessionPage = () => {
 
     const getFilteredRooms = () => {
         const selectedMovie = movies.find(m => m.id === parseInt(formData.filmeid));
-        if (selectedMovie && selectedMovie.cinema && selectedMovie.cinema !== 'N/A') {
-            return rooms.filter(room => room.cinema?.nomecinema === selectedMovie.cinema);
+        if (selectedMovie) {
+            // Prefer ID comparison if available
+            if (selectedMovie.cinemaId) {
+                return rooms.filter(room => room.cinemaid === selectedMovie.cinemaId);
+            }
+            // Fallback to name comparison
+            if (selectedMovie.cinema && selectedMovie.cinema !== 'N/A') {
+                return rooms.filter(room => room.cinema === selectedMovie.cinema);
+            }
         }
         return rooms;
     };

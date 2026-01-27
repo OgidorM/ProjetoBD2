@@ -5,7 +5,7 @@ from django.views import generic
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.contrib.auth.models import User
-from django.db import transaction
+from django.db import transaction, connections, DatabaseError
 from django.utils import timezone
 import json
 
