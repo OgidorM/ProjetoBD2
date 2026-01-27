@@ -892,3 +892,40 @@ BEGIN
     RETURN COALESCE(v_resultado, '[]'::json);
 END;
 $$;
+
+------------------------------------------------------------------------------------------------
+-- 22. EXPORTAR BILHETE PDF (API)
+------------------------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION exportar_bilhete_pdf(p_bilheteid INT)
+RETURNS JSON
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_result JSON;
+BEGIN
+    SELECT json_build_object(
+        'bilhete_id', b.bilheteid,
+        'filme', f.titulo,
+        'cinema', cin.nomecinema,
+        'sala', sa.nomesala,
+        'data_sessao', TO_CHAR(s.inicio, 'YYYY-MM-DD HH24:MI'),
+        'lugar_fila', l.fila,
+        'lugar_numero', l.numero,
+        'preco', b.precobilhete,
+        'cliente_nome', c.nomecliente,
+        'data_emissao', TO_CHAR(b.emissao, 'YYYY-MM-DD HH24:MI:SS')
+    ) INTO v_result
+    FROM bilhetes b
+    JOIN sessoes s ON b.sessaoid = s.sessaoid
+    JOIN filmes f ON s.filmeid = f.filmeid
+    JOIN salas sa ON s.salaid = sa.salaid
+    JOIN cinemas cin ON sa.cinemaid = cin.cinemaid
+    JOIN lugares l ON b.lugarid = l.lugarid
+    LEFT JOIN vendalinhas vl ON b.bilheteid = vl.bilheteid
+    LEFT JOIN vendas v ON vl.vendaid = v.vendaid
+    LEFT JOIN clientes c ON v.clienteid = c.clienteid
+    WHERE b.bilheteid = p_bilheteid;
+
+    RETURN v_result;
+END;
+$$;

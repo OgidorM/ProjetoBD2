@@ -295,3 +295,16 @@ SELECT
 FROM vendas v
 JOIN clientes c ON v.clienteid = c.clienteid
 JOIN auth_user au ON au.username = c.nomecliente;
+
+-- ==============================================================
+-- Vista simples: Segurança de Bilhetes (Valida propriedade)
+-- ==============================================================
+CREATE OR REPLACE VIEW v_bilhetes_seguranca AS
+SELECT 
+    b.bilheteid,
+    au.id AS user_id
+FROM bilhetes b
+JOIN vendalinhas vl ON vl.bilheteid = b.bilheteid
+JOIN vendas v ON v.vendaid = vl.vendaid
+JOIN clientes c ON v.clienteid = c.clienteid
+JOIN auth_user au ON au.username = c.nomecliente;
