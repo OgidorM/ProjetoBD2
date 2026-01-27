@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models.deletion import ProtectedError
+from django.db import connection
 
 from bd2ap1.models import Bilhetes
 from bd2ap1.mongo_logger import log_action
@@ -27,15 +28,15 @@ def adicionar_bilhete(request):
     if request.method == 'POST':
         form = BilheteForm(request.POST)
         if form.is_valid():
-            bilhete = form.save()
-
-            log_action(
-                user=request.user,
-                action='CREATE',
-                target_model='Bilhete',
-                target_id=bilhete.bilheteid,
-                details={'preco': float(bilhete.precobilhete), 'sessao': str(bilhete.sessaoid)}
-            )
+            data = form.cleaned_data
+            lugar_sessao = data['lugarid'] # This is a LugaresSessao object from the form queryset
+            
+            with connection.cursor() as cursor:
+                cursor.execute("CALL inserir_bilhete(%s, %s, %s)", [
+                    lugar_sessao.lugarsessaoid,
+                    lugar_sessao.sessaoid.sessaoid,
+                    data['precobilhete']
+                ])
 
             return redirect('lista_bilhetes')
     else:

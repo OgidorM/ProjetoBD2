@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from bd2ap1.models import Avaliacoes
 from .forms import AvaliacaoForm
+from django.db import connection
 
 @login_required
 def index(request):
@@ -17,7 +18,16 @@ def adicionar_avaliacao(request):
     if request.method == 'POST':
         form = AvaliacaoForm(request.POST)
         if form.is_valid():
-            form.save()
+            data = form.cleaned_data
+            with connection.cursor() as cursor:
+                cursor.execute("CALL inserir_avaliacao(%s, %s, %s, %s, %s, %s)", [
+                    data['venda'].vendaid,
+                    data['tituloavaliacao'],
+                    data['avaliacaocinema'],
+                    data['avaliacaofilme'],
+                    data['avaliacaofuncionario'],
+                    data['comentario']
+                ])
             return redirect('lista_avaliacoes')
     else:
         form = AvaliacaoForm()

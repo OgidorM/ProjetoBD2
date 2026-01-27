@@ -98,11 +98,30 @@ if [[ "$reset_db" =~ ^[Ss]$ ]]; then
     
     # Ordem de execução
     # 1. Schema (create)
-    # 2. Objetos lógicos (functions, triggers, views, procedures)
-    # 3. Dados (fill)
-    # 4. Indices/Outros
+    # 2. Django System Tables (Auth, Admin...) - NECESSÁRIO POIS create.sql APAGA TUDO
+    # 3. Objetos lógicos (functions, triggers, views, procedures)
+    # 4. Dados (fill)
     
     psql -d "$DB_NAME" -f Scripts/create.sql
+    
+    # Garantir que o role admin_bd existe para podermos "logar como admin" nas migrações
+    echo "🔑 A preparar utilizador administrador para migrações..."
+    psql -d "$DB_NAME" -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'admin_bd') THEN CREATE ROLE admin_bd WITH LOGIN PASSWORD 'admin123' SUPERUSER; END IF; END \$\$;"
+
+    echo "⚙️  A sincronizar Django (System Tables - como Admin)..."
+    python manage.py migrate --database=admin admin
+    python manage.py migrate --database=admin auth
+    python manage.py migrate --database=admin contenttypes
+    python manage.py migrate --database=admin sessions
+    
+    # Fingir migração da app principal (pois já criamos as tabelas via SQL)
+    echo "🙈 A registar tabelas de domínio (Fake Migration - como Admin)..."
+    python manage.py migrate --database=admin bd2ap1 --fake
+
+    # Migrar todas as outras apps (incluindo Profiles, Cinemas, Vendas, etc.)
+    echo "🚀 A aplicar migrações restantes (como Admin)..."
+    python manage.py migrate --database=admin --fake-initial
+
     psql -d "$DB_NAME" -f Scripts/funcoes.sql
     psql -d "$DB_NAME" -f Scripts/procedimentos.sql
     psql -d "$DB_NAME" -f Scripts/triggers.sql
@@ -110,26 +129,15 @@ if [[ "$reset_db" =~ ^[Ss]$ ]]; then
     psql -d "$DB_NAME" -f Scripts/fill.sql
     psql -d "$DB_NAME" -f Scripts/indices.sql
     psql -d "$DB_NAME" -f Scripts/exportações.sql
-    # psql -d "$DB_NAME" -f Scripts/users_roles.sql # Opcional, cuidado com permissões
-
-    echo "✅ SQL Scripts executados com sucesso."
-
-    echo "⚙️  A sincronizar Django (System Tables)..."
-    # 1. Migrar tabelas do sistema (Auth, Admin, Sessions)
-    python manage.py migrate admin
-    python manage.py migrate auth
-    python manage.py migrate contenttypes
-    python manage.py migrate sessions
+    psql -d "$DB_NAME" -f Scripts/users_roles.sql # Aplica permissões finais e ownerships
     
-    # 2. Fingir migração da app principal (pois já criamos as tabelas via SQL)
-    echo "🙈 A registar tabelas de domínio (Fake Migration)..."
-    python manage.py migrate bd2ap1 --fake || echo "⚠️  Aviso: Fake migration falhou ou já aplicada."
+    echo "✅ SQL Scripts executados com sucesso."
 
     echo ""
     echo "Deseja criar um superutilizador (admin) do Django? (s/n)"
     read -r criar_admin
     if [[ "$criar_admin" =~ ^[Ss]$ ]]; then
-        python manage.py createsuperuser
+        python manage.py createsuperuser --database=admin
     fi
 
 else

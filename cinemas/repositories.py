@@ -1,6 +1,7 @@
 from typing import Iterable, Optional, Any
 from .models import Cinema
 from django.db.models import QuerySet
+from django.db import connection
 
 
 def get(cinema_id: int) -> Cinema:
@@ -25,8 +26,19 @@ def delete(cinema_id: int) -> None:
 
 
 def create(**data: Any) -> Cinema:
-    """Persist and return a new Cinema instance."""
-    return Cinema.objects.create(**data)
+    """Persist and return a new Cinema instance using the stored procedure."""
+    with connection.cursor() as cursor:
+        cursor.execute("CALL inserir_cinema(%s, %s, %s, %s, %s, %s, %s)", [
+            data.get('nomecinema'),
+            data.get('emailcinema'),
+            data.get('telefonecinema'),
+            data.get('moradacinema'),
+            data.get('codigopostalcinema'),
+            data.get('localidadecinema'),
+            data.get('ranking', 0.0)
+        ])
+    # Fetch the created instance to return it (assuming name and locality are unique enough as per procedure check)
+    return Cinema.objects.get(nomecinema=data.get('nomecinema'), localidadecinema=data.get('localidadecinema'))
 
 
 def update(cinema_id: int, **data: Any) -> Cinema:

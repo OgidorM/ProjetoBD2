@@ -93,10 +93,24 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'cinemaDB',
-        'USER': '',
-        'PASSWORD': '',
+        'USER': 'app_user',
+        'PASSWORD': 'app123',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5434',
+        'TEST': {
+           'MIRROR': 'default', 
+        },
+    },
+    'admin': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'cinemaDB',
+        'USER': 'admin_bd',
+        'PASSWORD': 'admin123',
+        'HOST': 'localhost',
+        'PORT': '5434',
+        'TEST': {
+            'MIRROR': 'default', 
+        }
     }
 }
 

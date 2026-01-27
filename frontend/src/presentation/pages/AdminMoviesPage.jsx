@@ -27,26 +27,23 @@ const AdminMoviesPage = () => {
         try {
             const client = new ApiClient();
             // We need movies, but also cinemas and categories to populate the dropdowns
-            const [moviesData, cinemasData] = await Promise.all([
+            const [moviesData, cinemasData, categoriesData] = await Promise.all([
                 client.get(API_CONFIG.ENDPOINTS.MOVIES),
-                client.get(API_CONFIG.ENDPOINTS.CINEMAS)
+                client.get(API_CONFIG.ENDPOINTS.CINEMAS),
+                client.get(API_CONFIG.ENDPOINTS.CATEGORIES)
             ]);
             
-            // For categories, we might need a specific endpoint or just extract from movies
-            // Let's assume we can get them or use fixed ones for now if no endpoint exists
             setMovies(moviesData);
             setCinemas(cinemasData);
-            
-            // Mock categories if endpoint doesn't exist (you might want to add an API for this later)
-            setCategories([
-                { id: 1, name: 'Ação' },
-                { id: 2, name: 'Comédia' },
-                { id: 3, name: 'Drama' },
-                { id: 4, name: 'Terror' },
-                { id: 5, name: 'Sci-Fi' }
-            ]);
+            setCategories(categoriesData);
         } catch (e) {
             console.error(e);
+            // Fallback if API fails
+            setCategories([
+                 { id: 1, name: 'Ação' },
+                 { id: 2, name: 'Comédia' },
+                 { id: 3, name: 'Drama' },
+            ]);
         } finally {
             setLoading(false);
         }

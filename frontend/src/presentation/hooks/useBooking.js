@@ -22,7 +22,7 @@ export const useBooking = () => {
         try {
             const useCase = new GetSessionsByMovieUseCase(repository);
             const data = await useCase.execute(movieId);
-            setSessions(data);
+            setSessions(Array.isArray(data) ? data : []);
         } catch (err) {
             setError(err.message);
         } finally {

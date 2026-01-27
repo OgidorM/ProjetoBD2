@@ -122,3 +122,4 @@ node_modules/
 
 # End of file
 
+.gemini/settings.json

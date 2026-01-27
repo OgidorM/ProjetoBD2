@@ -41,7 +41,10 @@ const UserPage = () => {
             setUser(userData);
             setFormData({ 
                 username: userData.username || '', 
-                email: userData.email || '' 
+                email: userData.email || '' ,
+                nif: userData.nif || '',
+                telefone: userData.telefone || '',
+                codigo_postal: userData.codigo_postal || ''
             });
         } catch (e) {
             console.error("Invalid user data", e);
@@ -262,6 +265,36 @@ const UserPage = () => {
                                         type="email"
                                         value={formData.email}
                                         onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-yellow outline-none transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs uppercase tracking-widest text-white/40 mb-1">NIF</label>
+                                    <input 
+                                        type="text"
+                                        name="nif"
+                                        value={formData.nif}
+                                        onChange={(e) => setFormData({...formData, nif: e.target.value})}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-yellow outline-none transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs uppercase tracking-widest text-white/40 mb-1">Telefone</label>
+                                    <input 
+                                        type="text"
+                                        name="telefone"
+                                        value={formData.telefone}
+                                        onChange={(e) => setFormData({...formData, telefone: e.target.value})}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-yellow outline-none transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs uppercase tracking-widest text-white/40 mb-1">Código Postal</label>
+                                    <input 
+                                        type="text"
+                                        name="codigo_postal"
+                                        value={formData.codigo_postal}
+                                        onChange={(e) => setFormData({...formData, codigo_postal: e.target.value})}
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-yellow outline-none transition-colors"
                                     />
                                 </div>

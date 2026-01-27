@@ -12,7 +12,18 @@ const AdminSalesPage = () => {
             try {
                 const client = new ApiClient();
                 const data = await client.get(API_CONFIG.ENDPOINTS.ADMIN_SALES);
-                setSales(data);
+                console.log("Dados de Vendas Recebidos:", data); // Debug
+                
+                // Garantir que é sempre um array. Se a API devolver nulo ou objeto vazio usa/se []
+                if (Array.isArray(data)) {
+                    setSales(data);
+                } else if (data && Array.isArray(data.results)) {
+                    // Caso venha paginado do Django REST Framework default
+                    setSales(data.results);
+                } else {
+                    console.warn("Formato de dados inesperado:", data);
+                    setSales([]);
+                }
             } catch (e) {
                 console.error(e);
             } finally {
@@ -33,7 +44,7 @@ const AdminSalesPage = () => {
         return true;
     });
 
-    const totalRevenue = filteredSales.reduce((acc, sale) => acc + parseFloat(sale.total), 0).toFixed(2);
+    const totalRevenue = filteredSales.reduce((acc, sale) => acc + (parseFloat(sale.total) || 0), 0).toFixed(2);
 
     const handleExportCsv = () => {
         let url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.EXPORT_SALES_CSV}`;
@@ -43,7 +54,6 @@ const AdminSalesPage = () => {
         
         if (params.toString()) url += `?${params.toString()}`;
 
-        // Since it's a file download that requires authentication, we use fetch and create a blob
         fetch(url, { credentials: 'include' })
             .then(response => {
                 if (!response.ok) throw new Error("Falha ao exportar CSV");

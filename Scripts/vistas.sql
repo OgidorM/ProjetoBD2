@@ -10,7 +10,7 @@ SELECT
     s.fim,
     sa.nomesala,
     c.nomecinema,
-    COUNT(ls.lugarsessaoid) FILTER (WHERE ls.estado = 'LIVRE') AS lugares_livres,
+    COUNT(ls.lugarsessaoid) FILTER (WHERE ls.estado = 'Livre') AS lugares_livres,
     COUNT(ls.lugarsessaoid) AS lugares_totais
 FROM filmes f
 JOIN sessoes s ON s.filmeid = f.filmeid
@@ -88,6 +88,12 @@ CREATE OR REPLACE VIEW v_cinemas_resumo AS
 SELECT
     c.cinemaid,
     c.nomecinema,
+    c.emailcinema,
+    c.telefonecinema,
+    c.moradacinema,
+    c.codigopostalcinema,
+    c.localidadecinema,
+    c.ranking,
     COUNT(DISTINCT sa.salaid) AS total_salas,
     COUNT(DISTINCT f.filmeid) AS total_filmes,
     COUNT(DISTINCT v.vendaid) AS total_vendas,
@@ -100,7 +106,7 @@ LEFT JOIN funcionarios fu ON fu.cinemaid = c.cinemaid
 LEFT JOIN vendas v ON v.funcionarioid = fu.funcionarioid
 LEFT JOIN vendalinhas vl ON vl.vendaid = v.vendaid AND vl.bilheteid IS NOT NULL
 LEFT JOIN bilhetes b ON b.bilheteid = vl.bilheteid
-GROUP BY c.cinemaid, c.nomecinema
+GROUP BY c.cinemaid, c.nomecinema, c.emailcinema, c.telefonecinema, c.moradacinema, c.codigopostalcinema, c.localidadecinema, c.ranking
 ORDER BY total_faturado DESC;
 
 -- ==============================================================
@@ -120,17 +126,19 @@ JOIN salas sa ON sa.salaid = s.salaid
 JOIN cinemas c ON c.cinemaid = sa.cinemaid
 JOIN lugares l ON l.salaid = sa.salaid
 JOIN lugaresSessao ls ON ls.lugarid = l.lugarid AND ls.sessaoid = s.sessaoid
-WHERE ls.estado = 'LIVRE'
+WHERE ls.estado = 'Livre'
 ORDER BY s.sessaoid, l.fila, l.numero;
 
 -- ==============================================================
 -- Vista materializada: Ranking de funcionários com vendas e avaliações
 -- ==============================================================
-CREATE MATERIALIZED VIEW mv_funcionarios_top AS
+DROP MATERIALIZED VIEW IF EXISTS mv_funcionarios_top;
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_funcionarios_top AS
 SELECT
     f.funcionarioid,
     f.nomefuncionario,
     f.cargo,
+    f.salario,
     c.nomecinema,
     ROUND(AVG(a.avaliacaofuncionario)::NUMERIC, 2) AS media_avaliacao,
     COUNT(v.vendaid) AS total_vendas,
@@ -139,26 +147,28 @@ FROM funcionarios f
 JOIN cinemas c ON c.cinemaid = f.cinemaid
 LEFT JOIN vendas v ON v.funcionarioid = f.funcionarioid
 LEFT JOIN avaliacoes a ON a.vendaid = v.vendaid
-GROUP BY f.funcionarioid, f.nomefuncionario, f.cargo, c.nomecinema
+GROUP BY f.funcionarioid, f.nomefuncionario, f.cargo, f.salario, c.nomecinema
 ORDER BY media_avaliacao DESC, total_faturado DESC;
+REFRESH MATERIALIZED VIEW mv_funcionarios_top;
 
 -- ==============================================================
 -- Vista materializada: Ocupação total das salas por sessão
 -- ==============================================================
-CREATE MATERIALIZED VIEW mv_ocupacao_salas AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_ocupacao_salas AS
 SELECT
     s.salaid,
     sa.nomesala,
     s.sessaoid,
     COUNT(ls.lugarSessaoid) AS total_lugares,
-    COUNT(ls.lugarSessaoid) FILTER (WHERE ls.estado = 'OCUPADO') AS lugares_ocupados,
-    COUNT(ls.lugarSessaoid) FILTER (WHERE ls.estado = 'LIVRE') AS lugares_livres
+    COUNT(ls.lugarSessaoid) FILTER (WHERE ls.estado = 'Ocupado') AS lugares_ocupados,
+    COUNT(ls.lugarSessaoid) FILTER (WHERE ls.estado = 'Livre') AS lugares_livres
 FROM sessoes s
 JOIN salas sa ON sa.salaid = s.salaid
 JOIN lugares l ON l.salaid = sa.salaid
 JOIN lugaresSessao ls ON ls.lugarid = l.lugarid AND ls.sessaoid = s.sessaoid
 GROUP BY s.sessaoid, s.salaid, sa.nomesala
 ORDER BY sa.nomesala, s.sessaoid;
+REFRESH MATERIALIZED VIEW mv_ocupacao_salas;
 
 -- ==============================================================
 -- Vista simples: Filmes em exibição atualmente
@@ -171,14 +181,14 @@ SELECT
     f.datalancamento,
     c.nomecinema
 FROM filmes f
-JOIN cinemas c ON c.cinemaid = f.cinemaid
-WHERE f.fimexebicao >= CURRENT_DATE
+LEFT JOIN cinemas c ON c.cinemaid = f.cinemaid
+WHERE (f.fimexebicao >= CURRENT_DATE OR f.fimexebicao IS NULL)
 ORDER BY f.titulo;
 
 -- ==============================================================
 -- Vista materializada: Total de vendas por dia
 -- ==============================================================
-CREATE MATERIALIZED VIEW mv_vendas_diarias AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_vendas_diarias AS
 SELECT
     data,
     COUNT(vendaid) AS total_transacoes,
@@ -186,12 +196,13 @@ SELECT
 FROM vendas
 GROUP BY data
 ORDER BY data;
+REFRESH MATERIALIZED VIEW mv_vendas_diarias;
 
 -- ==============================================================
 -- Vista Materializada: Histórico de compras por cliente
 -- Mostra total gasto, num de compras e datas da primeira/ultima compra
 -- ==============================================================
-CREATE MATERIALIZED VIEW mv_historico_clientes AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_historico_clientes AS
 SELECT
     c.clienteid,
     c.nomecliente,
@@ -212,3 +223,94 @@ GROUP BY
     c.localidadecliente,
     c.codigopostalcliente
 ORDER BY total_gasto DESC;
+REFRESH MATERIALIZED VIEW mv_historico_clientes;
+
+-- ==============================================================
+-- Vista simples: Avaliações por cliente
+-- ==============================================================
+CREATE OR REPLACE VIEW v_avaliacoes_cliente AS
+SELECT 
+    a.avaliacaoid,
+    a.vendaid,
+    c.nomecliente AS cliente_nome,
+    c.emailcliente AS cliente_email,
+    a.tituloavaliacao,
+    a.avaliacaocinema,
+    a.avaliacaofilme,
+    a.avaliacaofuncionario,
+    a.comentario
+FROM avaliacoes a
+JOIN vendas v ON a.vendaid = v.vendaid
+JOIN clientes c ON v.clienteid = c.clienteid
+ORDER BY a.avaliacaoid DESC;
+
+-- ==============================================================
+-- Vista simples: Lista Global de Clientes
+-- ==============================================================
+CREATE OR REPLACE VIEW v_clientes_global AS
+SELECT 
+    clienteid,
+    nomecliente,
+    emailcliente,
+    telefonecliente,
+    nif,
+    localidadecliente
+FROM clientes
+ORDER BY nomecliente;
+
+-- ==============================================================
+-- Vista simples: Mostra apenas os lugares ocupados e detalhes
+-- ==============================================================
+CREATE OR REPLACE VIEW v_lugares_sessao_detalhado AS
+SELECT
+    ls.sessaoid,
+    ls.lugarsessaoid,
+    ls.estado,
+    l.lugarid,
+    l.fila,
+    l.numero,
+    l.tipolugar
+FROM lugaresSessao ls
+JOIN lugares l ON l.lugarid = ls.lugarid
+ORDER BY ls.sessaoid, l.fila, l.numero;
+
+-- ==============================================================
+-- Vista simples: Mostra apenas os produtos ativos e disponíveis
+-- ==============================================================
+CREATE OR REPLACE VIEW v_produtos_disponiveis AS
+SELECT 
+    produtoid,
+    nomeproduto,
+    precoproduto,
+    stock,
+    ativo
+FROM produtos
+WHERE 
+    ativo = true 
+    AND stock > 0
+ORDER BY nomeproduto ASC;
+
+-- ==============================================================
+-- Vista simples: Mostra apenas as vendas e o ID do Django
+-- ==============================================================
+CREATE OR REPLACE VIEW v_vendas_users AS
+SELECT 
+    v.vendaid,
+    v.clienteid,
+    au.id AS user_id 
+FROM vendas v
+JOIN clientes c ON v.clienteid = c.clienteid
+JOIN auth_user au ON au.username = c.nomecliente;
+
+-- ==============================================================
+-- Vista simples: Segurança de Bilhetes (Valida propriedade)
+-- ==============================================================
+CREATE OR REPLACE VIEW v_bilhetes_seguranca AS
+SELECT 
+    b.bilheteid,
+    au.id AS user_id
+FROM bilhetes b
+JOIN vendalinhas vl ON vl.bilheteid = b.bilheteid
+JOIN vendas v ON v.vendaid = vl.vendaid
+JOIN clientes c ON v.clienteid = c.clienteid
+JOIN auth_user au ON au.username = c.nomecliente;

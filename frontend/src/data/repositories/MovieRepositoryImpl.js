@@ -31,7 +31,8 @@ export class MovieRepositoryImpl extends MovieRepository {
             rating: parseFloat(apiMovie.ranking) || 0,
             releaseDate: apiMovie.datalancamento,
             language: apiMovie.idioma,
-            cinema: apiMovie.cinema?.nomecinema || 'N/A',
+            cinema: apiMovie.cinema || 'N/A',
+            cinemaId: apiMovie.cinema_id,
             ageRating: apiMovie.classificacao?.nomeclassificacao || 'N/A',
             cartazUrl: apiMovie.cartaz_url,
         });

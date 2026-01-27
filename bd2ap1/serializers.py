@@ -57,10 +57,18 @@ class SalasSerializer(serializers.ModelSerializer):
 
 class SessoesSerializer(serializers.ModelSerializer):
     sala = SalasSerializer(source='salaid', read_only=True)
+    ocupacao = serializers.SerializerMethodField()
     
     class Meta:
         model = Sessoes
-        fields = ['sessaoid', 'sala', 'filmeid', 'inicio', 'fim', 'versao', 'precosessao']
+        fields = ['sessaoid', 'sala', 'filmeid', 'inicio', 'fim', 'versao', 'precosessao', 'ocupacao']
+
+    def get_ocupacao(self, obj):
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT fn_verificar_capacidade_sessao(%s)", [obj.sessaoid])
+            result = cursor.fetchone()
+            return result[0] if result else 0
 
 class SessaoCreateSerializer(serializers.ModelSerializer):
     class Meta:

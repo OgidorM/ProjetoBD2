@@ -50,8 +50,8 @@ BEGIN
                 ) AS "itens_compra"
 
             FROM VENDAS v
-            JOIN FUNCIONARIOS func ON v.FUNCIONARIOID = func.FUNCIONARIOID
-            JOIN CINEMAS cin ON func.CINEMAID = cin.CINEMAID
+            LEFT JOIN FUNCIONARIOS func ON v.FUNCIONARIOID = func.FUNCIONARIOID
+            LEFT JOIN CINEMAS cin ON func.CINEMAID = cin.CINEMAID
             LEFT JOIN CLIENTES c ON v.CLIENTEID = c.CLIENTEID
             WHERE v.VENDAID = p_venda_id -- Filtra apenas a fatura pedida
         ) fatura_obj
@@ -160,3 +160,58 @@ BEGIN
     );
 END;
 $BODY$;
+
+
+-- ==============================================================
+-- Relatório p/ CSV 
+-- ==============================================================
+DROP FUNCTION IF EXISTS fn_relatorio_vendas_csv(DATE, DATE);
+CREATE OR REPLACE FUNCTION fn_relatorio_vendas_csv(p_inicio DATE, p_fim DATE)
+RETURNS TABLE (
+    vendaid INT,
+    data TIMESTAMPTZ,
+    nomecliente VARCHAR,
+    nif VARCHAR,
+    tipo TEXT,
+    descricao TEXT,
+    local TEXT,
+    quantidade INT,
+    precolinha NUMERIC,
+    total_linha_ NUMERIC
+)
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT 
+        v.vendaid,
+        v.data,
+        c.nomecliente,
+        c.nif,
+        CASE 
+            WHEN vl.bilheteid IS NOT NULL THEN 'Bilhete'
+            ELSE 'Produto'
+        END,
+        CASE 
+            WHEN vl.bilheteid IS NOT NULL THEN f.titulo
+            ELSE p.nomeproduto
+        END,
+        CASE 
+            WHEN vl.bilheteid IS NOT NULL THEN CONCAT(cine.nomecinema, ' - ', s.nomesala)
+            ELSE '-'
+        END,
+        vl.quantidade,
+        vl.precolinha,
+        vl.total_linha_
+    FROM vendas v
+    LEFT JOIN vendalinhas vl ON v.vendaid = vl.vendaid
+    LEFT JOIN clientes c ON v.clienteid = c.clienteid
+    LEFT JOIN produtos p ON vl.produtoid = p.produtoid
+    LEFT JOIN bilhetes b ON vl.bilheteid = b.bilheteid
+    LEFT JOIN sessoes sess ON b.sessaoid = sess.sessaoid
+    LEFT JOIN filmes f ON sess.filmeid = f.filmeid
+    LEFT JOIN salas s ON sess.salaid = s.salaid
+    LEFT JOIN cinemas cine ON s.cinemaid = cine.cinemaid
+    WHERE (p_inicio IS NULL OR DATE(v.data) >= p_inicio)
+      AND (p_fim IS NULL OR DATE(v.data) <= p_fim)
+    ORDER BY v.data DESC, v.vendaid DESC;
+$$;

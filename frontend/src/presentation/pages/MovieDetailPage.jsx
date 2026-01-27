@@ -81,7 +81,7 @@ const MovieDetailPage = () => {
                         
                         {sessionsLoading ? (
                             <div className="text-white/50">A carregar sessões...</div>
-                        ) : sessions.length === 0 ? (
+                        ) : (!sessions || sessions.length === 0) ? (
                             <div className="text-white/50">Sem sessões disponíveis.</div>
                         ) : (
                             <div className="space-y-8">
