@@ -31,7 +31,13 @@ def adicionar_filme(request):
         if form.is_valid():
             data = form.cleaned_data
             with connection.cursor() as cursor:
-                cursor.execute("CALL inserir_filme(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [
+                cursor.execute("""
+                    CALL inserir_filme(
+                        %s::integer, %s::integer, %s::varchar, %s::date, %s::integer, 
+                        %s::varchar, %s::date, %s::varchar, %s::text, %s::integer, 
+                        %s::numeric, %s::varchar, %s
+                    )
+                """, [
                     data['categoriaid'].categoriaid,
                     data['cinemaid'].cinemaid,
                     data['titulo'],
@@ -42,7 +48,9 @@ def adicionar_filme(request):
                     data['idioma'],
                     data['sinopse'],
                     data['classificacaoetaria'].classificacaoid if hasattr(data['classificacaoetaria'], 'classificacaoid') else data['classificacaoetaria'].pk,
-                    0.0
+                    0.0,
+                    None,
+                    None
                 ])
             return redirect('lista_filmes')
     else:

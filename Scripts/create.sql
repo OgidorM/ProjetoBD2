@@ -1,6 +1,23 @@
 /*==============================================================*/
 /* DBMS: PostgreSQL 16                                         */
 /*==============================================================*/
+
+-- Drop Django Tables
+DROP TABLE IF EXISTS auth_group_permissions CASCADE;
+DROP TABLE IF EXISTS auth_user_groups CASCADE;
+DROP TABLE IF EXISTS auth_user_user_permissions CASCADE;
+DROP TABLE IF EXISTS auth_permission CASCADE;
+DROP TABLE IF EXISTS auth_group CASCADE;
+DROP TABLE IF EXISTS auth_user CASCADE;
+DROP TABLE IF EXISTS django_admin_log CASCADE;
+DROP TABLE IF EXISTS django_content_type CASCADE;
+DROP TABLE IF EXISTS django_migrations CASCADE;
+DROP TABLE IF EXISTS django_session CASCADE;
+DROP TABLE IF EXISTS cliente_profiles CASCADE;
+DROP TABLE IF EXISTS funcionario_profiles CASCADE;
+
+
+-- Drop Domain Tables
 DROP TABLE IF EXISTS AVALIACOES CASCADE;
 DROP TABLE IF EXISTS VENDALINHAS CASCADE;
 DROP TABLE IF EXISTS VENDAS CASCADE;

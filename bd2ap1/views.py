@@ -706,7 +706,11 @@ def admin_create_movie_api(request):
 
         with connections['admin'].cursor() as cursor:
             cursor.execute("""
-                CALL inserir_filme(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                CALL inserir_filme(
+                    %s::integer, %s::integer, %s::varchar, %s::date, %s::integer, 
+                    %s::varchar, %s::date, %s::varchar, %s::text, %s::integer, 
+                    %s::numeric, %s::varchar, %s
+                )
             """, [
                 categoria_id,
                 cinema_id,
@@ -719,7 +723,8 @@ def admin_create_movie_api(request):
                 request.data.get('sinopse', ''),
                 classificacao_id,
                 request.data.get('ranking', 0.0),
-                request.data.get('cartaz_url')
+                request.data.get('cartaz_url'),
+                None
             ])
             movie_id = cursor.fetchone()[0]
         

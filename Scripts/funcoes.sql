@@ -653,7 +653,7 @@ BEGIN
                 'duracao', f.duracao,
                 'sinopse', f.sinopse,
                 'idioma', f.idioma,
-                'cartaz', f.cartaz_url,
+                'cartaz_url', f.cartaz_url,
                 'ranking', f.ranking,
                 'datalancamento', f.datalancamento,
                 'fimexebicao', f.fimexebicao,
